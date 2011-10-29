@@ -24,12 +24,12 @@ has 'type'            => (is => 'ro', isa => 'Str');
 
 method form_fields {
     my $meta = $self->meta;
-    return [
+    return (
         map { ("card[$_]" => $self->$_) }
             grep { defined $self->$_ }
                 qw/number cvc name address_line1 address_line2 address_zip
                    address_state address_country exp_month exp_year/
-    ];
+    );
 }
 
 __PACKAGE__->meta->make_immutable;

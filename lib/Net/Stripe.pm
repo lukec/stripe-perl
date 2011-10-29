@@ -2,59 +2,128 @@ package Net::Stripe;
 use Moose;
 use methods;
 use LWP::UserAgent;
-use HTTP::Request::Common;
+use HTTP::Request::Common qw/GET POST DELETE/;
 use MIME::Base64 qw/encode_base64/;
 use JSON qw/decode_json/;
 use Try::Tiny;
 use Net::Stripe::Charge;
 use Net::Stripe::Card;
+use Net::Stripe::Customer;
+use Net::Stripe::Token;
 use Net::Stripe::Error;
 
 our $VERSION = '0.01';
 
+has 'debug'       => (is => 'rw', isa => 'Bool', default => 0);
 has 'api_key'     => (is => 'ro', isa => 'Str',    required   => 1);
 has 'api_base'    => (is => 'ro', isa => 'Str',    lazy_build => 1);
 has 'ua'          => (is => 'ro', isa => 'Object', lazy_build => 1);
 
-method post_charge {
-    my %args = @_;
-    my $charge = Net::Stripe::Charge->new(%args);
-    return $self->_post('charges', $charge);
-}
-
-method get_charge {
-    my $id = shift;
-    return $self->_get("charges/$id");
-}
-
-method refund_charge {
-    my $id = shift;
-    return $self->_post("charges/$id/refund");
-}
-
-method get_charges {
-    my %args = @_;
-    my @path_args;
-    if (my $c = $args{count}) {
-        push @path_args, "count=$c";
-    }
-    if (my $o = $args{offset}) {
-        push @path_args, "offset=$o";
-    }
-    if (my $c = $args{customer}) {
-        push @path_args, "customer=$c";
+Charges: {
+    method post_charge {
+        my %args = @_;
+        my $charge = Net::Stripe::Charge->new(%args);
+        return $self->_post('charges', $charge);
     }
 
-    my $path = "charges";
-    if (@path_args) {
-        $path .= "?" . join('&', @path_args);
+    method get_charge {
+        my $id = shift || die "A charge ID is required";;
+        return $self->_get("charges/$id");
     }
-    return $self->_get($path);
+
+    method refund_charge {
+        my $id = shift || die "A charge ID is required";;
+        $id = $id->id if ref($id);
+        return $self->_post("charges/$id/refund");
+    }
+
+    method get_charges {
+        my %args = @_;
+        my @path_args;
+        if (my $c = $args{count}) {
+            push @path_args, "count=$c";
+        }
+        if (my $o = $args{offset}) {
+            push @path_args, "offset=$o";
+        }
+        if (my $c = $args{customer}) {
+            push @path_args, "customer=$c";
+        }
+
+        return $self->_get_with_args('charges', \@path_args);
+    }
 }
+
+Customers: {
+    method post_customer {
+        # Update from an existing object
+        if (@_ == 1) {
+            my $c = shift;
+            return $self->_post("customers/" . $c->id, $c);
+        }
+
+        my $customer = Net::Stripe::Customer->new(@_);
+        return $self->_post('customers', $customer);
+    }
+
+    method get_customer {
+        my $id = shift || 'get_customer() requires a customer id';
+        return $self->_get("customers/$id");
+    }
+
+    method delete_customer {
+        my $id = shift || 'delete_customer() requires a customer id';
+        $id = $id->id if ref($id);
+        $self->_delete("customers/$id");
+    }
+
+    method get_customers {
+        my %args = @_;
+        my @path_args;
+        if (my $c = $args{count}) {
+            push @path_args, "count=$c";
+        }
+        if (my $o = $args{offset}) {
+            push @path_args, "offset=$o";
+        }
+
+        return $self->_get_with_args('customers', \@path_args);
+    }
+}
+
+Tokens: {
+    method post_token {
+        my $token = Net::Stripe::Token->new(@_);
+        return $self->_post('tokens', $token);
+    }
+
+    method get_token {
+        my $id = shift || 'get_token() requires a token id';
+        return $self->_get("tokens/$id");
+    }
+}
+
+
+# Helper methods
 
 method _get {
     my $path = shift;
     my $req = GET $self->api_base . '/' . $path;
+    return $self->_make_request($req);
+}
+
+method _get_with_args {
+    my $path = shift;
+    my $args = shift;
+    if (@$args) {
+        $path .= "?" . join('&', @$args);
+    }
+    return $self->_get($path);
+}
+
+method _delete {
+    my $path = shift;
+    my $req = DELETE $self->api_base . '/' . $path;
     return $self->_make_request($req);
 }
 
@@ -63,7 +132,7 @@ method _post {
     my $obj  = shift;
 
     my $req = POST $self->api_base . '/' . $path, 
-        ($obj ? (Content => $obj->form_fields) : ());
+        ($obj ? (Content => [$obj->form_fields]) : ());
     return $self->_make_request($req);
 }
 
@@ -82,7 +151,7 @@ method _make_request {
         return $hash;
     }
 
-    die try {
+    my $e = try {
         my $hash = decode_json($resp->content);
         Net::Stripe::Error->new($hash->{error})
     }
@@ -92,14 +161,14 @@ method _make_request {
             message => $resp->status_line . " - " . $resp->content,
         );
     };
-    
-    # Handle these cases:
-    # * 200 OK
-    # * 400 Bad Request - Missing a req parameter
-    # * 401 Un-authorized - No valid API key
-    # * 402 Request Failed - Params were valid but req failed
-    # * 404 Not Found
-    # * 50X - Something wrong on their end
+
+    if ($self->debug) {
+        my $msg = "Error: @{[$e->type]} - @{[$e->message]}";
+        $msg .= " On parameter: " . $e->param if $e->param;
+        $msg .= "\nCard error: " . $e->code   if $e->code;
+        warn $msg . "\n";
+    }
+    die $e;
 }
 
 

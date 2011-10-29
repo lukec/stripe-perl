@@ -15,22 +15,52 @@ unless ($API_KEY) {
 }
 
 my $future = DateTime->now + DateTime::Duration->new(years => 1);
+my $stripe = Net::Stripe->new(api_key => $API_KEY, debug => 1);
+isa_ok $stripe, 'Net::Stripe', 'API object created today';
+
+my $fake_card = {
+    number    => '4242-4242-4242-4242',
+    exp_month => $future->month,
+    exp_year  => $future->year,
+    cvc       => 123,
+    name      => 'Anonymous',
+};
+
+Card_Tokens: {
+    Sunny_day: {
+        my $token = $stripe->post_token(
+            card => $fake_card,
+            amount => 330,
+            currency => 'usd',
+        );
+        isa_ok $token, 'Net::Stripe::Token', 'got a token back';
+        is $token->card->last4, '4242', 'token card';
+        is $token->amount, 330, 'token amount';
+        is $token->currency, 'usd', 'token currency';
+        ok !$token->used, 'token is not used';
+
+        my $same = $stripe->get_token($token->id);
+        isa_ok $token, 'Net::Stripe::Token', 'got a token back';
+        is $same->id, $token->id, 'token id matches';
+
+
+        my $no_amount = $stripe->post_token( card => $fake_card );
+        isa_ok $no_amount, 'Net::Stripe::Token', 'got a token back';
+        is $no_amount->card->last4, '4242', 'token card';
+        is $no_amount->amount, 0, 'card has no amount';
+        is $no_amount->currency, 'usd', 'token currency';
+        ok !$no_amount->used, 'token is not used';
+    }
+}
 
 Charges: {
-    my $stripe = Net::Stripe->new(api_key => $API_KEY);
     Sunny_day: {
         my $charge;
         lives_ok { 
             $charge = $stripe->post_charge(
                 amount => 3300,
                 currency => 'usd',
-                card => {
-                    number => '4242-4242-4242-4242',
-                    exp_month => $future->month,
-                    exp_year  => $future->year,
-                    cvc => 123,
-                    name => 'Anonymous',
-                },
+                card => $fake_card,
                 description => 'Wikileaks donation',
             );
         } 'Created a charge object';
@@ -45,12 +75,12 @@ Charges: {
         # Check out the returned card object
         my $card = $charge->card;
         isa_ok $card, 'Net::Stripe::Card';
-        is $card->country, 'US';
-        is $card->cvc_check, 'pass';
-        is $card->exp_month, $future->month;
-        is $card->exp_year,  $future->year;
-        is $card->last4, '4242';
-        is $card->type, 'Visa';
+        is $card->country, 'US', 'card country';
+        is $card->exp_month, $future->month, 'card exp_month';
+        is $card->exp_year,  $future->year, 'card exp_year';
+        is $card->last4, '4242', 'card last4';
+        is $card->type, 'Visa', 'card type';
+        is $card->cvc_check, 'pass', 'card cvc_check';
 
         # Fetch a charge
         my $charge2;
@@ -125,14 +155,65 @@ Charges: {
 # * fetching charges just for one customer
 # * fetching charges with an offset
 
+Customers: {
+    Sunny_day: {
+        GET_POST_DELETE: {
+            my $customer = $stripe->post_customer();
+            isa_ok $customer, 'Net::Stripe::Customer', 'got back a customer';
+            my $id = $customer->id;
+            ok $id, 'customer has an id';
+            for my $f (qw/card coupon email description plan trial_end/) {
+                is $customer->$f, undef, "customer has no $f";
+            }
+            ok !$customer->deleted, 'customer is not deleted';
+
+            # Update an existing customer
+            $customer->description("Test user for Net::Stripe");
+            my $samesy = $stripe->post_customer($customer);
+            is $samesy->description, $customer->description,
+                'post_customer returns an updated customer object';
+            my $same = $stripe->get_customer($id);
+            is $same->description, $customer->description,
+                'get customer retrieves an updated customer';
+
+            # Fetch the list of customers
+            my $all = $stripe->get_customers(count => 1);
+            is scalar(@$all), 1, 'only one customer returned';
+            is $all->[0]->id, $customer->id, 'correct customer returned';
+
+            # Delete a customer
+            $stripe->delete_customer($customer);
+            $customer = $stripe->get_customer($id);
+            ok $customer->deleted, 'customer is now deleted';
+        }
+
+        Create_with_all_the_works: {
+            my $customer = $stripe->post_customer(
+                card => $fake_card,
+                email => 'stripe@example.com',
+                description => 'Test for Net::Stripe',
+            );
+            my $card = $customer->active_card;
+            isa_ok $card, 'Net::Stripe::Card';
+            is $card->country, 'US', 'card country';
+            is $card->exp_month, $future->month, 'card exp_month';
+            is $card->exp_year,  $future->year, 'card exp_year';
+            is $card->last4, '4242', 'card last4';
+            is $card->type, 'Visa', 'card type';
+        }
+
+        # TODO: create with a coupon, create with a plan
+        # Posting a customer with a card
+        # Posting a customer with a coupon
+        # trial_end
+    }
+}
 
 done_testing();
 
 
 __DATA__
 
-    /v1/customers
-    /v1/customers/{CUSTOMER_ID}
     /v1/customers/{CUSTOMER_ID}/subscription
     /v1/invoices
     /v1/invoices/{INVOICE_ID}
