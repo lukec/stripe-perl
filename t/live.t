@@ -102,6 +102,18 @@ Charges: {
         is $charges->[0]->id, $charge->id, 'charge ids match';
     }
 
+    Post_charge_using_customer: {
+        my $token = $stripe->post_token( card => $fake_card );
+        my $customer = $stripe->post_customer( card => $token->id );
+        my $charge = $stripe->post_charge(
+            customer => $customer->id,
+            amount => 250,
+            currency => 'usd',
+        );
+        isa_ok $charge, 'Net::Stripe::Charge';
+        ok $charge->paid, 'charge was paid';
+    }
+
     Post_charge_using_token: {
         my $token = $stripe->post_token( card => $fake_card );
         my $charge = $stripe->post_charge(
@@ -120,7 +132,7 @@ Charges: {
                 currency => 'usd',
                 description => 'Wikileaks donation',
             );
-        } qr/customer OR card is required/, 'missing card and customer';
+        } qr/invalid_request_error/, 'missing card and customer';
 
         throws_ok {
             $stripe->post_charge(
@@ -136,7 +148,7 @@ Charges: {
                     name => 'Anonymous',
                 },
             );
-        } qr/customer OR card is required/, 'missing card and customer';
+        } qr/invalid_request_error/, 'missing card and customer';
 
         # Test an invalid currency
         try {
