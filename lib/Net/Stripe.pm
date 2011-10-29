@@ -4,12 +4,14 @@ use methods;
 use LWP::UserAgent;
 use HTTP::Request::Common qw/GET POST DELETE/;
 use MIME::Base64 qw/encode_base64/;
+use URI::Escape qw/uri_escape/;
 use JSON qw/decode_json/;
 use Try::Tiny;
 use Net::Stripe::Card;
 use Net::Stripe::Charge;
 use Net::Stripe::Customer;
 use Net::Stripe::Token;
+use Net::Stripe::Plan;
 use Net::Stripe::Error;
 
 our $VERSION = '0.01';
@@ -40,17 +42,11 @@ Charges: {
     method get_charges {
         my %args = @_;
         my @path_args;
-        if (my $c = $args{count}) {
-            push @path_args, "count=$c";
-        }
-        if (my $o = $args{offset}) {
-            push @path_args, "offset=$o";
-        }
         if (my $c = $args{customer}) {
             push @path_args, "customer=$c";
         }
 
-        return $self->_get_with_args('charges', \@path_args);
+        $self->_get_collections('charges', \@path_args, %args);
     }
 }
 
@@ -78,17 +74,9 @@ Customers: {
     }
 
     method get_customers {
-        my %args = @_;
-        my @path_args;
-        if (my $c = $args{count}) {
-            push @path_args, "count=$c";
-        }
-        if (my $o = $args{offset}) {
-            push @path_args, "offset=$o";
-        }
-
-        return $self->_get_with_args('customers', \@path_args);
+        $self->_get_collections('customers', [], @_);
     }
+
 }
 
 Tokens: {
@@ -103,6 +91,27 @@ Tokens: {
     }
 }
 
+Plans: {
+    method post_plan {
+        my $plan = Net::Stripe::Plan->new(@_);
+        return $self->_post('plans', $plan);
+    }
+
+    method get_plan {
+        my $id = shift || 'get_plan() requires a plan id';
+        return $self->_get("plans/" . uri_escape($id));
+    }
+
+    method delete_plan {
+        my $id = shift || 'delete_plan() requires a plan id';
+        $id = $id->id if ref($id);
+        $self->_delete("plans/$id");
+    }
+
+    method get_plans {
+        $self->_get_collections('plans', [], @_);
+    }
+}
 
 # Helper methods
 
@@ -119,6 +128,19 @@ method _get_with_args {
         $path .= "?" . join('&', @$args);
     }
     return $self->_get($path);
+}
+
+method _get_collections {
+    my $path = shift;
+    my $path_args = shift;
+    my %args = @_;
+    if (my $c = $args{count}) {
+        push @$path_args, "count=$c";
+    }
+    if (my $o = $args{offset}) {
+        push @$path_args, "offset=$o";
+    }
+    return $self->_get_with_args($path, $path_args);
 }
 
 method _delete {

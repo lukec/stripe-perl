@@ -53,6 +53,39 @@ Card_Tokens: {
     }
 }
 
+Plans: {
+    Basic_successful_use: {
+        # Notice that the plan ID requires uri escaping
+        my $id = $future->ymd('-') . '-' . $future->hms('-');
+        my $plan = $stripe->post_plan(
+            id => $id,
+            amount => 0,
+            currency => 'usd',
+            interval => 'month',
+            name => "Test Plan - $future",
+            trial_period_days => 10,
+        );
+        isa_ok $plan, 'Net::Stripe::Plan',
+            'I love it when a plan comes together';
+
+        my $newplan = $stripe->get_plan($id);
+        isa_ok $newplan, 'Net::Stripe::Plan',
+            'I love it when another plan comes together';
+        is $newplan->id, $id, 'Plan id was encoded correctly';
+        is($newplan->$_, $plan->$_, "$_ matches")
+            for qw/id amount currency interval name trial_period_days/;
+
+        my $plans = $stripe->get_plans(count => 1);
+        is scalar(@$plans), 1, 'got just one plan';
+        is $plans->[0]->id, $id, 'plan id matches';
+
+        my $hash = $stripe->delete_plan($plan);
+        ok $hash->{deleted}, 'delete response indicates delete was successful';
+        eval { $stripe->get_plan($id) };
+        ok $@, "no longer can fetch deleted plans";
+    }
+}
+
 Charges: {
     Basic_successful_use: {
         my $charge;
