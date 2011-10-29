@@ -1,0 +1,9 @@
+= Stripe Ruby bindings =
+
+== Installation ==
+
+Right now this is not installable, but soon it will be.
+
+== REQUIREMENTS ==
+
+Not yet triaged.
