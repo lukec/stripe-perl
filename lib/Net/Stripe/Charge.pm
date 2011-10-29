@@ -15,17 +15,6 @@ has 'livemode'    => (is => 'rw', isa => 'Bool');
 has 'paid'        => (is => 'rw', isa => 'Bool');
 has 'refunded'    => (is => 'rw', isa => 'Bool');
 
-around BUILDARGS => sub {
-    my $orig = shift;
-    my $class = shift;
-    my %args = @_ == 1 ? %{ $_[0] } : @_;
-    die "customer OR card is required"
-        unless (($args{customer} or $args{card})
-            and not($args{customer} and $args{card}));
-
-    $class->$orig(%args);
-};
-
 method form_fields {
     return (
         $self->card_form_fields,
