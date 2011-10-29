@@ -9,10 +9,10 @@ has 'amount'      => (is => 'ro', isa => 'Int');
 has 'currency'    => (is => 'ro', isa => 'Str');
 
 # Args returned by the API
-has 'id'          => (is => 'rw', isa => 'Str');
-has 'created'     => (is => 'rw', isa => 'Int');
-has 'used'        => (is => 'rw', isa => 'Bool');
-has 'livemode'    => (is => 'rw', isa => 'Bool');
+has 'id'          => (is => 'ro', isa => 'Str');
+has 'created'     => (is => 'ro', isa => 'Int');
+has 'used'        => (is => 'ro', isa => 'Bool');
+has 'livemode'    => (is => 'ro', isa => 'Bool');
 
 method form_fields {
     return (

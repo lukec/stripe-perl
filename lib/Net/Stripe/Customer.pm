@@ -8,7 +8,7 @@ has 'email'       => (is => 'rw', isa => 'Str');
 has 'description' => (is => 'rw', isa => 'Str');
 has 'trial_end'   => (is => 'rw', isa => 'Int');
 has 'card'        => (is => 'rw', isa => 'StripeCard');
-has 'plan'        => (is => 'rw', isa => 'StripePlan');
+has 'plan'        => (is => 'ro', isa => 'StripePlan');
 has 'coupon'      => (is => 'rw', isa => 'StripeCoupon');
 
 # API object args
