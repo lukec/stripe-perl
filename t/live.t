@@ -27,7 +27,7 @@ my $fake_card = {
 };
 
 Card_Tokens: {
-    Sunny_day: {
+    Basic_successful_use: {
         my $token = $stripe->post_token(
             card => $fake_card,
             amount => 330,
@@ -54,7 +54,7 @@ Card_Tokens: {
 }
 
 Charges: {
-    Sunny_day: {
+    Basic_successful_use: {
         my $charge;
         lives_ok { 
             $charge = $stripe->post_charge(
@@ -100,6 +100,17 @@ Charges: {
         my $charges = $stripe->get_charges( count => 1 );
         is scalar(@$charges), 1, 'one charge returned';
         is $charges->[0]->id, $charge->id, 'charge ids match';
+    }
+
+    Post_charge_using_token: {
+        my $token = $stripe->post_token( card => $fake_card );
+        my $charge = $stripe->post_charge(
+            amount => 100,
+            currency => 'usd',
+            card => $token->id,
+        );
+        isa_ok $charge, 'Net::Stripe::Charge';
+        ok $charge->paid, 'charge was paid';
     }
 
     Rainy_day: {
@@ -156,7 +167,7 @@ Charges: {
 # * fetching charges with an offset
 
 Customers: {
-    Sunny_day: {
+    Basic_successful_use: {
         GET_POST_DELETE: {
             my $customer = $stripe->post_customer();
             isa_ok $customer, 'Net::Stripe::Customer', 'got back a customer';
@@ -200,6 +211,16 @@ Customers: {
             is $card->exp_year,  $future->year, 'card exp_year';
             is $card->last4, '4242', 'card last4';
             is $card->type, 'Visa', 'card type';
+        }
+
+        Create_with_a_token: {
+            my $token = $stripe->post_token(card => $fake_card);
+            my $customer = $stripe->post_customer(
+                card => $token->id,
+            );
+            isa_ok $customer, 'Net::Stripe::Customer', 'got back a customer';
+            ok $customer->id, 'customer has an id';
+            is $customer->active_card->last4, '4242', 'card token ok';
         }
 
         # TODO: create with a coupon, create with a plan

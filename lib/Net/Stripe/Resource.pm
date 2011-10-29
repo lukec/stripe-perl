@@ -1,5 +1,6 @@
 package Net::Stripe::Resource;
 use Moose;
+use methods;
 
 around BUILDARGS => sub {
     my $orig = shift;
@@ -20,5 +21,13 @@ around BUILDARGS => sub {
 
     $class->$orig(%args);
 };
+
+method card_form_fields {
+    return unless $self->can('card');
+    my $card = $self->card;
+    return unless $card;
+    return $card->form_fields if ref $card;
+    return (card => $card);
+}
 
 1;

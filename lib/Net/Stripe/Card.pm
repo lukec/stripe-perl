@@ -1,6 +1,9 @@
 package Net::Stripe::Card;
 use Moose;
+use Moose::Util::TypeConstraints;
 use methods;
+
+union 'StripeCard', ['Str', 'Net::Stripe::Card'];
 
 # Input fields
 has 'number'          => (is => 'ro', isa => 'Str');

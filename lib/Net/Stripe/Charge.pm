@@ -9,7 +9,7 @@ has 'fee'         => (is => 'rw', isa => 'Int');
 has 'amount'      => (is => 'ro', isa => 'Int', required => 1);
 has 'currency'    => (is => 'ro', isa => 'Str', required => 1);
 has 'customer'    => (is => 'ro', isa => 'Str');
-has 'card'        => (is => 'ro', isa => 'Net::Stripe::Card');
+has 'card'        => (is => 'ro', isa => 'StripeCard');
 has 'description' => (is => 'rw', isa => 'Str');
 has 'livemode'    => (is => 'rw', isa => 'Bool');
 has 'paid'        => (is => 'rw', isa => 'Bool');
@@ -28,7 +28,7 @@ around BUILDARGS => sub {
 
 method form_fields {
     return (
-        (defined $self->card ? $self->card->form_fields : () ),
+        $self->card_form_fields,
         map { $_ => $self->$_ }
             grep { defined $self->$_ }
                 qw/amount currency customer description/
