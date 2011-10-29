@@ -1,4 +1,4 @@
-= Stripe Ruby bindings =
+= Stripe Perl bindings =
 
 == Installation ==
 
