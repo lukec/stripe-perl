@@ -162,12 +162,7 @@ method _make_request {
         );
     };
 
-    if ($self->debug) {
-        my $msg = "Error: @{[$e->type]} - @{[$e->message]}";
-        $msg .= " On parameter: " . $e->param if $e->param;
-        $msg .= "\nCard error: " . $e->code   if $e->code;
-        warn $msg . "\n";
-    }
+    warn "$e\n" if $self->debug;
     die $e;
 }
 
