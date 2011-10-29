@@ -17,7 +17,7 @@ has 'refunded'    => (is => 'rw', isa => 'Bool');
 
 method form_fields {
     return (
-        $self->card_form_fields,
+        $self->fields_for('card'),
         map { $_ => $self->$_ }
             grep { defined $self->$_ }
                 qw/amount currency customer description/

@@ -1,0 +1,5 @@
+audit ro/rw
+get rid of $meta
+resume: cancelling a customer's subscription
+test that all the extra subscription fields are received
+

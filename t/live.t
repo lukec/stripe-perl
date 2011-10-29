@@ -15,6 +15,7 @@ unless ($API_KEY) {
 }
 
 my $future = DateTime->now + DateTime::Duration->new(years => 1);
+my $future_ymdhms = $future->ymd('-') . '-' . $future->hms('-');
 my $stripe = Net::Stripe->new(api_key => $API_KEY, debug => 1);
 isa_ok $stripe, 'Net::Stripe', 'API object created today';
 
@@ -56,7 +57,7 @@ Card_Tokens: {
 Plans: {
     Basic_successful_use: {
         # Notice that the plan ID requires uri escaping
-        my $id = $future->ymd('-') . '-' . $future->hms('-');
+        my $id = $future_ymdhms;
         my $plan = $stripe->post_plan(
             id => $id,
             amount => 0,
@@ -268,7 +269,34 @@ Customers: {
             is $customer->active_card->last4, '4242', 'card token ok';
         }
 
-        # TODO: create with a coupon, create with a plan
+        Customers_with_plans: {
+            my $freeplan = $stripe->post_plan(
+                id => "free-$future_ymdhms",
+                amount => 0,
+                currency => 'usd',
+                interval => 'year',
+                name => "Freeplan $future_ymdhms",
+            );
+            ok $freeplan->id, 'freeplan created';
+            my $customer = $stripe->post_customer(
+                plan => $freeplan->id,
+            );
+            is $customer->subscription->plan->id, $freeplan->id,
+                'customer has freeplan';
+
+            # Now update an existing customer
+            my $other = $stripe->post_customer();
+            my $subs = $stripe->post_customer_subscription(
+                customer_id => $other->id,
+                plan => $freeplan->id,
+            );
+            isa_ok $subs, 'Net::Stripe::Subscription',
+                'got a subscription back';
+            is $subs->plan->id, $freeplan->id;
+        }
+
+
+        # TODO: create with a coupon
         # Posting a customer with a card
         # Posting a customer with a coupon
         # trial_end

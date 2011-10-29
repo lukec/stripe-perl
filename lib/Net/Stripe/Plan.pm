@@ -1,7 +1,10 @@
 package Net::Stripe::Plan;
 use Moose;
+use Moose::Util::TypeConstraints;
 use methods;
 extends 'Net::Stripe::Resource';
+
+union 'StripePlan', ['Str', 'Net::Stripe::Plan'];
 
 has 'id'                => (is => 'rw', isa => 'Str', required => 1);
 has 'amount'            => (is => 'ro', isa => 'Int', required => 1);

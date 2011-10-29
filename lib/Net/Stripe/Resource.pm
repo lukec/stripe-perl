@@ -18,16 +18,28 @@ around BUILDARGS => sub {
         next unless ref($args{$f}) eq 'HASH';
         $args{$f} = Net::Stripe::Card->new($args{$f});
     }
+    if (my $s = $args{subscription}) {
+        if (ref($s) eq 'HASH') {
+            $args{subscription} = Net::Stripe::Subscription->new($s);
+        }
+    }
+    if (my $p = $args{plan}) {
+        if (ref($p) eq 'HASH') {
+            $args{plan} = Net::Stripe::Plan->new($p);
+        }
+    }
 
     $class->$orig(%args);
 };
 
-method card_form_fields {
-    return unless $self->can('card');
-    my $card = $self->card;
-    return unless $card;
-    return $card->form_fields if ref $card;
-    return (card => $card);
+method fields_for {
+    my $for = shift;
+    return unless $self->can($for);
+    my $thingy = $self->$for;
+    return unless $thingy;
+    my $class = 'Net::Stripe::' . ucfirst($for);
+    return $thingy->form_fields if ref($thingy) eq $class;
+    return ($for => $thingy);
 }
 
 1;

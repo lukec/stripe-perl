@@ -8,10 +8,12 @@ use URI::Escape qw/uri_escape/;
 use JSON qw/decode_json/;
 use Try::Tiny;
 use Net::Stripe::Card;
+use Net::Stripe::Plan;
+use Net::Stripe::Coupon;
 use Net::Stripe::Charge;
 use Net::Stripe::Customer;
 use Net::Stripe::Token;
-use Net::Stripe::Plan;
+use Net::Stripe::Subscription;
 use Net::Stripe::Error;
 
 our $VERSION = '0.01';
@@ -60,6 +62,13 @@ Customers: {
 
         my $customer = Net::Stripe::Customer->new(@_);
         return $self->_post('customers', $customer);
+    }
+
+    method post_customer_subscription {
+        my %args = @_;
+        my $cid = delete $args{customer_id};
+        my $subs = Net::Stripe::Subscription->new(%args);
+        return $self->_post("customers/$cid/subscription", $subs);
     }
 
     method get_customer {
