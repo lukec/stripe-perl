@@ -19,7 +19,8 @@ has 'subscription' => (is => 'ro', isa => 'Net::Stripe::Subscription');
 
 method form_fields {
     return (
-        $self->fields_for('card'),
+        (($self->card && ref($self->card) eq 'Net::Stripe::Token') ?
+            (card => $self->card->id) : $self->fields_for('card')),
         $self->fields_for('plan'),
         $self->fields_for('coupon'),
         map { ($_ => $self->$_) }

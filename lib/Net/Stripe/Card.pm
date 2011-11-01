@@ -3,7 +3,7 @@ use Moose;
 use Moose::Util::TypeConstraints;
 use methods;
 
-union 'StripeCard', ['Str', 'Net::Stripe::Card'];
+union 'StripeCard', ['Str', 'Net::Stripe::Card', 'Net::Stripe::Token'];
 
 # Input fields
 has 'number'          => (is => 'ro', isa => 'Str');

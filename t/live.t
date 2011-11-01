@@ -27,6 +27,7 @@ my $fake_card = {
     name      => 'Anonymous',
 };
 
+
 Card_Tokens: {
     Basic_successful_use: {
         my $token = $stripe->post_token(
@@ -323,6 +324,65 @@ Customers: {
         # trial_end
     }
 }
+
+Invoices_and_items: {
+    Successful_usage: {
+        my $plan = $stripe->post_plan(
+            id => "plan-$future_ymdhms",
+            amount => 1000,
+            currency => 'usd',
+            interval => 'year',
+            name => "Plan $future_ymdhms",
+        );
+        ok $plan->id, 'plan has an id';
+        my $token = $stripe->post_token(card => $fake_card);
+        ok $token->id, 'token has an id';
+        my $customer = $stripe->post_customer(
+            card => $token,
+            plan => $plan->id,
+        );
+        ok $customer->id, 'customer has an id';
+        is $customer->subscription->plan->id, $plan->id, 'customer has a plan';
+        is $customer->active_card->last4, $token->card->last4,
+            'customer has a card';
+
+        my $item = $stripe->post_invoiceitem(
+            customer => $customer->id,
+            amount   => 700,
+            currency => 'usd',
+            description => 'Pickles',
+        );
+        for my $f (qw/date description currency amount id/) {
+            ok $item->$f, "item has $f";
+        }
+
+        my $sameitem = $stripe->get_invoiceitem( $item->id );
+        is $sameitem->id, $item->id, 'get item returns same id';
+
+        $item->description('Jerky');
+        my $newitem = $stripe->post_invoiceitem($item);
+        is $newitem->id, $item->id, 'item id is unchanged';
+        is $newitem->description, $item->description, 'item desc changed';
+
+        my $items = $stripe->get_invoiceitems(
+            customer => $customer->id,
+            count => 1,
+            offset => 0,
+        );
+        is scalar(@$items), 1, 'only 1 item returned';
+        is $items->[0]->id, $item->id, 'item id is correct';
+
+        my $resp = $stripe->delete_invoiceitem( $item->id );
+        is $resp->{deleted}, 'true', 'invoiceitem deleted';
+        is $resp->{id}, $item->id, 'deleted id is correct';
+
+        eval { $stripe->get_invoiceitem($item->id) };
+        like $@, qr/No such invoiceitem/, 'correct error message';
+    }
+
+
+}
+
 
 done_testing();
 

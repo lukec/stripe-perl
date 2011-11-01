@@ -7,12 +7,13 @@ use MIME::Base64 qw/encode_base64/;
 use URI::Escape qw/uri_escape/;
 use JSON qw/decode_json/;
 use Try::Tiny;
+use Net::Stripe::Token;
+use Net::Stripe::Invoiceitem;
 use Net::Stripe::Card;
 use Net::Stripe::Plan;
 use Net::Stripe::Coupon;
 use Net::Stripe::Charge;
 use Net::Stripe::Customer;
-use Net::Stripe::Token;
 use Net::Stripe::Subscription;
 use Net::Stripe::Error;
 
@@ -99,7 +100,6 @@ Customers: {
     method get_customers {
         $self->_get_collections('customers', [], @_);
     }
-
 }
 
 Tokens: {
@@ -133,6 +133,34 @@ Plans: {
 
     method get_plans {
         $self->_get_collections('plans', [], @_);
+    }
+}
+
+InvoiceItems: {
+    method post_invoiceitem {
+        # Update from an existing object
+        if (@_ == 1) {
+            my $i = shift;
+            return $self->_post("invoiceitems/" . $i->id, $i);
+        }
+
+        my $invoiceitem = Net::Stripe::Invoiceitem->new(@_);
+        return $self->_post('invoiceitems', $invoiceitem);
+    }
+
+    method get_invoiceitem {
+        my $id = shift || 'get_invoiceitem() requires a invoiceitem id';
+        return $self->_get("invoiceitems/$id");
+    }
+
+    method delete_invoiceitem {
+        my $id = shift || 'delete_invoiceitem() requires a invoiceitem id';
+        $id = $id->id if ref($id);
+        $self->_delete("invoiceitems/$id");
+    }
+
+    method get_invoiceitems {
+        $self->_get_collections('invoiceitems', [], @_);
     }
 }
 

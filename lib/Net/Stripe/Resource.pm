@@ -37,8 +37,7 @@ method fields_for {
     return unless $self->can($for);
     my $thingy = $self->$for;
     return unless $thingy;
-    my $class = 'Net::Stripe::' . ucfirst($for);
-    return $thingy->form_fields if ref($thingy) eq $class;
+    return $thingy->form_fields if ref($thingy) =~ m/^Net::Stripe::/;
     return ($for => $thingy);
 }
 
