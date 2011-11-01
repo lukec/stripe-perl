@@ -240,11 +240,6 @@ Charges: {
     }
 }
 
-# To Test:
-# For posting a charge:
-# * fetching charges just for one customer
-# * fetching charges with an offset
-
 Customers: {
     Basic_successful_use: {
         GET_POST_DELETE: {
@@ -349,11 +344,6 @@ Customers: {
             ok $other_dsubs->canceled_at, 'has canceled_at';
             ok $other_dsubs->ended_at, 'has ended_at';
         }
-
-
-        # TODO: create with a coupon
-        # Posting a customer with a coupon
-        # trial_end
     }
 }
 
@@ -433,17 +423,4 @@ Invoices_and_items: {
     }
 }
 
-
 done_testing();
-
-
-__DATA__
-
-    /v1/customers/{CUSTOMER_ID}/subscription
-    /v1/invoices
-    /v1/invoices/{INVOICE_ID}
-    /v1/invoiceitems
-    /v1/invoiceitems/{INVOICEITEM_ID}
-    /v1/tokens
-    /v1/tokens/{TOKEN_ID}
-
