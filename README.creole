@@ -3,6 +3,12 @@
 This code is a wrapper around the Stripe API.  It uses the same naming conventions
 and object attributes.
 
+== IMPORTANT WARNING ==
+
+This library has not been used in production yet! You are on your own!
+
+Read the code! Understand what it is and isn't doing.
+
 == Installation ==
 
 You probably want to install this into your perl using cpanm or cpan:
@@ -13,7 +19,14 @@ If you want to hack the code you can clone it from github:
 
   https://github.com/primeradiant/stripe-perl
 
+Pull requests are welcome, as are co-maintainers.
 
 == REQUIREMENTS ==
 
 Several, which you can get from CPAN.
+
+== AUTHOR ==
+
+Luke Closs, @lukec
+
+Copyright 2011, Prime Radiant, Inc.
