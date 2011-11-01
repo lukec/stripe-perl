@@ -1,9 +1,19 @@
 = Stripe Perl bindings =
 
+This code is a wrapper around the Stripe API.  It uses the same naming conventions
+and object attributes.
+
 == Installation ==
 
-Right now this is not installable, but soon it will be.
+You probably want to install this into your perl using cpanm or cpan:
+
+  cpanm Net::Stripe
+
+If you want to hack the code you can clone it from github:
+
+  https://github.com/primeradiant/stripe-perl
+
 
 == REQUIREMENTS ==
 
-Not yet triaged.
+Several, which you can get from CPAN.

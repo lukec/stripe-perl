@@ -6,7 +6,6 @@ use HTTP::Request::Common qw/GET POST DELETE/;
 use MIME::Base64 qw/encode_base64/;
 use URI::Escape qw/uri_escape/;
 use JSON qw/decode_json/;
-use Try::Tiny;
 use Net::Stripe::Token;
 use Net::Stripe::Invoiceitem;
 use Net::Stripe::Invoice;
@@ -20,10 +19,73 @@ use Net::Stripe::Error;
 
 our $VERSION = '0.01';
 
+=head1 NAME
+
+Net::Stripe - API client for Stripe.com
+
+=head1 SYNOPSIS
+
+ my $stripe = Net::Stripe->new(api_key => $API_KEY);
+ my $charge = $stripe->post_charge(
+     amount => 12500,
+     currency => 'usd',
+     card => $card_token,
+     description => 'YAPC Registration',
+ );
+
+ # ... and the api mirrors https://stripe.com/docs/api
+ # Charges: post_charge() get_charge() refund_charge() get_charges()
+ # Customer: post_customer() 
+
+=head1 DESCRIPTION
+
+This module is a wrapper around the Stripe.com HTTP API.  Methods are 
+generally named after the HTTP method and the object name.
+
+This method returns Moose objects for responses from the API.
+
+=head1 METHODS
+
+=head2 API Object
+
+=head3 new PARAMHASH
+
+This creates a new stripe api object.  The following parameters are accepted:
+
+=over
+
+=item api_key
+
+This is required. You get this from your Stripe Account settings.
+
+=item debug
+
+You can set this to true to see extra debug info.
+
+=back
+ 
+=cut
+
 has 'debug'       => (is => 'rw', isa => 'Bool', default => 0);
 has 'api_key'     => (is => 'ro', isa => 'Str',    required   => 1);
 has 'api_base'    => (is => 'ro', isa => 'Str',    lazy_build => 1);
 has 'ua'          => (is => 'ro', isa => 'Object', lazy_build => 1);
+
+=head2 Charges
+
+All methods accept the same arguments as described in the API.
+
+See https://stripe.com/docs/api for full details.
+
+=head3 post_charge( PARAMHASH | OBJECT )
+
+=head3 get_charge( CHARGE_ID )
+
+=head3 refund_charge( CHARGE_ID )
+
+=head3 get_charges( PARAMHASH )
+
+=cut
 
 Charges: {
     method post_charge {
@@ -49,6 +111,22 @@ Charges: {
     }
 }
 
+=head2 Customers
+
+All methods accept the same arguments as described in the API.
+
+See https://stripe.com/docs/api for full details.
+
+=head3 post_customer( PARAMHASH | OBJECT )
+
+=head3 get_customer( CUSTOMER_ID )
+
+=head3 delete_customer( CUSTOMER_ID )
+
+=head3 get_customers( PARAMHASH )
+
+=cut
+
 Customers: {
     method post_customer {
         # Update from an existing object
@@ -61,6 +139,37 @@ Customers: {
         return $self->_post('customers', $customer);
     }
 
+    method get_customer {
+        my $id = shift || 'get_customer() requires a customer id';
+        return $self->_get("customers/$id");
+    }
+
+    method delete_customer {
+        my $id = shift || 'delete_customer() requires a customer id';
+        $id = $id->id if ref($id);
+        $self->_delete("customers/$id");
+    }
+
+    method get_customers {
+        $self->_get_collections('customers', @_);
+    }
+}
+
+=head2 Subscriptions
+
+All methods accept the same arguments as described in the API.
+
+See https://stripe.com/docs/api for full details.
+
+=head3 post_subscription( PARAMHASH )
+
+=head3 get_subscription( CUSTOMER_ID )
+
+=head3 delete_subscription( CUSTOMER_ID )
+
+=cut
+
+Subscriptions: {
     method get_subscription {
         my %args = @_;
         my $cid = delete $args{customer_id};
@@ -82,21 +191,19 @@ Customers: {
         $self->_delete("customers/$cid/subscription$query");
     }
 
-    method get_customer {
-        my $id = shift || 'get_customer() requires a customer id';
-        return $self->_get("customers/$id");
-    }
-
-    method delete_customer {
-        my $id = shift || 'delete_customer() requires a customer id';
-        $id = $id->id if ref($id);
-        $self->_delete("customers/$id");
-    }
-
-    method get_customers {
-        $self->_get_collections('customers', @_);
-    }
 }
+
+=head2 Tokens
+
+All methods accept the same arguments as described in the API.
+
+See https://stripe.com/docs/api for full details.
+
+=head3 post_token( PARAMHASH )
+
+=head3 get_token( TOKEN_ID )
+
+=cut
 
 Tokens: {
     method post_token {
@@ -109,6 +216,22 @@ Tokens: {
         return $self->_get("tokens/$id");
     }
 }
+
+=head2 Plans
+
+All methods accept the same arguments as described in the API.
+
+See https://stripe.com/docs/api for full details.
+
+=head3 post_plan( PARAMHASH )
+
+=head3 get_plan( PLAN_ID )
+
+=head3 delete_plan( PLAN_ID )
+
+=head3 get_plans( PARAMHASH )
+
+=cut
 
 Plans: {
     method post_plan {
@@ -132,6 +255,22 @@ Plans: {
     }
 }
 
+=head2 Coupons
+
+All methods accept the same arguments as described in the API.
+
+See https://stripe.com/docs/api for full details.
+
+=head3 post_coupon( PARAMHASH )
+
+=head3 get_coupon( COUPON_ID )
+
+=head3 delete_coupon( COUPON_ID )
+
+=head3 get_coupons( PARAMHASH )
+
+=cut
+
 Coupons: {
     method post_coupon {
         my $coupon = Net::Stripe::Coupon->new(@_);
@@ -154,6 +293,20 @@ Coupons: {
     }
 }
 
+=head2 Invoices
+
+All methods accept the same arguments as described in the API.
+
+See https://stripe.com/docs/api for full details.
+
+=head3 get_invoice( COUPON_ID )
+
+=head3 get_upcominginvoice( COUPON_ID )
+
+=head3 get_invoices( PARAMHASH )
+
+=cut
+
 Invoices: {
     method get_invoice {
         my $id = shift || 'get_invoice() requires an invoice id';
@@ -169,6 +322,22 @@ Invoices: {
         return $self->_get("invoices/upcoming?customer=$id");
     }
 }
+
+=head2 InvoiceItems
+
+All methods accept the same arguments as described in the API.
+
+See https://stripe.com/docs/api for full details.
+
+=head3 post_invoiceitem( PARAMHASH | OBJECT )
+
+=head3 get_invoiceitem( INVOICEITEM_ID )
+
+=head3 delete_invoiceitem( INVOICEITEM_ID )
+
+=head3 get_invoiceitems( PARAMHASH )
+
+=cut
 
 InvoiceItems: {
     method post_invoiceitem {
@@ -261,13 +430,13 @@ method _make_request {
         return $hash;
     }
 
-    my $e = try {
+    my $e = eval {
         my $hash = decode_json($resp->content);
         Net::Stripe::Error->new($hash->{error})
-    }
-    catch {
+    };
+    if ($@) {
         Net::Stripe::Error->new(
-            type => "Could not decode HTTP response: $_",
+            type => "Could not decode HTTP response: $@",
             message => $resp->status_line . " - " . $resp->content,
         );
     };
@@ -291,6 +460,20 @@ method _build_ua {
     return $ua;
 }
 
+=head1 SEE ALSO
+
+L<https://stripe.com>, L<https://stripe.com/docs/api>
+
+=head1 AUTHORS
+
+Luke Closs
+
+=head1 LICENSE
+
+Net-Stripe is Copyright 2011 Prime Radiant, Inc.
+Net-Stripe is distributed under the same terms as Perl itself.
+
+=cut
 
 __PACKAGE__->meta->make_immutable;
 1;

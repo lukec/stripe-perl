@@ -6,7 +6,6 @@ use Test::Exception;
 use Net::Stripe;
 use DateTime;
 use DateTime::Duration;
-use Try::Tiny;
 
 my $API_KEY = $ENV{STRIPE_API_KEY};
 unless ($API_KEY) {
@@ -219,7 +218,7 @@ Charges: {
         } qr/invalid_request_error/, 'missing card and customer';
 
         # Test an invalid currency
-        try {
+        eval {
             $stripe->post_charge(
                 amount => 3300,
                 currency => 'zzz',
@@ -230,9 +229,9 @@ Charges: {
                     cvc => 123,
                 },
             );
-        }
-        catch {
-            my $e = $_;
+        };
+        if ($@) {
+            my $e = $@;
             isa_ok $e, 'Net::Stripe::Error', 'error raised is an object';
             is $e->type, 'invalid_request_error', 'error type';
             is $e->message, 'Invalid currency: zzz', 'error message';
