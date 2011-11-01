@@ -1,6 +1,5 @@
 package Net::Stripe::Invoiceitem;
 use Moose;
-use Moose::Util::TypeConstraints;
 use methods;
 extends 'Net::Stripe::Resource';
 

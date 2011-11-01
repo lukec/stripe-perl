@@ -27,6 +27,7 @@ my $fake_card = {
     name      => 'Anonymous',
 };
 
+goto Invoices_and_items;
 
 Card_Tokens: {
     Basic_successful_use: {
@@ -372,6 +373,26 @@ Invoices_and_items: {
         is scalar(@$items), 1, 'only 1 item returned';
         is $items->[0]->id, $item->id, 'item id is correct';
 
+
+        my $invoice = $stripe->get_upcominginvoice($customer->id);
+        isa_ok $invoice, 'Net::Stripe::Invoice';
+        is $invoice->{subtotal}, 1700, 'subtotal';
+        is $invoice->{total}, 1700, 'total';
+        is scalar(@{ $invoice->lines }), 2, '2 lines';
+
+        my $all_invoices = $stripe->get_invoices(
+            customer => $customer->id,
+            count    => 1,
+            offset   => 0,
+        );
+        is scalar(@$all_invoices), 1, 'one invoice returned';
+
+        # We can't fetch the upcoming invoice because it does not have an ID
+        # So to test get_invoice() we need a way to create an invoice.
+        # This test should be re-written in a way that works reliably.
+        # my $same_invoice = $stripe->get_invoice($invoice->id);
+        # is $same_invoice->id, $invoice->id, 'invoice id matches';
+
         my $resp = $stripe->delete_invoiceitem( $item->id );
         is $resp->{deleted}, 'true', 'invoiceitem deleted';
         is $resp->{id}, $item->id, 'deleted id is correct';
@@ -379,8 +400,6 @@ Invoices_and_items: {
         eval { $stripe->get_invoiceitem($item->id) };
         like $@, qr/No such invoiceitem/, 'correct error message';
     }
-
-
 }
 
 

@@ -9,6 +9,7 @@ use JSON qw/decode_json/;
 use Try::Tiny;
 use Net::Stripe::Token;
 use Net::Stripe::Invoiceitem;
+use Net::Stripe::Invoice;
 use Net::Stripe::Card;
 use Net::Stripe::Plan;
 use Net::Stripe::Coupon;
@@ -44,12 +45,7 @@ Charges: {
 
     method get_charges {
         my %args = @_;
-        my @path_args;
-        if (my $c = $args{customer}) {
-            push @path_args, "customer=$c";
-        }
-
-        $self->_get_collections('charges', \@path_args, %args);
+        $self->_get_collections('charges', %args);
     }
 }
 
@@ -98,7 +94,7 @@ Customers: {
     }
 
     method get_customers {
-        $self->_get_collections('customers', [], @_);
+        $self->_get_collections('customers', @_);
     }
 }
 
@@ -132,7 +128,23 @@ Plans: {
     }
 
     method get_plans {
-        $self->_get_collections('plans', [], @_);
+        $self->_get_collections('plans', @_);
+    }
+}
+
+Invoices: {
+    method get_invoice {
+        my $id = shift || 'get_invoice() requires an invoice id';
+        return $self->_get("invoices/$id");
+    }
+
+    method get_invoices {
+        $self->_get_collections('invoices', @_);
+    }
+
+    method get_upcominginvoice {
+        my $id = shift || 'get_upcominginvoice() requires a customer id';
+        return $self->_get("invoices/upcoming?customer=$id");
     }
 }
 
@@ -160,7 +172,7 @@ InvoiceItems: {
     }
 
     method get_invoiceitems {
-        $self->_get_collections('invoiceitems', [], @_);
+        $self->_get_collections('invoiceitems', @_);
     }
 }
 
@@ -183,15 +195,18 @@ method _get_with_args {
 
 method _get_collections {
     my $path = shift;
-    my $path_args = shift;
     my %args = @_;
+    my @path_args;
     if (my $c = $args{count}) {
-        push @$path_args, "count=$c";
+        push @path_args, "count=$c";
     }
     if (my $o = $args{offset}) {
-        push @$path_args, "offset=$o";
+        push @path_args, "offset=$o";
     }
-    return $self->_get_with_args($path, $path_args);
+    if (my $c = $args{customer}) {
+        push @path_args, "customer=$c";
+    }
+    return $self->_get_with_args($path, \@path_args);
 }
 
 method _delete {
