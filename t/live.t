@@ -27,8 +27,6 @@ my $fake_card = {
     name      => 'Anonymous',
 };
 
-goto Invoices_and_items;
-
 Card_Tokens: {
     Basic_successful_use: {
         my $token = $stripe->post_token(
@@ -86,6 +84,40 @@ Plans: {
         ok $hash->{deleted}, 'delete response indicates delete was successful';
         eval { $stripe->get_plan($id) };
         ok $@, "no longer can fetch deleted plans";
+    }
+}
+
+Coupons: {
+    Basic_successful_use: {
+        my $id = "coupon-$future_ymdhms";
+        my $coupon = $stripe->post_coupon(
+            id => $id,
+            percent_off => 50,
+            duration => 'repeating',
+            duration_in_months => 3,
+            max_redemptions => 5,
+            redeem_by => time() + 100,
+        );
+        isa_ok $coupon, 'Net::Stripe::Coupon',
+            'I love it when a coupon comes together';
+        is $coupon->id, $id, 'coupon id is the same';
+
+        my $newcoupon = $stripe->get_coupon($id);
+        isa_ok $newcoupon, 'Net::Stripe::Coupon',
+            'I love it when another coupon comes together';
+        is $newcoupon->id, $id, 'coupon id was encoded correctly';
+        is($newcoupon->$_, $coupon->$_, "$_ matches")
+            for qw/id percent_off duration duration_in_months 
+                   max_redemptions redeem_by/;
+
+        my $coupons = $stripe->get_coupons(count => 1);
+        is scalar(@$coupons), 1, 'got just one coupon';
+        is $coupons->[0]->id, $id, 'coupon id matches';
+
+        my $hash = $stripe->delete_coupon($coupon);
+        ok $hash->{deleted}, 'delete response indicates delete was successful';
+        eval { $stripe->get_coupon($id) };
+        ok $@, "no longer can fetch deleted coupons";
     }
 }
 

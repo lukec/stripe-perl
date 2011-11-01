@@ -132,6 +132,28 @@ Plans: {
     }
 }
 
+Coupons: {
+    method post_coupon {
+        my $coupon = Net::Stripe::Coupon->new(@_);
+        return $self->_post('coupons', $coupon);
+    }
+
+    method get_coupon {
+        my $id = shift || 'get_coupon() requires a coupon id';
+        return $self->_get("coupons/" . uri_escape($id));
+    }
+
+    method delete_coupon {
+        my $id = shift || 'delete_coupon() requires a coupon id';
+        $id = $id->id if ref($id);
+        $self->_delete("coupons/$id");
+    }
+
+    method get_coupons {
+        $self->_get_collections('coupons', @_);
+    }
+}
+
 Invoices: {
     method get_invoice {
         my $id = shift || 'get_invoice() requires an invoice id';
