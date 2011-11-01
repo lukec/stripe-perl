@@ -64,11 +64,25 @@ Customers: {
         return $self->_post('customers', $customer);
     }
 
-    method post_customer_subscription {
+    method get_subscription {
+        my %args = @_;
+        my $cid = delete $args{customer_id};
+        return $self->_get("customers/$cid/subscription");
+    }
+
+    method post_subscription {
         my %args = @_;
         my $cid = delete $args{customer_id};
         my $subs = Net::Stripe::Subscription->new(%args);
         return $self->_post("customers/$cid/subscription", $subs);
+    }
+
+    method delete_subscription {
+        my %args = @_;
+        my $cid = delete $args{customer_id};
+        my $query = '';
+        $query .= '?at_period_end=true' if $args{at_period_end};
+        $self->_delete("customers/$cid/subscription$query");
     }
 
     method get_customer {

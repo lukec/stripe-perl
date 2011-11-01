@@ -284,20 +284,41 @@ Customers: {
             is $customer->subscription->plan->id, $freeplan->id,
                 'customer has freeplan';
 
-            # Now update an existing customer
+            # Now update subscription of an existing customer
             my $other = $stripe->post_customer();
-            my $subs = $stripe->post_customer_subscription(
+            my $subs = $stripe->post_subscription(
                 customer_id => $other->id,
                 plan => $freeplan->id,
             );
             isa_ok $subs, 'Net::Stripe::Subscription',
                 'got a subscription back';
             is $subs->plan->id, $freeplan->id;
+
+            my $subs_again = $stripe->get_subscription(
+                customer_id => $other->id,
+            );
+            is $subs_again->status, 'active', 'subs is active';
+            is $subs_again->start, $subs->start, 'same subs was returned';
+
+            # Now cancel subscriptions
+            my $dsubs = $stripe->delete_subscription(
+                customer_id => $customer->id,
+            );
+            is $dsubs->status, 'canceled', 'subscription is canceled';
+            ok $dsubs->canceled_at, 'has canceled_at';
+            ok $dsubs->ended_at, 'has ended_at';
+
+            my $other_dsubs = $stripe->delete_subscription(
+                customer_id => $other->id,
+                at_period_end => 1,
+            );
+            is $other_dsubs->status, 'active', 'subscription is still active';
+            ok $other_dsubs->canceled_at, 'has canceled_at';
+            ok $other_dsubs->ended_at, 'has ended_at';
         }
 
 
         # TODO: create with a coupon
-        # Posting a customer with a card
         # Posting a customer with a coupon
         # trial_end
     }

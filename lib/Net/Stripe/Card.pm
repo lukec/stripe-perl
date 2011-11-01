@@ -26,7 +26,6 @@ has 'last4'           => (is => 'ro', isa => 'Str');
 has 'type'            => (is => 'ro', isa => 'Str');
 
 method form_fields {
-    my $meta = $self->meta;
     return (
         map { ("card[$_]" => $self->$_) }
             grep { defined $self->$_ }

@@ -10,13 +10,15 @@ has 'trial_end' => (is => 'ro', isa => 'Int');
 has 'card'      => (is => 'ro', isa => 'StripeCard');
 
 # Other fields returned by the API
-has 'current_period_end'   => (is => 'ro', isa => 'Int');
+has 'customer'             => (is => 'ro', isa => 'Str');
 has 'status'               => (is => 'ro', isa => 'Str');
-has 'current_period_start' => (is => 'ro', isa => 'Int');
 has 'start'                => (is => 'ro', isa => 'Int');
+has 'canceled_at'          => (is => 'ro', isa => 'Int');
+has 'ended_at'             => (is => 'ro', isa => 'Int');
+has 'current_period_start' => (is => 'ro', isa => 'Int');
+has 'current_period_end'   => (is => 'ro', isa => 'Int');
 has 'trial_start'          => (is => 'ro', isa => 'Str');
 has 'trial_end'            => (is => 'ro', isa => 'Str');
-has 'customer'             => (is => 'ro', isa => 'Str');
 
 
 method form_fields {
