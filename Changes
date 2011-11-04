@@ -1,0 +1,4 @@
+0.02 - Thu Nov  3 19:20:55 PDT 2011
+ * Added missing dependency on Throwable - thx tomeliaz++
+
+0.01 - Initial Release
