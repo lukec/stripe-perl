@@ -14,5 +14,6 @@ requires 'HTTP::Request::Common' => 0;
 requires 'MIME::Base64'          => 0;
 requires 'URI::Escape'           => 0;
 requires 'JSON'                  => 0;
+requires 'Throwable'             => 0;
 
 WriteAll;
