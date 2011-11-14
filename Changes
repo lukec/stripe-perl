@@ -1,3 +1,6 @@
+0.03 - Mon Nov 14 12:31:41 PST 2011
+ * Added missing dep on LWP::Protocol::https
+
 0.02 - Thu Nov  3 19:20:55 PDT 2011
  * Added missing dependency on Throwable - thx tomeliaz++
 

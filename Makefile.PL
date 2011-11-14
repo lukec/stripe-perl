@@ -10,6 +10,7 @@ requires 'perl'                  => v5.10.1;
 requires 'Moose'                 => 0;
 requires 'methods'               => 0;
 requires 'LWP::UserAgent'        => 0;
+requires 'LWP::Protocol::https'  => 0;
 requires 'HTTP::Request::Common' => 0;
 requires 'MIME::Base64'          => 0;
 requires 'URI::Escape'           => 0;
