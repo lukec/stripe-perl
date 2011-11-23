@@ -21,7 +21,7 @@ method form_fields {
 
 =head1 NAME
 
-Net::Stripe::InvoiceItem
+Net::Stripe::Invoiceitem
 
 =head1 SEE ALSO
 
