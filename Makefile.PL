@@ -16,5 +16,7 @@ requires 'MIME::Base64'          => 0;
 requires 'URI::Escape'           => 0;
 requires 'JSON'                  => 0;
 requires 'Throwable'             => 0;
+requires 'Test::Exception'       => 0;
+requires 'DateTime'              => 0;
 
 WriteAll;
