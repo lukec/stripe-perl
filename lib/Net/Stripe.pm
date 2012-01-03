@@ -101,8 +101,16 @@ Charges: {
 
     method refund_charge {
         my $id = shift || die "A charge ID is required";;
+        my $amount = shift;
         $id = $id->id if ref($id);
-        return $self->_post("charges/$id/refund");
+        
+        if($amount) {
+            $amount = "?amount=$amount";
+        } else {
+            $amount = '';
+        }
+        
+        return $self->_post("charges/$id/refund" . $amount);
     }
 
     method get_charges {
