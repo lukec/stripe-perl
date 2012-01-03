@@ -157,10 +157,18 @@ Charges: {
 
         # Refund a charge
         my $charge3;
+        # partial refund
+        lives_ok { $charge = $stripe->refund_charge($charge->id, 1000) }
+            'refunding a charge works';
+        is $charge->id, $charge->id, 'returned charge object matches id';
+        is $charge->amount_refunded, 1000, 'partial refund $10';
+        ok !$charge->refunded, 'charge not yet fully refunded';
+        # fully refund
         lives_ok { $charge = $stripe->refund_charge($charge->id) }
-            'Refunding a charge works';
+            'refunding remainder of charge';
         is $charge->id, $charge->id, 'returned charge object matches id';
         ok $charge->refunded, 'charge is refunded';
+        ok $charge->paid, 'charge was paid';
         ok $charge->paid, 'charge was paid';
 
         # Fetch list of charges
