@@ -17,7 +17,7 @@ use Net::Stripe::Customer;
 use Net::Stripe::Subscription;
 use Net::Stripe::Error;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 =head1 NAME
 
