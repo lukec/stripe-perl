@@ -14,6 +14,7 @@ has 'description' => (is => 'ro', isa => 'Str');
 has 'livemode'    => (is => 'ro', isa => 'Bool');
 has 'paid'        => (is => 'ro', isa => 'Bool');
 has 'refunded'    => (is => 'ro', isa => 'Bool');
+has 'amount_refunded' => (is => 'ro', isa => 'Int');
 
 method form_fields {
     return (
