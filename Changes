@@ -1,4 +1,4 @@
-0.05 - unreleased
+0.05 - Wed Feb  1 13:02:51 PST 2012
  * Add support for partial refunds via second parameter on refund_charge call.
    Thanks tomeliaz++ 
 
