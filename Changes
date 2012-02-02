@@ -1,3 +1,6 @@
+0.06 - Thu Feb  2 09:20:06 PST 2012
+ * Fix MANIFEST so that Invoiceitem.pm is not renamed as InvoiceItem.pm
+
 0.05 - Wed Feb  1 13:02:51 PST 2012
  * Add support for partial refunds via second parameter on refund_charge call.
    Thanks tomeliaz++ 
