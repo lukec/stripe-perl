@@ -4,18 +4,18 @@ use methods;
 extends 'Net::Stripe::Resource';
 
 # Customer creation args
-has 'email'       => (is => 'rw', isa => 'Str');
-has 'description' => (is => 'rw', isa => 'Str');
-has 'trial_end'   => (is => 'rw', isa => 'Int');
-has 'card'        => (is => 'rw', isa => 'StripeCard');
-has 'plan'        => (is => 'ro', isa => 'StripePlan');
-has 'coupon'      => (is => 'rw', isa => 'StripeCoupon');
+has 'email'       => (is => 'rw', isa => 'Maybe[Str]');
+has 'description' => (is => 'rw', isa => 'Maybe[Str]');
+has 'trial_end'   => (is => 'rw', isa => 'Maybe[Int]');
+has 'card'        => (is => 'rw', isa => 'Maybe[StripeCard]');
+has 'plan'        => (is => 'ro', isa => 'Maybe[StripePlan]');
+has 'coupon'      => (is => 'rw', isa => 'Maybe[StripeCoupon]');
 
 # API object args
-has 'id'           => (is => 'ro', isa => 'Str');
-has 'deleted'      => (is => 'ro', isa => 'Bool', default => 0);
-has 'active_card'  => (is => 'ro', isa => 'StripeCard');
-has 'subscription' => (is => 'ro', isa => 'Net::Stripe::Subscription');
+has 'id'           => (is => 'ro', isa => 'Maybe[Str]');
+has 'deleted'      => (is => 'ro', isa => 'Maybe[Bool]', default => 0);
+has 'active_card'  => (is => 'ro', isa => 'Maybe[StripeCard]');
+has 'subscription' => (is => 'ro', isa => 'Maybe[Net::Stripe::Subscription]');
 
 method form_fields {
     return (

@@ -6,12 +6,12 @@ extends 'Net::Stripe::Resource';
 
 union 'StripeCoupon', ['Str', 'Net::Stripe::Coupon'];
 
-has 'id'                 => (is => 'rw', isa => 'Str');
-has 'percent_off'        => (is => 'rw', isa => 'Int', required => 1);
-has 'duration'           => (is => 'rw', isa => 'Str', required => 1);
-has 'duration_in_months' => (is => 'rw', isa => 'Int');
-has 'max_redemptions'    => (is => 'rw', isa => 'Int');
-has 'redeem_by'          => (is => 'rw', isa => 'Int');
+has 'id'                 => (is => 'rw', isa => 'Maybe[Str]');
+has 'percent_off'        => (is => 'rw', isa => 'Maybe[Int]', required => 1);
+has 'duration'           => (is => 'rw', isa => 'Maybe[Str]', required => 1);
+has 'duration_in_months' => (is => 'rw', isa => 'Maybe[Int]');
+has 'max_redemptions'    => (is => 'rw', isa => 'Maybe[Int]');
+has 'redeem_by'          => (is => 'rw', isa => 'Maybe[Int]');
 
 method form_fields {
     return (

@@ -3,10 +3,10 @@ use Moose;
 with 'Throwable';
 use namespace::clean -except => 'meta';
 
-has 'type'    => (is => 'ro', isa => 'Str', required => 1);
-has 'message' => (is => 'ro', isa => 'Str', required => 1);
-has 'code'    => (is => 'ro', isa => 'Str');
-has 'param'   => (is => 'ro', isa => 'Str');
+has 'type'    => (is => 'ro', isa => 'Maybe[Str]', required => 1);
+has 'message' => (is => 'ro', isa => 'Maybe[Str]', required => 1);
+has 'code'    => (is => 'ro', isa => 'Maybe[Str]');
+has 'param'   => (is => 'ro', isa => 'Maybe[Str]');
 
 use overload fallback => 1,
     '""' => sub {

@@ -4,15 +4,15 @@ use methods;
 extends 'Net::Stripe::Resource';
 
 # Args for creating a Token
-has 'card'        => (is => 'ro', isa => 'Net::Stripe::Card', required => 1);
-has 'amount'      => (is => 'ro', isa => 'Int');
-has 'currency'    => (is => 'ro', isa => 'Str');
+has 'card'        => (is => 'ro', isa => 'Maybe[Net::Stripe::Card]', required => 1);
+has 'amount'      => (is => 'ro', isa => 'Maybe[Int]');
+has 'currency'    => (is => 'ro', isa => 'Maybe[Str]');
 
 # Args returned by the API
-has 'id'          => (is => 'ro', isa => 'Str');
-has 'created'     => (is => 'ro', isa => 'Int');
-has 'used'        => (is => 'ro', isa => 'Bool');
-has 'livemode'    => (is => 'ro', isa => 'Bool');
+has 'id'          => (is => 'ro', isa => 'Maybe[Str]');
+has 'created'     => (is => 'ro', isa => 'Maybe[Int]');
+has 'used'        => (is => 'ro', isa => 'Maybe[Bool]');
+has 'livemode'    => (is => 'ro', isa => 'Maybe[Bool]');
 
 method form_fields {
     return (

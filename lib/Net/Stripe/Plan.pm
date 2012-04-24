@@ -6,12 +6,12 @@ extends 'Net::Stripe::Resource';
 
 union 'StripePlan', ['Str', 'Net::Stripe::Plan'];
 
-has 'id'                => (is => 'ro', isa => 'Str', required => 1);
-has 'amount'            => (is => 'ro', isa => 'Int', required => 1);
-has 'currency'          => (is => 'ro', isa => 'Str', required => 1);
-has 'interval'          => (is => 'ro', isa => 'Str', required => 1);
-has 'name'              => (is => 'ro', isa => 'Str', required => 1);
-has 'trial_period_days' => (is => 'ro', isa => 'Int');
+has 'id'                => (is => 'ro', isa => 'Maybe[Str]', required => 1);
+has 'amount'            => (is => 'ro', isa => 'Maybe[Int]', required => 1);
+has 'currency'          => (is => 'ro', isa => 'Maybe[Str]', required => 1);
+has 'interval'          => (is => 'ro', isa => 'Maybe[Str]', required => 1);
+has 'name'              => (is => 'ro', isa => 'Maybe[Str]', required => 1);
+has 'trial_period_days' => (is => 'ro', isa => 'Maybe[Int]');
 
 method form_fields {
     return (

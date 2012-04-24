@@ -3,12 +3,12 @@ use Moose;
 use methods;
 extends 'Net::Stripe::Resource';
 
-has 'id'                => (is => 'ro', isa => 'Str');
-has 'customer'          => (is => 'ro', isa => 'Str', required => 1);
-has 'amount'            => (is => 'rw', isa => 'Int', required => 1);
-has 'currency'          => (is => 'rw', isa => 'Str', required => 1);
-has 'description'       => (is => 'rw', isa => 'Str');
-has 'date'              => (is => 'ro', isa => 'Int');
+has 'id'                => (is => 'ro', isa => 'Maybe[Str]');
+has 'customer'          => (is => 'ro', isa => 'Maybe[Str]', required => 1);
+has 'amount'            => (is => 'rw', isa => 'Maybe[Int]', required => 1);
+has 'currency'          => (is => 'rw', isa => 'Maybe[Str]', required => 1);
+has 'description'       => (is => 'rw', isa => 'Maybe[Str]');
+has 'date'              => (is => 'ro', isa => 'Maybe[Int]');
 
 method form_fields {
     return (

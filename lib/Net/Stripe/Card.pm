@@ -6,24 +6,24 @@ use methods;
 union 'StripeCard', ['Str', 'Net::Stripe::Card', 'Net::Stripe::Token'];
 
 # Input fields
-has 'number'          => (is => 'ro', isa => 'Str');
-has 'cvc'             => (is => 'ro', isa => 'Int');
-has 'name'            => (is => 'ro', isa => 'Str');
-has 'address_line1'   => (is => 'ro', isa => 'Str');
-has 'address_line2'   => (is => 'ro', isa => 'Str');
-has 'address_zip'     => (is => 'ro', isa => 'Str');
-has 'address_state'   => (is => 'ro', isa => 'Str');
-has 'address_country' => (is => 'ro', isa => 'Str');
+has 'number'          => (is => 'ro', isa => 'Maybe[Str]');
+has 'cvc'             => (is => 'ro', isa => 'Maybe[Int]');
+has 'name'            => (is => 'ro', isa => 'Maybe[Str]');
+has 'address_line1'   => (is => 'ro', isa => 'Maybe[Str]');
+has 'address_line2'   => (is => 'ro', isa => 'Maybe[Str]');
+has 'address_zip'     => (is => 'ro', isa => 'Maybe[Str]');
+has 'address_state'   => (is => 'ro', isa => 'Maybe[Str]');
+has 'address_country' => (is => 'ro', isa => 'Maybe[Str]');
 
 # Both input and output
-has 'exp_month'       => (is => 'ro', isa => 'Int', required => 1);
-has 'exp_year'        => (is => 'ro', isa => 'Int', required => 1);
+has 'exp_month'       => (is => 'ro', isa => 'Maybe[Int]', required => 1);
+has 'exp_year'        => (is => 'ro', isa => 'Maybe[Int]', required => 1);
 
 # Output fields
-has 'country'         => (is => 'ro', isa => 'Str');
-has 'cvc_check'       => (is => 'ro', isa => 'Str');
-has 'last4'           => (is => 'ro', isa => 'Str');
-has 'type'            => (is => 'ro', isa => 'Str');
+has 'country'         => (is => 'ro', isa => 'Maybe[Str]');
+has 'cvc_check'       => (is => 'ro', isa => 'Maybe[Str]');
+has 'last4'           => (is => 'ro', isa => 'Maybe[Str]');
+has 'type'            => (is => 'ro', isa => 'Maybe[Str]');
 
 method form_fields {
     return (
