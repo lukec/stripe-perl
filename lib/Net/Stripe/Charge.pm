@@ -3,18 +3,18 @@ use Moose;
 use methods;
 extends 'Net::Stripe::Resource';
 
-has 'id'          => (is => 'ro', isa => 'Str');
-has 'created'     => (is => 'ro', isa => 'Int');
-has 'fee'         => (is => 'ro', isa => 'Int');
-has 'amount'      => (is => 'ro', isa => 'Int', required => 1);
-has 'currency'    => (is => 'ro', isa => 'Str', required => 1);
-has 'customer'    => (is => 'ro', isa => 'Str');
-has 'card'        => (is => 'ro', isa => 'StripeCard');
-has 'description' => (is => 'ro', isa => 'Str');
-has 'livemode'    => (is => 'ro', isa => 'Bool');
-has 'paid'        => (is => 'ro', isa => 'Bool');
-has 'refunded'    => (is => 'ro', isa => 'Bool');
-has 'amount_refunded' => (is => 'ro', isa => 'Int');
+has 'id'          => (is => 'ro', isa => 'Maybe[Str]');
+has 'created'     => (is => 'ro', isa => 'Maybe[Int]');
+has 'fee'         => (is => 'ro', isa => 'Maybe[Int]');
+has 'amount'      => (is => 'ro', isa => 'Maybe[Int]', required => 1);
+has 'currency'    => (is => 'ro', isa => 'Maybe[Str]', required => 1);
+has 'customer'    => (is => 'ro', isa => 'Maybe[Str]');
+has 'card'        => (is => 'ro', isa => 'Maybe[StripeCard]');
+has 'description' => (is => 'ro', isa => 'Maybe[Str]');
+has 'livemode'    => (is => 'ro', isa => 'Maybe[Bool]');
+has 'paid'        => (is => 'ro', isa => 'Maybe[Bool]');
+has 'refunded'    => (is => 'ro', isa => 'Maybe[Bool]');
+has 'amount_refunded' => (is => 'ro', isa => 'Maybe[Int]');
 
 method form_fields {
     return (
