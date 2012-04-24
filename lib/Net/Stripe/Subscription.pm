@@ -3,22 +3,22 @@ use Moose;
 use methods;
 extends 'Net::Stripe::Resource';
 
-has 'plan' => (is => 'ro', isa => 'StripePlan', required => 1);
-has 'coupon'    => (is => 'ro', isa => 'StripeCoupon');
-has 'prorate'   => (is => 'ro', isa => 'Bool');
-has 'trial_end' => (is => 'ro', isa => 'Int');
-has 'card'      => (is => 'ro', isa => 'StripeCard');
+has 'plan' => (is => 'ro', isa => 'Maybe[StripePlan]', required => 1);
+has 'coupon'    => (is => 'ro', isa => 'Maybe[StripeCoupon]');
+has 'prorate'   => (is => 'ro', isa => 'Maybe[Bool]');
+has 'trial_end' => (is => 'ro', isa => 'Maybe[Int]');
+has 'card'      => (is => 'ro', isa => 'Maybe[StripeCard]');
 
 # Other fields returned by the API
-has 'customer'             => (is => 'ro', isa => 'Str');
-has 'status'               => (is => 'ro', isa => 'Str');
-has 'start'                => (is => 'ro', isa => 'Int');
-has 'canceled_at'          => (is => 'ro', isa => 'Int');
-has 'ended_at'             => (is => 'ro', isa => 'Int');
-has 'current_period_start' => (is => 'ro', isa => 'Int');
-has 'current_period_end'   => (is => 'ro', isa => 'Int');
-has 'trial_start'          => (is => 'ro', isa => 'Str');
-has 'trial_end'            => (is => 'ro', isa => 'Str');
+has 'customer'             => (is => 'ro', isa => 'Maybe[Str]');
+has 'status'               => (is => 'ro', isa => 'Maybe[Str]');
+has 'start'                => (is => 'ro', isa => 'Maybe[Int]');
+has 'canceled_at'          => (is => 'ro', isa => 'Maybe[Int]');
+has 'ended_at'             => (is => 'ro', isa => 'Maybe[Int]');
+has 'current_period_start' => (is => 'ro', isa => 'Maybe[Int]');
+has 'current_period_end'   => (is => 'ro', isa => 'Maybe[Int]');
+has 'trial_start'          => (is => 'ro', isa => 'Maybe[Str]');
+has 'trial_end'            => (is => 'ro', isa => 'Maybe[Str]');
 
 
 method form_fields {

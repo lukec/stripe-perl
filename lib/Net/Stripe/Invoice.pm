@@ -3,10 +3,10 @@ use Moose;
 use methods;
 extends 'Net::Stripe::Resource';
 
-has 'id'       => (is => 'ro', isa => 'Str');
-has 'created'  => (is => 'ro', isa => 'Int');
-has 'total'    => (is => 'ro', isa => 'Int',              required => 1);
-has 'subtotal' => (is => 'ro', isa => 'Int',              required => 1);
+has 'id'       => (is => 'ro', isa => 'Maybe[Str]');
+has 'created'  => (is => 'ro', isa => 'Maybe[Int]');
+has 'total'    => (is => 'ro', isa => 'Maybe[Int]',              required => 1);
+has 'subtotal' => (is => 'ro', isa => 'Maybe[Int]',              required => 1);
 has 'lines'    => (is => 'ro', isa => 'ArrayRef[Object]', required => 1);
 
 has 'invoiceitems' =>
