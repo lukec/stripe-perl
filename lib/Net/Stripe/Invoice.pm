@@ -3,11 +3,25 @@ use Moose;
 use methods;
 extends 'Net::Stripe::Resource';
 
-has 'id'       => (is => 'ro', isa => 'Maybe[Str]');
-has 'created'  => (is => 'ro', isa => 'Maybe[Int]');
-has 'total'    => (is => 'ro', isa => 'Maybe[Int]',              required => 1);
-has 'subtotal' => (is => 'ro', isa => 'Maybe[Int]',              required => 1);
-has 'lines'    => (is => 'ro', isa => 'ArrayRef[Object]', required => 1);
+has 'id'            => ( is => 'ro', isa => 'Maybe[Str]' );
+has 'created'       => ( is => 'ro', isa => 'Maybe[Int]' );
+has 'subtotal'      => ( is => 'ro', isa => 'Maybe[Int]', required => 1 );
+has 'amount_due'    => ( is => 'ro', isa => 'Maybe[Int]', required => 1 );
+has 'attempt_count' => ( is => 'ro', isa => 'Maybe[Int]', required => 1 );
+has 'attempted'     => ( is => 'ro', isa => 'Maybe[Bool]', required => 1 );
+has 'closed'        => ( is => 'ro', isa => 'Maybe[Bool]', required => 1 );
+has 'customer'      => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
+has 'date'          => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
+has 'lines'         => ( is => 'ro', isa => 'ArrayRef[Object]', required => 1 );
+has 'paid'          => ( is => 'ro', isa => 'Maybe[Bool]', required => 1 );
+has 'period_end'    => ( is => 'ro', isa => 'Maybe[Int]' );
+has 'period_start'  => ( is => 'ro', isa => 'Maybe[Int]' );
+has 'starting_balance' => ( is => 'ro', isa => 'Maybe[Int]' );
+has 'subtotal'         => ( is => 'ro', isa => 'Maybe[Int]' );
+has 'total'            => ( is => 'ro', isa => 'Maybe[Int]', required => 1 );
+has 'charge'           => ( is => 'ro', isa => 'Maybe[Str]' );
+has 'ending_balance'   => ( is => 'ro', isa => 'Maybe[Int]' );
+has 'next_payment_attempt' => ( is => 'ro', isa => 'Maybe[Int]' );
 
 has 'invoiceitems' =>
     (is => 'ro', isa => 'ArrayRef[Net::Stripe::Invoiceitem]');
