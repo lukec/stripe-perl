@@ -277,7 +277,7 @@ Customers: {
             # Delete a customer
             $stripe->delete_customer($customer);
             $customer = $stripe->get_customer($id);
-            ok $customer->deleted, 'customer is now deleted';
+            ok $customer->{deleted}, 'customer is now deleted';
         }
 
         Create_with_all_the_works: {
