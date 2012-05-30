@@ -277,7 +277,7 @@ Customers: {
             # Delete a customer
             $stripe->delete_customer($customer);
             $customer = $stripe->get_customer($id);
-            ok $customer->deleted, 'customer is now deleted';
+            ok $customer->{deleted}, 'customer is now deleted';
         }
 
         Create_with_all_the_works: {
@@ -388,11 +388,6 @@ Invoices_and_items: {
 
         my $sameitem = $stripe->get_invoiceitem( $item->id );
         is $sameitem->id, $item->id, 'get item returns same id';
-
-        $item->description('Jerky');
-        my $newitem = $stripe->post_invoiceitem($item);
-        is $newitem->id, $item->id, 'item id is unchanged';
-        is $newitem->description, $item->description, 'item desc changed';
 
         my $items = $stripe->get_invoiceitems(
             customer => $customer->id,
