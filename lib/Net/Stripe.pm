@@ -25,13 +25,19 @@ Net::Stripe - API client for Stripe.com
 
 =head1 SYNOPSIS
 
- my $stripe = Net::Stripe->new(api_key => $API_KEY);
- my $charge = $stripe->post_charge(
-     amount => 12500,
-     currency => 'usd',
-     card => $card_token,
+ my $stripe     = Net::Stripe->new(api_key = > $API_KEY);
+ my $card_token = 'a token';
+ my $charge = $stripe->post_charge(  # Net::Stripe::Charge
+     amount      => 12500,
+     currency    => 'usd',
+     card        => $card_token,
      description => 'YAPC Registration',
  );
+ print "Charge was not paid!\n" unless $charge->paid;
+ my $card = $charge->card;           # Net::Stripe::Card
+
+ # look up a charge by id
+ my $same_charge = $stripe->get_charge($charge->id);
 
  # ... and the api mirrors https://stripe.com/docs/api
  # Charges: post_charge() get_charge() refund_charge() get_charges()
