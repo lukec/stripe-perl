@@ -8,7 +8,7 @@ all_from 'lib/Net/Stripe.pm';
 # Specific dependencies
 requires 'DateTime'              => 0;
 requires 'perl'                  => v5.10.1;
-requires 'Moose'                 => 0;
+requires 'Moose'                 => '2.0602';
 requires 'methods'               => 0;
 requires 'LWP::UserAgent'        => 0;
 requires 'LWP::Protocol::https'  => 0;
