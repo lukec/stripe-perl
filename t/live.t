@@ -389,11 +389,6 @@ Invoices_and_items: {
         my $sameitem = $stripe->get_invoiceitem( $item->id );
         is $sameitem->id, $item->id, 'get item returns same id';
 
-        $item->description('Jerky');
-        my $newitem = $stripe->post_invoiceitem($item);
-        is $newitem->id, $item->id, 'item id is unchanged';
-        is $newitem->description, $item->description, 'item desc changed';
-
         my $items = $stripe->get_invoiceitems(
             customer => $customer->id,
             count => 1,
