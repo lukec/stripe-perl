@@ -392,6 +392,7 @@ Invoices_and_items: {
         $item->description('Jerky');
         my $newitem = $stripe->post_invoiceitem($item);
         is $newitem->id, $item->id, 'item id is unchanged';
+        is $newitem->currency, $item->currency, 'item currency unchanged';
         is $newitem->description, $item->description, 'item desc changed';
 
         my $items = $stripe->get_invoiceitems(
