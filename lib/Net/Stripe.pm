@@ -359,7 +359,7 @@ InvoiceItems: {
         if (@_ == 1) {
             my $i = shift;
             my $item = $i->clone; $item->clear_currency;
-            return $self->_post("invoiceitems/" . $i->id, $i);
+            return $self->_post("invoiceitems/" . $i->id, $item);
         }
 
         my $invoiceitem = Net::Stripe::Invoiceitem->new(@_);
