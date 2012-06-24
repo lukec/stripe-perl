@@ -154,12 +154,12 @@ Customers: {
     }
 
     method get_customer {
-        my $id = shift || 'get_customer() requires a customer id';
+        my $id = shift || die 'get_customer() requires a customer id';
         return $self->_get("customers/$id");
     }
 
     method delete_customer {
-        my $id = shift || 'delete_customer() requires a customer id';
+        my $id = shift || die 'delete_customer() requires a customer id';
         $id = $id->id if ref($id);
         $self->_delete("customers/$id");
     }
@@ -226,7 +226,7 @@ Tokens: {
     }
 
     method get_token {
-        my $id = shift || 'get_token() requires a token id';
+        my $id = shift || die 'get_token() requires a token id';
         return $self->_get("tokens/$id");
     }
 }
@@ -254,12 +254,12 @@ Plans: {
     }
 
     method get_plan {
-        my $id = shift || 'get_plan() requires a plan id';
+        my $id = shift || die 'get_plan() requires a plan id';
         return $self->_get("plans/" . uri_escape($id));
     }
 
     method delete_plan {
-        my $id = shift || 'delete_plan() requires a plan id';
+        my $id = shift || die 'delete_plan() requires a plan id';
         $id = $id->id if ref($id);
         $self->_delete("plans/$id");
     }
@@ -292,12 +292,12 @@ Coupons: {
     }
 
     method get_coupon {
-        my $id = shift || 'get_coupon() requires a coupon id';
+        my $id = shift || die 'get_coupon() requires a coupon id';
         return $self->_get("coupons/" . uri_escape($id));
     }
 
     method delete_coupon {
-        my $id = shift || 'delete_coupon() requires a coupon id';
+        my $id = shift || die 'delete_coupon() requires a coupon id';
         $id = $id->id if ref($id);
         $self->_delete("coupons/$id");
     }
@@ -323,7 +323,7 @@ See https://stripe.com/docs/api for full details.
 
 Invoices: {
     method get_invoice {
-        my $id = shift || 'get_invoice() requires an invoice id';
+        my $id = shift || die 'get_invoice() requires an invoice id';
         return $self->_get("invoices/$id");
     }
 
@@ -332,7 +332,7 @@ Invoices: {
     }
 
     method get_upcominginvoice {
-        my $id = shift || 'get_upcominginvoice() requires a customer id';
+        my $id = shift || die 'get_upcominginvoice() requires a customer id';
         return $self->_get("invoices/upcoming?customer=$id");
     }
 }
@@ -358,6 +358,7 @@ InvoiceItems: {
         # Update from an existing object
         if (@_ == 1) {
             my $i = shift;
+            my $item = $i->clone; $item->clear_currency;
             return $self->_post("invoiceitems/" . $i->id, $i);
         }
 
@@ -366,12 +367,12 @@ InvoiceItems: {
     }
 
     method get_invoiceitem {
-        my $id = shift || 'get_invoiceitem() requires a invoiceitem id';
+        my $id = shift || die 'get_invoiceitem() requires a invoiceitem id';
         return $self->_get("invoiceitems/$id");
     }
 
     method delete_invoiceitem {
-        my $id = shift || 'delete_invoiceitem() requires a invoiceitem id';
+        my $id = shift || die 'delete_invoiceitem() requires a invoiceitem id';
         $id = $id->id if ref($id);
         $self->_delete("invoiceitems/$id");
     }
