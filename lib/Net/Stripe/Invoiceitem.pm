@@ -2,11 +2,12 @@ package Net::Stripe::Invoiceitem;
 use Moose;
 use methods;
 extends 'Net::Stripe::Resource';
+with 'MooseX::Clone';
 
 has 'id'                => (is => 'ro', isa => 'Maybe[Str]');
 has 'customer'          => (is => 'ro', isa => 'Maybe[Str]', required => 1);
 has 'amount'            => (is => 'rw', isa => 'Maybe[Int]', required => 1);
-has 'currency'          => (is => 'rw', isa => 'Maybe[Str]', required => 1);
+has 'currency'          => (is => 'rw', isa => 'Maybe[Str]', required => 1, clearer => 'clear_currency');
 has 'description'       => (is => 'rw', isa => 'Maybe[Str]');
 has 'date'              => (is => 'ro', isa => 'Maybe[Int]');
 
