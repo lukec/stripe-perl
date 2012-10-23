@@ -18,6 +18,7 @@ requires 'URI::Escape'           => 0;
 requires 'JSON'                  => 0;
 requires 'Test::Exception'       => 0;
 requires 'Throwable'             => 0;
+requires 'namespace::clean'      => 0;
 requires 'MooseX::Clone'         => 0;
 
 WriteAll;

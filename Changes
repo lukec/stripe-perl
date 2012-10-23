@@ -1,5 +1,8 @@
   * Updating Invoiceitem should not update currency
 
+0.08 - Tue Oct 23 09:42:54 PDT 2012
+ * Add missing namespace::clean dep - thanks ANDK
+
 0.07 - Fri Apr 27 16:25:13 PDT 2012
  * Add more fields to Invoices
  * Allow null values in responses - thanks to Brian Collins
