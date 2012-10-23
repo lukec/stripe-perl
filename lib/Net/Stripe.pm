@@ -177,9 +177,9 @@ See https://stripe.com/docs/api for full details.
 
 =head3 post_subscription( PARAMHASH )
 
-=head3 get_subscription( CUSTOMER_ID )
+=head3 get_subscription( customer_id => CUSTOMER_ID )
 
-=head3 delete_subscription( CUSTOMER_ID )
+=head3 delete_subscription( customer_id => CUSTOMER_ID )
 
 =cut
 
