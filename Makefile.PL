@@ -21,4 +21,6 @@ requires 'Throwable'             => 0;
 requires 'namespace::clean'      => 0;
 requires 'MooseX::Clone'         => 0;
 
+repository 'https://github.com/lukec/stripe-perl';
+
 WriteAll;
