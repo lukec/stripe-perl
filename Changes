@@ -1,5 +1,8 @@
   * Updating Invoiceitem should not update currency
 
+0.09 - Not yet released
+ * Make customer plan rw
+
 0.08 - Tue Oct 23 09:42:54 PDT 2012
  * Add missing namespace::clean dep - thanks ANDK
 
