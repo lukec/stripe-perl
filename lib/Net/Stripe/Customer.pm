@@ -8,7 +8,7 @@ has 'email'       => (is => 'rw', isa => 'Maybe[Str]');
 has 'description' => (is => 'rw', isa => 'Maybe[Str]');
 has 'trial_end'   => (is => 'rw', isa => 'Maybe[Int]');
 has 'card'        => (is => 'rw', isa => 'Maybe[StripeCard]');
-has 'plan'        => (is => 'ro', isa => 'Maybe[StripePlan]');
+has 'plan'        => (is => 'rw', isa => 'Maybe[StripePlan|Str]');
 has 'coupon'      => (is => 'rw', isa => 'Maybe[StripeCoupon]');
 
 # API object args
