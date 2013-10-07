@@ -2,6 +2,7 @@
 
 0.09 - Not yet released
  * Make customer plan rw
+ * Add post_customer_subscription
 
 0.08 - Tue Oct 23 09:42:54 PDT 2012
  * Add missing namespace::clean dep - thanks ANDK

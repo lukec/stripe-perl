@@ -137,6 +137,8 @@ See https://stripe.com/docs/api for full details.
 
 =head3 delete_customer( CUSTOMER_ID )
 
+=head3 post_customer_subscription( CUSTOMER_ID, PARAMHASH )
+
 =head3 get_customers( PARAMHASH )
 
 =cut
@@ -151,6 +153,12 @@ Customers: {
 
         my $customer = Net::Stripe::Customer->new(@_);
         return $self->_post('customers', $customer);
+    }
+
+    method post_customer_subscription {
+        my $customer_id = shift || die 'post_customer_subscription() requires a customer_id';
+        die 'post_customer_subscription() requires a param hash' unless @_;
+        $self->_post("customers/$customer_id/subscription", @_);
     }
 
     method get_customer {
