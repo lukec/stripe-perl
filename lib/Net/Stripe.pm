@@ -434,7 +434,7 @@ method _post {
     my $obj  = shift;
 
     my $req = POST $self->api_base . '/' . $path, 
-        ($obj ? (Content => [$obj->form_fields]) : ());
+        ($obj ? (Content => [ref($obj) eq 'HASH' ? %$obj : $obj->form_fields]) : ());
     return $self->_make_request($req);
 }
 
