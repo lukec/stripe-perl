@@ -28,15 +28,16 @@ my $fake_card = {
 
 Card_Tokens: {
     Basic_successful_use: {
-        my $token = $stripe->post_token(
-            card => $fake_card,
-            amount => 330,
-            currency => 'usd',
-        );
-        isa_ok $token, 'Net::Stripe::Token', 'got a token back';
+
+        {
+            my $token = Net::Stripe::Token->new( card => $fake_card );
+            isa_ok $token, 'Net::Stripe::Token', 'got a token back';
+        }
+
+        my $token = $stripe->post_token( card => $fake_card );
+        isa_ok $token, 'Net::Stripe::Token', 'got a token back from post';
+
         is $token->card->last4, '4242', 'token card';
-        is $token->amount, 330, 'token amount';
-        is $token->currency, 'usd', 'token currency';
         ok !$token->used, 'token is not used';
 
         my $same = $stripe->get_token($token->id);
@@ -47,8 +48,6 @@ Card_Tokens: {
         my $no_amount = $stripe->post_token( card => $fake_card );
         isa_ok $no_amount, 'Net::Stripe::Token', 'got a token back';
         is $no_amount->card->last4, '4242', 'token card';
-        is $no_amount->amount, 0, 'card has no amount';
-        is $no_amount->currency, 'usd', 'token currency';
         ok !$no_amount->used, 'token is not used';
     }
 }
