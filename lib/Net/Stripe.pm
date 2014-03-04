@@ -25,7 +25,7 @@ Net::Stripe - API client for Stripe.com
 
 =head1 SYNOPSIS
 
- my $stripe     = Net::Stripe->new(api_key = > $API_KEY);
+ my $stripe     = Net::Stripe->new(api_key => $API_KEY);
  my $card_token = 'a token';
  my $charge = $stripe->post_charge(  # Net::Stripe::Charge
      amount      => 12500,
