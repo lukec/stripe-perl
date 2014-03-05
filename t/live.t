@@ -391,8 +391,9 @@ Invoices_and_items: {
         );
         ok $customer->id, 'customer has an id';
         is $customer->subscription->plan->id, $plan->id, 'customer has a plan';
-        is $customer->active_card->last4, $token->card->last4,
-            'customer has a card';
+        my $path = 'customers/'.$customer->id.'/cards/'.$customer->default_card;
+        my $card = $stripe->_get( $path );        
+        is $card->last4, $token->card->last4, 'customer has a card';
 
         my $item = $stripe->post_invoiceitem(
             customer => $customer->id,
