@@ -141,7 +141,7 @@ Charges: {
             );
         } 'Created a charge object';
         isa_ok $charge, 'Net::Stripe::Charge';
-        for my $field (qw/id amount created currency description fee
+        for my $field (qw/id amount created currency description 
                           livemode paid refunded/) {
             ok defined($charge->$field), "charge has $field";
         }
