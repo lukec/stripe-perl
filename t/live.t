@@ -443,11 +443,16 @@ Invoices_and_items: {
         # is $same_invoice->id, $invoice->id, 'invoice id matches';
 
         my $resp = $stripe->delete_invoiceitem( $item->id );
-        is $resp->{deleted}, 'true', 'invoiceitem deleted';
+        is $resp->{deleted}, '1', 'invoiceitem deleted';
         is $resp->{id}, $item->id, 'deleted id is correct';
 
+        # swallow the expected warning rather than have it print out durring tests. 
+        close STDERR;
+        open(STDERR, ">", "/dev/null");
         eval { $stripe->get_invoiceitem($item->id) };
         like $@, qr/No such invoiceitem/, 'correct error message';
+        close STDERR;
+        open(STDERR, ">&", STDOUT);        
     }
 }
 
