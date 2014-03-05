@@ -368,7 +368,7 @@ Customers: {
             );
             is $other_dsubs->status, 'active', 'subscription is still active';
             ok $other_dsubs->canceled_at, 'has canceled_at';
-            ok $other_dsubs->ended_at, 'has ended_at';
+            ok !$other_dsubs->ended_at, 'does not have ended_at (not at period end yet)';
         }
     }
 }
