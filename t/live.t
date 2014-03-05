@@ -80,8 +80,13 @@ Plans: {
 
         my $hash = $stripe->delete_plan($plan);
         ok $hash->{deleted}, 'delete response indicates delete was successful';
+        # swallow the expected warning rather than have it print out durring tests. 
+        close STDERR;
+        open(STDERR, ">", "/dev/null");
         eval { $stripe->get_plan($id) };
         ok $@, "no longer can fetch deleted plans";
+        close STDERR;
+        open(STDERR, ">&", STDOUT);
     }
 }
 
@@ -114,8 +119,13 @@ Coupons: {
 
         my $hash = $stripe->delete_coupon($coupon);
         ok $hash->{deleted}, 'delete response indicates delete was successful';
+        # swallow the expected warning rather than have it print out durring tests. 
+        close STDERR;
+        open(STDERR, ">", "/dev/null");
         eval { $stripe->get_coupon($id) };
         ok $@, "no longer can fetch deleted coupons";
+        close STDERR;
+        open(STDERR, ">&", STDOUT);
     }
 }
 
