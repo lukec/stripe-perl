@@ -318,7 +318,9 @@ Customers: {
             );
             isa_ok $customer, 'Net::Stripe::Customer', 'got back a customer';
             ok $customer->id, 'customer has an id';
-            is $customer->active_card->last4, '4242', 'card token ok';
+            my $path = 'customers/'.$customer->id.'/cards/'.$customer->default_card;
+            my $card = $stripe->_get( $path );
+            is $card->last4, '4242', 'card token ok';
         }
 
         Customers_with_plans: {
