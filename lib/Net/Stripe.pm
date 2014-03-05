@@ -446,6 +446,13 @@ method _make_request {
     my $resp = $self->ua->request($req);
     if ($resp->code == 200) {
         my $hash = decode_json($resp->content);
+        if( $hash->{object} && 'list' eq $hash->{object} ) {
+          my @objects = ();
+          foreach my $object_data (@{$hash->{data}}) {
+            push @objects, hash_to_object($object_data);            
+          }
+          return \@objects;
+        }     
         return hash_to_object($hash) if $hash->{object};
         if (my $data = $hash->{data}) {
             return [ map { hash_to_object($_) } @$data ];
