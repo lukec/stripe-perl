@@ -13,7 +13,7 @@ around BUILDARGS => sub {
         $args{$field} = $args{$field} ? 1 : 0;
     }
 
-    for my $f (qw/card active_card/) {
+    for my $f (qw/card default_card/) {
         next unless $args{$f};
         next unless ref($args{$f}) eq 'HASH';
         $args{$f} = Net::Stripe::Card->new($args{$f});

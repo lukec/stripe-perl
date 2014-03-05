@@ -39,7 +39,7 @@ Card_Tokens: {
 
         is $token->card->last4, '4242', 'token card';
         ok !$token->used, 'token is not used';
-
+        
         my $same = $stripe->get_token($token->id);
         isa_ok $token, 'Net::Stripe::Token', 'got a token back';
         is $same->id, $token->id, 'token id matches';
@@ -301,7 +301,8 @@ Customers: {
                 email => 'stripe@example.com',
                 description => 'Test for Net::Stripe',
             );
-            my $card = $customer->active_card;
+            my $path = 'customers/'.$customer->id.'/cards/'.$customer->default_card;
+            my $card = $stripe->_get( $path );
             isa_ok $card, 'Net::Stripe::Card';
             is $card->country, 'US', 'card country';
             is $card->exp_month, $future->month, 'card exp_month';

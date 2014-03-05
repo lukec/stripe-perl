@@ -14,7 +14,7 @@ has 'coupon'      => (is => 'rw', isa => 'Maybe[StripeCoupon]');
 # API object args
 has 'id'           => (is => 'ro', isa => 'Maybe[Str]');
 has 'deleted'      => (is => 'ro', isa => 'Maybe[Bool]', default => 0);
-has 'active_card'  => (is => 'ro', isa => 'Maybe[StripeCard]');
+has 'default_card' => (is => 'ro', isa => 'Maybe[StripeCard]');
 has 'subscription' => (is => 'ro', isa => 'Maybe[Net::Stripe::Subscription]');
 
 method form_fields {
