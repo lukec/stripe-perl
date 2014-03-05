@@ -210,6 +210,10 @@ Charges: {
     }
 
     Rainy_day: {
+        # swallow the expected warning rather than have it print out durring tests. 
+        close STDERR;
+        open(STDERR, ">", "/dev/null");
+
         throws_ok {
             $stripe->post_charge(
                 amount => 3300,
@@ -251,9 +255,11 @@ Charges: {
             my $e = $@;
             isa_ok $e, 'Net::Stripe::Error', 'error raised is an object';
             is $e->type, 'invalid_request_error', 'error type';
-            is $e->message, 'Invalid currency: zzz', 'error message';
+            like $e->message, '/^Invalid currency: zzz/', 'error message';
             is $e->param, 'currency', 'error param';
         }
+        close STDERR;
+        open(STDERR, ">&", STDOUT);
     }
 }
 
