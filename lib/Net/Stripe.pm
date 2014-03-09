@@ -155,10 +155,17 @@ Customers: {
         return $self->_post('customers', $customer);
     }
 
+    # adds a subscription, keeping any existing subscriptions unmodified
     method post_customer_subscription {
         my $customer_id = shift || die 'post_customer_subscription() requires a customer_id';
         die 'post_customer_subscription() requires a param hash' unless @_;
-        $self->_post("customers/$customer_id/subscription", @_);
+        $self->_post("customers/$customer_id/subscriptions", @_);
+    }
+
+    method list_subscriptions {
+        my %args = @_;
+        my $cid = delete $args{customer_id};
+        return $self->_get("customers/$cid/subscriptions", @_);
     }
 
     method get_customer {
@@ -198,21 +205,29 @@ Subscriptions: {
         return $self->_get("customers/$cid/subscription");
     }
 
+    # adds a subscription, keeping any existing subscriptions unmodified
     method post_subscription {
         my %args = @_;
         my $cid = delete $args{customer_id};
         my $subs = Net::Stripe::Subscription->new(%args);
-        return $self->_post("customers/$cid/subscription", $subs);
+        return $self->_post("customers/$cid/subscriptions", $subs);
+    }
+    
+    method update_subscription {
+      my %args = @_;
+      my $cid  = delete $args{customer_id};
+      my $sid  = delete $args{subscription_id};
+      return $self->_post("customers/$cid/subscriptions/$sid", \%args);
     }
 
     method delete_subscription {
-        my %args = @_;
-        my $cid = delete $args{customer_id};
-        my $query = '';
-        $query .= '?at_period_end=true' if $args{at_period_end};
-        $self->_delete("customers/$cid/subscription$query");
+      my %args = @_;
+      my $cid  = delete $args{customer_id};
+      my $sid  = delete $args{subscription_id};
+      my $query = '';
+      $query .= '?at_period_end=true' if $args{at_period_end};
+      return $self->_delete("customers/$cid/subscriptions/$sid$query");
     }
-
 }
 
 =head2 Tokens

@@ -3,11 +3,13 @@ use Moose;
 use methods;
 extends 'Net::Stripe::Resource';
 
-has 'plan' => (is => 'ro', isa => 'Maybe[StripePlan]', required => 1);
-has 'coupon'    => (is => 'ro', isa => 'Maybe[StripeCoupon]');
-has 'prorate'   => (is => 'ro', isa => 'Maybe[Bool]');
-has 'trial_end' => (is => 'ro', isa => 'Maybe[Int]');
-has 'card'      => (is => 'ro', isa => 'Maybe[StripeCard]');
+has 'id' => (is => 'ro', isa => 'Maybe[Str]');
+has 'plan' => (is => 'rw', isa => 'Maybe[StripePlan]');
+has 'coupon'    => (is => 'rw', isa => 'Maybe[StripeCoupon]');
+has 'prorate'   => (is => 'rw', isa => 'Maybe[Bool]');
+has 'trial_end' => (is => 'rw', isa => 'Maybe[Int]');
+has 'card'      => (is => 'rw', isa => 'Maybe[StripeCard]');
+has 'quantity'  => (is => 'rw', isa => 'Int', default => 1);
 
 # Other fields returned by the API
 has 'customer'             => (is => 'ro', isa => 'Maybe[Str]');
@@ -18,7 +20,7 @@ has 'ended_at'             => (is => 'ro', isa => 'Maybe[Int]');
 has 'current_period_start' => (is => 'ro', isa => 'Maybe[Int]');
 has 'current_period_end'   => (is => 'ro', isa => 'Maybe[Int]');
 has 'trial_start'          => (is => 'ro', isa => 'Maybe[Str]');
-has 'trial_end'            => (is => 'ro', isa => 'Maybe[Str]');
+has 'trial_end'            => (is => 'rw', isa => 'Maybe[Str]');
 
 
 method form_fields {
@@ -26,7 +28,7 @@ method form_fields {
         $self->fields_for('card'),
         $self->fields_for('plan'),
         map { ($_ => $self->$_) }
-            grep { defined $self->$_ } qw/coupon prorate trial_end/
+            grep { defined $self->$_ } qw/coupon prorate trial_end quantity/
     );
 }
 
