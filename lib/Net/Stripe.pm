@@ -15,6 +15,7 @@ use Net::Stripe::Coupon;
 use Net::Stripe::Charge;
 use Net::Stripe::Customer;
 use Net::Stripe::Subscription;
+use Net::Stripe::SubscriptionList;
 use Net::Stripe::Error;
 
 our $VERSION = '0.09';

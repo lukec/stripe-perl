@@ -16,7 +16,21 @@ has 'metadata'    => (is => 'rw', isa => 'HashRef');
 has 'id'           => (is => 'ro', isa => 'Maybe[Str]');
 has 'deleted'      => (is => 'ro', isa => 'Maybe[Bool]', default => 0);
 has 'default_card' => (is => 'ro', isa => 'Maybe[StripeCard]');
-has 'subscription' => (is => 'ro', isa => 'Maybe[Net::Stripe::Subscription]');
+has 'subscriptions' => (is => 'ro', isa => 'Net::Stripe::SubscriptionList');
+has 'subscription' => (is => 'ro',
+                       lazy => 1,
+                       builder => '_build_subscription');
+
+sub _build_subscription {
+    my $self = shift;
+    if (scalar(@{$self->subscriptions->data}) > 0) {
+        return $self->subscriptions->data->[0];
+    }
+    return;
+}
+
+
+#has 'subscription' => (is => 'ro', isa => 'Maybe[Net::Stripe::Subscription]');
 
 method form_fields {
     my $metadata = $self->metadata();

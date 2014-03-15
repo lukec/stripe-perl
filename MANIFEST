@@ -18,6 +18,7 @@ lib/Net/Stripe/Plan.pm
 lib/Net/Stripe/Resource.pm
 lib/Net/Stripe/Subscription.pm
 lib/Net/Stripe/Token.pm
+lib/Net/Stripe/SubscriptionList.pm
 Makefile.PL
 MANIFEST			This list of files
 META.yml

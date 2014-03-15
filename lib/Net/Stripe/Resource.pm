@@ -18,6 +18,16 @@ around BUILDARGS => sub {
         next unless ref($args{$f}) eq 'HASH';
         $args{$f} = Net::Stripe::Card->new($args{$f});
     }
+
+    if (my $s = $args{subscriptions}) {
+        if (ref($s) eq 'HASH') {
+            if (defined($s->{data}) && ref($s->{data}) eq 'ARRAY') {
+                $s->{data} = [map { Net::Stripe::Subscription->new($_) } @{$s->{data}}];
+            }
+            $args{subscriptions} = Net::Stripe::SubscriptionList->new($s);
+        }
+    }
+
     if (my $s = $args{subscription}) {
         if (ref($s) eq 'HASH') {
             $args{subscription} = Net::Stripe::Subscription->new($s);
