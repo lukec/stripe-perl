@@ -9,6 +9,7 @@ union 'StripePlan', ['Str', 'Net::Stripe::Plan'];
 has 'id'                => (is => 'ro', isa => 'Maybe[Str]', required => 1);
 has 'amount'            => (is => 'ro', isa => 'Maybe[Int]', required => 1);
 has 'currency'          => (is => 'ro', isa => 'Maybe[Str]', required => 1);
+has 'interval_count'    => (is => 'ro', isa => 'Maybe[Int]', required => 0);
 has 'interval'          => (is => 'ro', isa => 'Maybe[Str]', required => 1);
 has 'name'              => (is => 'ro', isa => 'Maybe[Str]', required => 1);
 has 'trial_period_days' => (is => 'ro', isa => 'Maybe[Int]');
@@ -17,7 +18,7 @@ method form_fields {
     return (
         map { $_ => $self->$_ }
             grep { defined $self->$_ }
-                qw/id amount currency interval name trial_period_days/
+                qw/id amount currency interval interval_count name trial_period_days/
     );
 }
 
