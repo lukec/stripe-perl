@@ -10,6 +10,7 @@ has 'trial_end' => (is => 'ro', isa => 'Maybe[Int]');
 has 'card'      => (is => 'ro', isa => 'Maybe[StripeCard]');
 
 # Other fields returned by the API
+has 'id'                   => (is => 'ro', isa => 'Str');
 has 'customer'             => (is => 'ro', isa => 'Maybe[Str]');
 has 'status'               => (is => 'ro', isa => 'Maybe[Str]');
 has 'start'                => (is => 'ro', isa => 'Maybe[Int]');
