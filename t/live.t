@@ -357,6 +357,7 @@ Customers: {
             # Now cancel subscriptions
             my $dsubs = $stripe->delete_subscription(
                 customer_id => $customer->id,
+                subscription_id => $customer->subscription->id,
             );
             is $dsubs->status, 'canceled', 'subscription is canceled';
             ok $dsubs->canceled_at, 'has canceled_at';
@@ -364,6 +365,7 @@ Customers: {
 
             my $other_dsubs = $stripe->delete_subscription(
                 customer_id => $other->id,
+                subscription_id => $subs_again->id,
                 at_period_end => 1,
             );
             is $other_dsubs->status, 'active', 'subscription is still active';

@@ -15,6 +15,7 @@ use Net::Stripe::Coupon;
 use Net::Stripe::Charge;
 use Net::Stripe::Customer;
 use Net::Stripe::Subscription;
+use Net::Stripe::SubscriptionList;
 use Net::Stripe::Error;
 
 our $VERSION = '0.09';
@@ -72,10 +73,11 @@ You can set this to true to see extra debug info.
  
 =cut
 
-has 'debug'       => (is => 'rw', isa => 'Bool', default => 0);
-has 'api_key'     => (is => 'ro', isa => 'Str',    required   => 1);
-has 'api_base'    => (is => 'ro', isa => 'Str',    lazy_build => 1);
-has 'ua'          => (is => 'ro', isa => 'Object', lazy_build => 1);
+has 'debug'         => (is => 'rw', isa => 'Bool', default => 0);
+has 'debug_network' => (is => 'rw', isa => 'Bool', default => 0);
+has 'api_key'       => (is => 'ro', isa => 'Str',    required   => 1);
+has 'api_base'      => (is => 'ro', isa => 'Str',    lazy_build => 1);
+has 'ua'            => (is => 'ro', isa => 'Object', lazy_build => 1);
 
 =head2 Charges
 
@@ -458,7 +460,16 @@ method _make_request {
     $req->header( Authorization => 
         "Basic " . encode_base64($self->api_key . ':'));
 
+    if ($self->debug_network) {
+        print STDERR "Sending to Stripe:\n------\n" . $req->as_string() . "------\n";
+
+    }
     my $resp = $self->ua->request($req);
+
+    if ($self->debug_network) {
+        print STDERR "Received from Stripe:\n------\n" . $resp->as_string()  . "------\n";
+    }
+
     if ($resp->code == 200) {
         my $hash = decode_json($resp->content);
         if( $hash->{object} && 'list' eq $hash->{object} ) {
