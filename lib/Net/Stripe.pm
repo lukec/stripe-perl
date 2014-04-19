@@ -393,6 +393,8 @@ All methods accept the same arguments as described in the API.
 
 See https://stripe.com/docs/api for full details.
 
+=head3 post_invoice( PARAMHASH )
+
 =head3 get_invoice( COUPON_ID )
 
 =head3 get_upcominginvoice( COUPON_ID )
@@ -402,6 +404,12 @@ See https://stripe.com/docs/api for full details.
 =cut
 
 Invoices: {
+
+    method post_invoice {
+        my %args = @_;
+        return $self->_post("invoices", {@_});
+    }
+
     method get_invoice {
         my $id = shift || die 'get_invoice() requires an invoice id';
         return $self->_get("invoices/$id");
@@ -566,7 +574,7 @@ sub hash_to_object {
 method _build_api_base { 'https://api.stripe.com/v1' }
 
 method _build_ua {
-    my $ua = LWP::UserAgent->new;
+    my $ua = LWP::UserAgent->new();
     $ua->agent("Net::Stripe/$VERSION");
     return $ua;
 }
