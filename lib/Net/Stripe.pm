@@ -12,6 +12,8 @@ use Net::Stripe::Invoice;
 use Net::Stripe::Card;
 use Net::Stripe::Plan;
 use Net::Stripe::Coupon;
+use Net::Stripe::List;
+use Net::Stripe::Discount;
 use Net::Stripe::Charge;
 use Net::Stripe::Customer;
 use Net::Stripe::Subscription;
@@ -471,6 +473,12 @@ method _make_request {
 
 sub hash_to_object {
     my $hash = shift;
+    foreach my $key (keys(%$hash)) {
+      if ((ref($hash->{$key}) eq 'HASH') && $hash->{$key}->{object}) {
+        my $obj = hash_to_object($hash->{$key});
+        $hash->{$key} = $obj;
+      }
+    }
     my $class = 'Net::Stripe::' . ucfirst($hash->{object});
     return $class->new($hash);
 }

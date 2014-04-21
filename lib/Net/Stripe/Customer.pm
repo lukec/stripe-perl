@@ -10,6 +10,7 @@ has 'trial_end'   => (is => 'rw', isa => 'Maybe[Int]');
 has 'card'        => (is => 'rw', isa => 'Maybe[StripeCard]');
 has 'plan'        => (is => 'rw', isa => 'Maybe[StripePlan|Str]');
 has 'coupon'      => (is => 'rw', isa => 'Maybe[StripeCoupon]');
+has 'discount'    => (is => 'rw', isa => 'Maybe[StripeDiscount]');
 
 # API object args
 has 'id'           => (is => 'ro', isa => 'Maybe[Str]');
