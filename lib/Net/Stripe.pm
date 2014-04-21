@@ -15,6 +15,7 @@ use Net::Stripe::Coupon;
 use Net::Stripe::Charge;
 use Net::Stripe::Customer;
 use Net::Stripe::Subscription;
+use Net::Stripe::SubscriptionList;
 use Net::Stripe::Error;
 
 our $VERSION = '0.09';
@@ -25,7 +26,7 @@ Net::Stripe - API client for Stripe.com
 
 =head1 SYNOPSIS
 
- my $stripe     = Net::Stripe->new(api_key = > $API_KEY);
+ my $stripe     = Net::Stripe->new(api_key => $API_KEY);
  my $card_token = 'a token';
  my $charge = $stripe->post_charge(  # Net::Stripe::Charge
      amount      => 12500,
@@ -72,10 +73,11 @@ You can set this to true to see extra debug info.
  
 =cut
 
-has 'debug'       => (is => 'rw', isa => 'Bool', default => 0);
-has 'api_key'     => (is => 'ro', isa => 'Str',    required   => 1);
-has 'api_base'    => (is => 'ro', isa => 'Str',    lazy_build => 1);
-has 'ua'          => (is => 'ro', isa => 'Object', lazy_build => 1);
+has 'debug'         => (is => 'rw', isa => 'Bool', default => 0);
+has 'debug_network' => (is => 'rw', isa => 'Bool', default => 0);
+has 'api_key'       => (is => 'ro', isa => 'Str',    required   => 1);
+has 'api_base'      => (is => 'ro', isa => 'Str',    lazy_build => 1);
+has 'ua'            => (is => 'ro', isa => 'Object', lazy_build => 1);
 
 =head2 Charges
 
@@ -155,10 +157,17 @@ Customers: {
         return $self->_post('customers', $customer);
     }
 
+    # adds a subscription, keeping any existing subscriptions unmodified
     method post_customer_subscription {
         my $customer_id = shift || die 'post_customer_subscription() requires a customer_id';
         die 'post_customer_subscription() requires a param hash' unless @_;
-        $self->_post("customers/$customer_id/subscription", @_);
+        $self->_post("customers/$customer_id/subscriptions", @_);
+    }
+
+    method list_subscriptions {
+        my %args = @_;
+        my $cid = delete $args{customer_id};
+        return $self->_get("customers/$cid/subscriptions", @_);
     }
 
     method get_customer {
@@ -176,6 +185,61 @@ Customers: {
         $self->_get_collections('customers', @_);
     }
 }
+
+=head2 Cards
+
+All methods accept the same arguments as described in the API.
+
+See https://stripe.com/docs/api for full details.
+
+=head3 post_card( PARAMHASH )
+
+=head3 get_card( customer_id => CUSTOMER_ID, card_id => CARD_ID )
+
+=head3 get_cards( customer_id => CUSTOMER_ID)
+
+=head3 update_card( customer_id => CUSTOMER_ID, card_id => CARD_ID)
+
+=head3 delete_card( customer_id => CUSTOMER_ID, card_id => CARD_ID )
+
+=cut
+
+Cards: {
+    method get_card {
+        my %args = @_;
+        my $cid = delete $args{customer_id};
+        my $card_id = delete $args{card_id};
+        return $self->_get("customers/$cid/cards/$card_id");
+    }
+
+    method get_cards {
+        $self->_get_collections('cards', @_);
+    }
+
+    method post_card {
+        my %args = @_;
+        my $cid = delete $args{customer_id};
+        my $card = Net::Stripe::Card->new(%args);
+        return $self->_post("customers/$cid/cards", $card);
+    }
+
+    method update_card {
+      my %args = @_;
+      my $cid  = delete $args{customer_id};
+      my $card_id = delete $args{card_id};
+      return $self->_post("customers/$cid/cards/$card_id", \%args);
+    }
+
+    method delete_card {
+      my %args = @_;
+      my $cid  = delete $args{customer_id};
+      my $card_id = delete $args{card_id};
+      return $self->_delete("customers/$cid/cards/$card_id");
+    }
+}
+
+
+
 
 =head2 Subscriptions
 
@@ -198,21 +262,29 @@ Subscriptions: {
         return $self->_get("customers/$cid/subscription");
     }
 
+    # adds a subscription, keeping any existing subscriptions unmodified
     method post_subscription {
         my %args = @_;
         my $cid = delete $args{customer_id};
         my $subs = Net::Stripe::Subscription->new(%args);
-        return $self->_post("customers/$cid/subscription", $subs);
+        return $self->_post("customers/$cid/subscriptions", $subs);
+    }
+    
+    method update_subscription {
+      my %args = @_;
+      my $cid  = delete $args{customer_id};
+      my $sid  = delete $args{subscription_id};
+      return $self->_post("customers/$cid/subscriptions/$sid", \%args);
     }
 
     method delete_subscription {
-        my %args = @_;
-        my $cid = delete $args{customer_id};
-        my $query = '';
-        $query .= '?at_period_end=true' if $args{at_period_end};
-        $self->_delete("customers/$cid/subscription$query");
+      my %args = @_;
+      my $cid  = delete $args{customer_id};
+      my $sid  = delete $args{subscription_id};
+      my $query = '';
+      $query .= '?at_period_end=true' if $args{at_period_end};
+      return $self->_delete("customers/$cid/subscriptions/$sid$query");
     }
-
 }
 
 =head2 Tokens
@@ -321,6 +393,8 @@ All methods accept the same arguments as described in the API.
 
 See https://stripe.com/docs/api for full details.
 
+=head3 post_invoice( PARAMHASH )
+
 =head3 get_invoice( COUPON_ID )
 
 =head3 get_upcominginvoice( COUPON_ID )
@@ -330,6 +404,12 @@ See https://stripe.com/docs/api for full details.
 =cut
 
 Invoices: {
+
+    method post_invoice {
+        my %args = @_;
+        return $self->_post("invoices", {@_});
+    }
+
     method get_invoice {
         my $id = shift || die 'get_invoice() requires an invoice id';
         return $self->_get("invoices/$id");
@@ -443,9 +523,25 @@ method _make_request {
     $req->header( Authorization => 
         "Basic " . encode_base64($self->api_key . ':'));
 
+    if ($self->debug_network) {
+        print STDERR "Sending to Stripe:\n------\n" . $req->as_string() . "------\n";
+
+    }
     my $resp = $self->ua->request($req);
+
+    if ($self->debug_network) {
+        print STDERR "Received from Stripe:\n------\n" . $resp->as_string()  . "------\n";
+    }
+
     if ($resp->code == 200) {
         my $hash = decode_json($resp->content);
+        if( $hash->{object} && 'list' eq $hash->{object} ) {
+          my @objects = ();
+          foreach my $object_data (@{$hash->{data}}) {
+            push @objects, hash_to_object($object_data);            
+          }
+          return \@objects;
+        }     
         return hash_to_object($hash) if $hash->{object};
         if (my $data = $hash->{data}) {
             return [ map { hash_to_object($_) } @$data ];
@@ -478,7 +574,7 @@ sub hash_to_object {
 method _build_api_base { 'https://api.stripe.com/v1' }
 
 method _build_ua {
-    my $ua = LWP::UserAgent->new;
+    my $ua = LWP::UserAgent->new();
     $ua->agent("Net::Stripe/$VERSION");
     return $ua;
 }

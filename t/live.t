@@ -28,17 +28,18 @@ my $fake_card = {
 
 Card_Tokens: {
     Basic_successful_use: {
-        my $token = $stripe->post_token(
-            card => $fake_card,
-            amount => 330,
-            currency => 'usd',
-        );
-        isa_ok $token, 'Net::Stripe::Token', 'got a token back';
-        is $token->card->last4, '4242', 'token card';
-        is $token->amount, 330, 'token amount';
-        is $token->currency, 'usd', 'token currency';
-        ok !$token->used, 'token is not used';
 
+        {
+            my $token = Net::Stripe::Token->new( card => $fake_card );
+            isa_ok $token, 'Net::Stripe::Token', 'got a token back';
+        }
+
+        my $token = $stripe->post_token( card => $fake_card );
+        isa_ok $token, 'Net::Stripe::Token', 'got a token back from post';
+
+        is $token->card->last4, '4242', 'token card';
+        ok !$token->used, 'token is not used';
+        
         my $same = $stripe->get_token($token->id);
         isa_ok $token, 'Net::Stripe::Token', 'got a token back';
         is $same->id, $token->id, 'token id matches';
@@ -47,8 +48,6 @@ Card_Tokens: {
         my $no_amount = $stripe->post_token( card => $fake_card );
         isa_ok $no_amount, 'Net::Stripe::Token', 'got a token back';
         is $no_amount->card->last4, '4242', 'token card';
-        is $no_amount->amount, 0, 'card has no amount';
-        is $no_amount->currency, 'usd', 'token currency';
         ok !$no_amount->used, 'token is not used';
     }
 }
@@ -81,8 +80,13 @@ Plans: {
 
         my $hash = $stripe->delete_plan($plan);
         ok $hash->{deleted}, 'delete response indicates delete was successful';
+        # swallow the expected warning rather than have it print out durring tests. 
+        close STDERR;
+        open(STDERR, ">", "/dev/null");
         eval { $stripe->get_plan($id) };
         ok $@, "no longer can fetch deleted plans";
+        close STDERR;
+        open(STDERR, ">&", STDOUT);
     }
 }
 
@@ -115,8 +119,13 @@ Coupons: {
 
         my $hash = $stripe->delete_coupon($coupon);
         ok $hash->{deleted}, 'delete response indicates delete was successful';
+        # swallow the expected warning rather than have it print out durring tests. 
+        close STDERR;
+        open(STDERR, ">", "/dev/null");
         eval { $stripe->get_coupon($id) };
         ok $@, "no longer can fetch deleted coupons";
+        close STDERR;
+        open(STDERR, ">&", STDOUT);
     }
 }
 
@@ -132,7 +141,7 @@ Charges: {
             );
         } 'Created a charge object';
         isa_ok $charge, 'Net::Stripe::Charge';
-        for my $field (qw/id amount created currency description fee
+        for my $field (qw/id amount created currency description 
                           livemode paid refunded/) {
             ok defined($charge->$field), "charge has $field";
         }
@@ -201,6 +210,10 @@ Charges: {
     }
 
     Rainy_day: {
+        # swallow the expected warning rather than have it print out durring tests. 
+        close STDERR;
+        open(STDERR, ">", "/dev/null");
+
         throws_ok {
             $stripe->post_charge(
                 amount => 3300,
@@ -242,9 +255,11 @@ Charges: {
             my $e = $@;
             isa_ok $e, 'Net::Stripe::Error', 'error raised is an object';
             is $e->type, 'invalid_request_error', 'error type';
-            is $e->message, 'Invalid currency: zzz', 'error message';
+            like $e->message, '/^Invalid currency: zzz/', 'error message';
             is $e->param, 'currency', 'error param';
         }
+        close STDERR;
+        open(STDERR, ">&", STDOUT);
     }
 }
 
@@ -286,7 +301,8 @@ Customers: {
                 email => 'stripe@example.com',
                 description => 'Test for Net::Stripe',
             );
-            my $card = $customer->active_card;
+            my $path = 'customers/'.$customer->id.'/cards/'.$customer->default_card;
+            my $card = $stripe->_get( $path );
             isa_ok $card, 'Net::Stripe::Card';
             is $card->country, 'US', 'card country';
             is $card->exp_month, $future->month, 'card exp_month';
@@ -302,7 +318,9 @@ Customers: {
             );
             isa_ok $customer, 'Net::Stripe::Customer', 'got back a customer';
             ok $customer->id, 'customer has an id';
-            is $customer->active_card->last4, '4242', 'card token ok';
+            my $path = 'customers/'.$customer->id.'/cards/'.$customer->default_card;
+            my $card = $stripe->_get( $path );
+            is $card->last4, '4242', 'card token ok';
         }
 
         Customers_with_plans: {
@@ -339,6 +357,7 @@ Customers: {
             # Now cancel subscriptions
             my $dsubs = $stripe->delete_subscription(
                 customer_id => $customer->id,
+                subscription_id => $customer->subscription->id,
             );
             is $dsubs->status, 'canceled', 'subscription is canceled';
             ok $dsubs->canceled_at, 'has canceled_at';
@@ -346,11 +365,12 @@ Customers: {
 
             my $other_dsubs = $stripe->delete_subscription(
                 customer_id => $other->id,
+                subscription_id => $subs_again->id,
                 at_period_end => 1,
             );
             is $other_dsubs->status, 'active', 'subscription is still active';
             ok $other_dsubs->canceled_at, 'has canceled_at';
-            ok $other_dsubs->ended_at, 'has ended_at';
+            ok !$other_dsubs->ended_at, 'does not have ended_at (not at period end yet)';
         }
     }
 }
@@ -373,8 +393,9 @@ Invoices_and_items: {
         );
         ok $customer->id, 'customer has an id';
         is $customer->subscription->plan->id, $plan->id, 'customer has a plan';
-        is $customer->active_card->last4, $token->card->last4,
-            'customer has a card';
+        my $path = 'customers/'.$customer->id.'/cards/'.$customer->default_card;
+        my $card = $stripe->_get( $path );        
+        is $card->last4, $token->card->last4, 'customer has a card';
 
         my $item = $stripe->post_invoiceitem(
             customer => $customer->id,
@@ -424,11 +445,16 @@ Invoices_and_items: {
         # is $same_invoice->id, $invoice->id, 'invoice id matches';
 
         my $resp = $stripe->delete_invoiceitem( $item->id );
-        is $resp->{deleted}, 'true', 'invoiceitem deleted';
+        is $resp->{deleted}, '1', 'invoiceitem deleted';
         is $resp->{id}, $item->id, 'deleted id is correct';
 
+        # swallow the expected warning rather than have it print out durring tests. 
+        close STDERR;
+        open(STDERR, ">", "/dev/null");
         eval { $stripe->get_invoiceitem($item->id) };
         like $@, qr/No such invoiceitem/, 'correct error message';
+        close STDERR;
+        open(STDERR, ">&", STDOUT);        
     }
 }
 
