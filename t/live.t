@@ -371,6 +371,41 @@ Customers: {
             is $other_dsubs->status, 'active', 'subscription is still active';
             ok $other_dsubs->canceled_at, 'has canceled_at';
             ok !$other_dsubs->ended_at, 'does not have ended_at (not at period end yet)';
+
+            my $priceyplan = $stripe->post_plan(
+                id => "pricey-$future_ymdhms",
+                amount => 1000,
+                currency => 'usd',
+                interval => 'year',
+                name => "Priceyplan $future_ymdhms",
+            );
+            ok $priceyplan->id, 'priceyplan created';
+            my $coupon_id = "priceycoupon-$future_ymdhms";
+            my $coupon = $stripe->post_coupon(
+                id => $coupon_id,
+                percent_off => 100,
+                duration => 'once',
+                max_redemptions => 1,
+                redeem_by => time() + 100,
+            );
+            isa_ok $coupon, 'Net::Stripe::Coupon',
+                'I love it when a coupon pays for the first month';
+            is $coupon->id, $coupon_id, 'coupon id is the same';
+            $customer->coupon($coupon->id);
+            $stripe->post_customer($customer);
+            $customer = $stripe->get_customer($customer->id);
+            is $customer->discount->coupon->id, $coupon_id,
+              'got the coupon';
+            my $priceysubs = $stripe->post_subscription(
+                customer_id => $customer->id,
+                plan => $priceyplan->id,
+            );
+            isa_ok $priceysubs, 'Net::Stripe::Subscription',
+                'got a subscription back';
+            is $priceysubs->plan->id, $priceyplan->id;
+            $customer = $stripe->get_customer($customer->id);
+            is $customer->subscriptions->data->[0]->plan->id,
+              $priceyplan->id, 'subscribed without a creditcard';
         }
     }
 }

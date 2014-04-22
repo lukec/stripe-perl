@@ -34,6 +34,16 @@ around BUILDARGS => sub {
             $args{subscription} = Net::Stripe::Subscription->new($s);
         }
     }
+    if (my $s = $args{coupon}) {
+        if (ref($s) eq 'HASH') {
+            $args{coupon} = Net::Stripe::Coupon->new($s);
+        }
+    }
+    if (my $s = $args{discount}) {
+        if (ref($s) eq 'HASH') {
+            $args{discount} = Net::Stripe::Discount->new($s);
+        }
+    }
     if (my $p = $args{plan}) {
         if (ref($p) eq 'HASH') {
             $args{plan} = Net::Stripe::Plan->new($p);
