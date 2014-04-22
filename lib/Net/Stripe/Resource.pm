@@ -9,8 +9,9 @@ around BUILDARGS => sub {
 
     # Break out the JSON::XS::Boolean values into 1/0
     for my $field (keys %args) {
-        next unless ref($args{$field}) eq 'JSON::XS::Boolean';
-        $args{$field} = $args{$field} ? 1 : 0;
+        if (ref($args{$field}) =~ /^(JSON::XS::Boolean|JSON::PP::Boolean)$/) {
+            $args{$field} = $args{$field} ? 1 : 0;
+        }
     }
 
     for my $f (qw/card default_card/) {

@@ -6,7 +6,7 @@ extends 'Net::Stripe::Resource';
 has 'id' => (is => 'ro', isa => 'Maybe[Str]');
 has 'plan' => (is => 'rw', isa => 'Maybe[StripePlan]');
 has 'coupon'    => (is => 'rw', isa => 'Maybe[StripeCoupon]');
-has 'prorate'   => (is => 'rw', isa => 'Maybe[Bool]');
+has 'prorate'   => (is => 'rw', isa => 'Maybe[Bool|Object]');
 has 'trial_end' => (is => 'rw', isa => 'Maybe[Int]');
 has 'card'      => (is => 'rw', isa => 'Maybe[StripeCard]');
 has 'quantity'  => (is => 'rw', isa => 'Int', default => 1);

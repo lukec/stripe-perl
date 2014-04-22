@@ -14,7 +14,7 @@ has 'metadata'    => (is => 'rw', isa => 'HashRef');
 
 # API object args
 has 'id'           => (is => 'ro', isa => 'Maybe[Str]');
-has 'deleted'      => (is => 'ro', isa => 'Maybe[Bool]', default => 0);
+has 'deleted'      => (is => 'ro', isa => 'Maybe[Bool|Object]', default => 0);
 has 'default_card' => (is => 'ro', isa => 'Maybe[StripeCard]');
 has 'subscriptions' => (is => 'ro', isa => 'Net::Stripe::SubscriptionList');
 has 'subscription' => (is => 'ro',

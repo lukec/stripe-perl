@@ -11,8 +11,8 @@ has 'currency'    => (is => 'ro', isa => 'Maybe[Str]');
 # Args returned by the API
 has 'id'          => (is => 'ro', isa => 'Maybe[Str]');
 has 'created'     => (is => 'ro', isa => 'Maybe[Int]');
-has 'used'        => (is => 'ro', isa => 'Maybe[Bool]');
-has 'livemode'    => (is => 'ro', isa => 'Maybe[Bool]');
+has 'used'        => (is => 'ro', isa => 'Maybe[Bool|Object]');
+has 'livemode'    => (is => 'ro', isa => 'Maybe[Bool|Object]');
 
 method form_fields {
     return (
