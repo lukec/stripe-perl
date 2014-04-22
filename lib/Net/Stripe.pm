@@ -17,6 +17,7 @@ use Net::Stripe::Customer;
 use Net::Stripe::Subscription;
 use Net::Stripe::SubscriptionList;
 use Net::Stripe::Error;
+use Net::Stripe::BalanceTransaction;
 
 our $VERSION = '0.09';
 
@@ -73,8 +74,8 @@ You can set this to true to see extra debug info.
  
 =cut
 
-has 'debug'         => (is => 'rw', isa => 'Bool', default => 0);
-has 'debug_network' => (is => 'rw', isa => 'Bool', default => 0);
+has 'debug'         => (is => 'rw', isa => 'Bool',   default    => 0);
+has 'debug_network' => (is => 'rw', isa => 'Bool',   default    => 0);
 has 'api_key'       => (is => 'ro', isa => 'Str',    required   => 1);
 has 'api_base'      => (is => 'ro', isa => 'Str',    lazy_build => 1);
 has 'ua'            => (is => 'ro', isa => 'Object', lazy_build => 1);
@@ -103,12 +104,12 @@ Charges: {
     }
 
     method get_charge {
-        my $id = shift || die "A charge ID is required";;
+        my $id = shift || die "A charge ID is required";
         return $self->_get("charges/$id");
     }
 
     method refund_charge {
-        my $id = shift || die "A charge ID is required";;
+        my $id = shift || die "A charge ID is required";
         my $amount = shift;
         $id = $id->id if ref($id);
         
@@ -125,6 +126,15 @@ Charges: {
         my %args = @_;
         $self->_get_collections('charges', %args);
     }
+    
+    
+}
+
+BalanceTransactions: {
+  method get_balance_transaction {
+    my $id = shift || die "A transaction ID is required";
+    return $self->_get("balance/history/$id");
+  }
 }
 
 =head2 Customers
@@ -487,7 +497,7 @@ method _get_with_args {
     return $self->_get($path);
 }
 
-method _get_collections {
+method _get_collections { 
     my $path = shift;
     my %args = @_;
     my @path_args;
@@ -499,6 +509,16 @@ method _get_collections {
     }
     if (my $c = $args{customer}) {
         push @path_args, "customer=$c";
+    }
+    
+    # example: $Stripe->get_charges( 'count' => 100, 'created' => { 'gte' => 1397663381 } );
+    if (defined($args{created})) {
+      my %c = %{$args{created}};   
+      foreach my $key (keys %c) {
+        if ($key =~ /(?:l|g)te?/) {
+          push @path_args, "created[".$key."]=".$c{$key};
+        }
+      }        
     }
     return $self->_get_with_args($path, \@path_args);
 }
@@ -566,8 +586,10 @@ method _make_request {
 
 
 sub hash_to_object {
-    my $hash = shift;
-    my $class = 'Net::Stripe::' . ucfirst($hash->{object});
+    my $hash   = shift;
+    my @words  = map { ucfirst($_) } split('_', $hash->{object});
+    my $object = join('', @words);
+    my $class  = 'Net::Stripe::' . $object;
     return $class->new($hash);
 }
 
