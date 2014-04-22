@@ -612,12 +612,7 @@ L<https://stripe.com>, L<https://stripe.com/docs/api>
 
 =head1 AUTHORS
 
-Luke Closs
-
-=head1 LICENSE
-
-Net-Stripe is Copyright 2011 Prime Radiant, Inc.
-Net-Stripe is distributed under the same terms as Perl itself.
+=head1 CONTRIBUTORS
 
 =cut
 
