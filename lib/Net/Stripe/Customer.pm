@@ -6,7 +6,7 @@ extends 'Net::Stripe::Resource';
 # Customer creation args
 has 'email'       => (is => 'rw', isa => 'Maybe[Str]');
 has 'description' => (is => 'rw', isa => 'Maybe[Str]');
-has 'trial_end'   => (is => 'rw', isa => 'Maybe[Int]');
+has 'trial_end'   => (is => 'rw', isa => 'Maybe[Int|Str]');
 has 'card'        => (is => 'rw', isa => 'Maybe[StripeCard]');
 has 'plan'        => (is => 'rw', isa => 'Maybe[StripePlan|Str]');
 has 'coupon'      => (is => 'rw', isa => 'Maybe[StripeCoupon]');
@@ -29,22 +29,15 @@ sub _build_subscription {
     return;
 }
 
-
 #has 'subscription' => (is => 'ro', isa => 'Maybe[Net::Stripe::Subscription]');
 
 method form_fields {
-    my $metadata = $self->metadata();
-    my @metadata = ();    
-    while( my($k,$v) = each(%$metadata) ) {
-      push @metadata, 'metadata['.$k.']';
-      push @metadata, $v;
-    }
     return (
         (($self->card && ref($self->card) eq 'Net::Stripe::Token') ?
             (card => $self->card->id) : $self->fields_for('card')),
         $self->fields_for('plan'),
         $self->fields_for('coupon'),
-        @metadata,
+        $self->form_fields_for_metadata(),
         map { ($_ => $self->$_) }
             grep { defined $self->$_ } qw/email description trial_end/
     );
