@@ -403,9 +403,9 @@ All methods accept the same arguments as described in the API.
 
 See https://stripe.com/docs/api for full details.
 
-=head3 post_invoice( PARAMHASH )
+=head3 post_invoice( OBJECT )
 
-=head3 get_invoice( COUPON_ID )
+=head3 get_invoice( INVOICE_ID )
 
 =head3 get_upcominginvoice( COUPON_ID )
 
@@ -414,10 +414,9 @@ See https://stripe.com/docs/api for full details.
 =cut
 
 Invoices: {
-
     method post_invoice {
-        my %args = @_;
-        return $self->_post("invoices", {@_});
+        my $i = shift;
+        return $self->_post("invoices/" . $i->id, $i);
     }
 
     method get_invoice {
@@ -567,6 +566,12 @@ method _make_request {
             return [ map { hash_to_object($_) } @$data ];
         }
         return $hash;
+    } elsif ($resp->code == 500) {
+        die Net::Stripe::Error->new(
+            type => "HTTP request error",
+            code => $resp->code,
+            message => $resp->status_line . " - " . $resp->content,
+        );
     }
 
     my $e = eval {

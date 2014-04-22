@@ -9,7 +9,7 @@ has 'subtotal'      => ( is => 'ro', isa => 'Maybe[Int]', required => 1 );
 has 'amount_due'    => ( is => 'ro', isa => 'Maybe[Int]', required => 1 );
 has 'attempt_count' => ( is => 'ro', isa => 'Maybe[Int]', required => 1 );
 has 'attempted'     => ( is => 'ro', isa => 'Maybe[Bool|Object]', required => 1 );
-has 'closed'        => ( is => 'ro', isa => 'Maybe[Bool|Object]', required => 1 );
+has 'closed'        => ( is => 'ro', isa => 'Maybe[Bool|Object]', required => 1, trigger => \&_closed_change_detector);
 has 'customer'      => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
 has 'date'          => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
 has 'lines'         => ( is => 'ro', isa => 'ArrayRef[Object]', required => 1 );
@@ -22,11 +22,34 @@ has 'total'            => ( is => 'ro', isa => 'Maybe[Int]', required => 1 );
 has 'charge'           => ( is => 'ro', isa => 'Maybe[Str]' );
 has 'ending_balance'   => ( is => 'ro', isa => 'Maybe[Int]' );
 has 'next_payment_attempt' => ( is => 'ro', isa => 'Maybe[Int]' );
+has 'metadata'         => ( is => 'rw', isa => 'HashRef');
+has 'description' => (is => 'rw', isa => 'Maybe[Str]');
 
 has 'invoiceitems' =>
     (is => 'ro', isa => 'ArrayRef[Net::Stripe::Invoiceitem]');
 has 'subscriptions' =>
     (is => 'ro', isa => 'ArrayRef[Net::Stripe::Subscription]');
+
+sub _closed_change_detector {
+    my ($instance, $new_value, $orig_value) = @_;
+    # Strip can update invoices but only wants to see the closed flag if it has been changed.
+    # Meaning if you retrieve an invoice then try to update it, and it is already closed
+    # it will reject the update.
+    if (!defined($orig_value) || $new_value ne $orig_value) {
+        $instance->{closed_value_changed} = 1;
+    }
+    return;
+}
+
+method form_fields {
+    return (
+        $self->form_fields_for_metadata(),
+        (($self->{closed_value_changed}) ? (closed => (($self->closed) ? 'true' : 'false')) : ()),
+        map { ($_ => $self->$_) }
+            grep { defined $self->$_ } qw/description/
+    );
+}
+
 
 around BUILDARGS => sub {
     my $orig = shift;

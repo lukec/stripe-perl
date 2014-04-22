@@ -42,6 +42,16 @@ around BUILDARGS => sub {
     $class->$orig(%args);
 };
 
+method form_fields_for_metadata {
+    my $metadata = $self->metadata();
+    my @metadata = ();
+    while( my($k,$v) = each(%$metadata) ) {
+      push @metadata, 'metadata['.$k.']';
+      push @metadata, $v;
+    }
+    return @metadata;
+}
+
 method fields_for {
     my $for = shift;
     return unless $self->can($for);
