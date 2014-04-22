@@ -8,7 +8,7 @@ union 'StripePlan', ['Str', 'Net::Stripe::Plan'];
 
 subtype 'StatementDescription',
     as 'Str',
-    where { $_ =~ /^[^<>"']{0,15}$/ },
+    where { !defined($_) || $_ =~ /^[^<>"']{0,15}$/ },
     message { "The statement description you provided '$_' must be 15 characters or less and not contain <>\"'." };
 
 has 'id'                => (is => 'ro', isa => 'Maybe[Str]', required => 1);

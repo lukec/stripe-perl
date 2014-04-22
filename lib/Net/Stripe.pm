@@ -186,6 +186,61 @@ Customers: {
     }
 }
 
+=head2 Cards
+
+All methods accept the same arguments as described in the API.
+
+See https://stripe.com/docs/api for full details.
+
+=head3 post_card( PARAMHASH )
+
+=head3 get_card( customer_id => CUSTOMER_ID, card_id => CARD_ID )
+
+=head3 get_cards( customer_id => CUSTOMER_ID)
+
+=head3 update_card( customer_id => CUSTOMER_ID, card_id => CARD_ID)
+
+=head3 delete_card( customer_id => CUSTOMER_ID, card_id => CARD_ID )
+
+=cut
+
+Cards: {
+    method get_card {
+        my %args = @_;
+        my $cid = delete $args{customer_id};
+        my $card_id = delete $args{card_id};
+        return $self->_get("customers/$cid/cards/$card_id");
+    }
+
+    method get_cards {
+        $self->_get_collections('cards', @_);
+    }
+
+    method post_card {
+        my %args = @_;
+        my $cid = delete $args{customer_id};
+        my $card = Net::Stripe::Card->new(%args);
+        return $self->_post("customers/$cid/cards", $card);
+    }
+
+    method update_card {
+      my %args = @_;
+      my $cid  = delete $args{customer_id};
+      my $card_id = delete $args{card_id};
+      return $self->_post("customers/$cid/cards/$card_id", \%args);
+    }
+
+    method delete_card {
+      my %args = @_;
+      my $cid  = delete $args{customer_id};
+      my $card_id = delete $args{card_id};
+      return $self->_delete("customers/$cid/cards/$card_id");
+    }
+}
+
+
+
+
 =head2 Subscriptions
 
 All methods accept the same arguments as described in the API.
@@ -338,6 +393,8 @@ All methods accept the same arguments as described in the API.
 
 See https://stripe.com/docs/api for full details.
 
+=head3 post_invoice( PARAMHASH )
+
 =head3 get_invoice( COUPON_ID )
 
 =head3 get_upcominginvoice( COUPON_ID )
@@ -347,6 +404,12 @@ See https://stripe.com/docs/api for full details.
 =cut
 
 Invoices: {
+
+    method post_invoice {
+        my %args = @_;
+        return $self->_post("invoices", {@_});
+    }
+
     method get_invoice {
         my $id = shift || die 'get_invoice() requires an invoice id';
         return $self->_get("invoices/$id");
@@ -511,7 +574,7 @@ sub hash_to_object {
 method _build_api_base { 'https://api.stripe.com/v1' }
 
 method _build_ua {
-    my $ua = LWP::UserAgent->new;
+    my $ua = LWP::UserAgent->new();
     $ua->agent("Net::Stripe/$VERSION");
     return $ua;
 }

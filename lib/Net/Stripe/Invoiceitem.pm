@@ -10,12 +10,14 @@ has 'amount'            => (is => 'rw', isa => 'Maybe[Int]', required => 1);
 has 'currency'          => (is => 'rw', isa => 'Maybe[Str]', required => 1, clearer => 'clear_currency');
 has 'description'       => (is => 'rw', isa => 'Maybe[Str]');
 has 'date'              => (is => 'ro', isa => 'Maybe[Int]');
+has 'invoice'           => (is => 'ro', isa => 'Maybe[Str]');
+
 
 method form_fields {
     return (
         map { $_ => $self->$_ }
             grep { defined $self->$_ }
-                qw/amount currency description/,
+                qw/amount currency description invoice/,
                 ($self->id ? () : qw/customer/)
     );
 }
