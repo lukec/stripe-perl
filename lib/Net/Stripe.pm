@@ -51,13 +51,11 @@ generally named after the HTTP method and the object name.
 
 This method returns Moose objects for responses from the API.
 
-=head1 METHODS
-
-=head2 API Object
-
 =method new PARAMHASH
 
 This creates a new stripe api object.  The following parameters are accepted:
+
+=over
 
 =item api_key
 
@@ -70,6 +68,8 @@ You can set this to true to see extra debug info.
 =item debug_network
 
 You can set this to true to see the actual network requests.
+
+=back
 
 =cut
 
