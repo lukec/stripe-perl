@@ -3,6 +3,8 @@ use Moose;
 use methods;
 extends 'Net::Stripe::Resource';
 
+# ABSTRACT: represent a Token object from Stripe
+
 # Args for creating a Token
 has 'card'        => (is => 'ro', isa => 'Maybe[Net::Stripe::Card]', required => 1);
 has 'amount'      => (is => 'ro', isa => 'Maybe[Int]');
@@ -22,26 +24,6 @@ method form_fields {
                 qw/amount currency/
     );
 }
-
-=head1 NAME
-
-Net::Stripe::Token
-
-=head1 SEE ALSO
-
-L<https://stripe.com>, L<https://stripe.com/docs/api>
-
-=head1 AUTHORS
-
-Luke Closs
-
-=head1 LICENSE
-
-Net-Stripe is Copyright 2011 Prime Radiant, Inc.
-Net-Stripe is distributed under the same terms as Perl itself.
-
-=cut
-
 
 __PACKAGE__->meta->make_immutable;
 1;

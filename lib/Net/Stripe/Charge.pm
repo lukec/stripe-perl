@@ -3,6 +3,8 @@ use Moose;
 use methods;
 extends 'Net::Stripe::Resource';
 
+# ABSTRACT: represent an Charge object from Stripe
+
 has 'id'                  => (is => 'ro', isa => 'Maybe[Str]');
 has 'created'             => (is => 'ro', isa => 'Maybe[Int]');
 has 'amount'              => (is => 'ro', isa => 'Maybe[Int]', required => 1);
@@ -28,26 +30,6 @@ method form_fields {
                 qw/amount currency customer description/
     );
 }
-
-=head1 NAME
-
-Net::Stripe::Charge
-
-=head1 SEE ALSO
-
-L<https://stripe.com>, L<https://stripe.com/docs/api>
-
-=head1 AUTHORS
-
-Luke Closs
-
-=head1 LICENSE
-
-Net-Stripe is Copyright 2011 Prime Radiant, Inc.
-Net-Stripe is distributed under the same terms as Perl itself.
-
-=cut
-
 
 __PACKAGE__->meta->make_immutable;
 1;

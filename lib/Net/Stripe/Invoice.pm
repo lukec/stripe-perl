@@ -3,6 +3,8 @@ use Moose;
 use methods;
 extends 'Net::Stripe::Resource';
 
+# ABSTRACT: represent an Invoice object from Stripe
+
 has 'id'            => ( is => 'ro', isa => 'Maybe[Str]' );
 has 'created'       => ( is => 'ro', isa => 'Maybe[Int]' );
 has 'subtotal'      => ( is => 'ro', isa => 'Maybe[Int]', required => 1 );
@@ -93,25 +95,6 @@ around BUILDARGS => sub {
     $args{lines} = \@lines;
     $class->$orig(%args);
 };
-
-=head1 NAME
-
-Net::Stripe::Invoice
-
-=head1 SEE ALSO
-
-L<https://stripe.com>, L<https://stripe.com/docs/api>
-
-=head1 AUTHORS
-
-Luke Closs
-
-=head1 LICENSE
-
-Net-Stripe is Copyright 2011 Prime Radiant, Inc.
-Net-Stripe is distributed under the same terms as Perl itself.
-
-=cut
 
 __PACKAGE__->meta->make_immutable;
 1;

@@ -3,6 +3,8 @@ use Moose;
 use methods;
 extends 'Net::Stripe::Resource';
 
+# ABSTRACT: represent a Customer object from Stripe
+
 # Customer creation args
 has 'email'       => (is => 'rw', isa => 'Maybe[Str]');
 has 'description' => (is => 'rw', isa => 'Maybe[Str]');
@@ -43,25 +45,6 @@ method form_fields {
             grep { defined $self->$_ } qw/email description trial_end/
     );
 }
-
-=head1 NAME
-
-Net::Stripe::Customer
-
-=head1 SEE ALSO
-
-L<https://stripe.com>, L<https://stripe.com/docs/api>
-
-=head1 AUTHORS
-
-Luke Closs
-
-=head1 LICENSE
-
-Net-Stripe is Copyright 2011 Prime Radiant, Inc.
-Net-Stripe is distributed under the same terms as Perl itself.
-
-=cut
 
 __PACKAGE__->meta->make_immutable;
 1;

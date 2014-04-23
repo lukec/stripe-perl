@@ -4,6 +4,8 @@ use Moose::Util::TypeConstraints;
 use methods;
 extends 'Net::Stripe::Resource';
 
+# ABSTRACT: represent a Plan object from Stripe
+
 union 'StripePlan', ['Str', 'Net::Stripe::Plan'];
 
 subtype 'StatementDescription',
@@ -27,25 +29,6 @@ method form_fields {
                 qw/id amount currency interval interval_count name statement_description trial_period_days/
     );
 }
-
-=head1 NAME
-
-Net::Stripe::Plan
-
-=head1 SEE ALSO
-
-L<https://stripe.com>, L<https://stripe.com/docs/api>
-
-=head1 AUTHORS
-
-Luke Closs
-
-=head1 LICENSE
-
-Net-Stripe is Copyright 2011 Prime Radiant, Inc.
-Net-Stripe is distributed under the same terms as Perl itself.
-
-=cut
 
 __PACKAGE__->meta->make_immutable;
 1;

@@ -3,6 +3,8 @@ use Moose;
 use methods;
 extends 'Net::Stripe::Resource';
 
+# ABSTRACT: represent a list of Subscriptions from Stripe
+
 has 'object' => (is => 'ro', isa => 'Str');
 has 'count'  => (is => 'ro', isa => 'Int'); # no longer included by default, see note below
 has 'url'    => (is => 'ro', isa => 'Str');

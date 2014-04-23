@@ -4,6 +4,8 @@ use methods;
 extends 'Net::Stripe::Resource';
 with 'MooseX::Clone';
 
+# ABSTRACT: represent an Invoice Item object from Stripe
+
 has 'id'                => (is => 'ro', isa => 'Maybe[Str]');
 has 'customer'          => (is => 'ro', isa => 'Maybe[Str]', required => 1);
 has 'amount'            => (is => 'rw', isa => 'Maybe[Int]', required => 1);
@@ -21,25 +23,6 @@ method form_fields {
                 ($self->id ? () : qw/customer/)
     );
 }
-
-=head1 NAME
-
-Net::Stripe::Invoiceitem
-
-=head1 SEE ALSO
-
-L<https://stripe.com>, L<https://stripe.com/docs/api>
-
-=head1 AUTHORS
-
-Luke Closs
-
-=head1 LICENSE
-
-Net-Stripe is Copyright 2011 Prime Radiant, Inc.
-Net-Stripe is distributed under the same terms as Perl itself.
-
-=cut
 
 __PACKAGE__->meta->make_immutable;
 1;

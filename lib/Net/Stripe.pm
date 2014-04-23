@@ -22,9 +22,7 @@ use Net::Stripe::BalanceTransaction;
 
 our $VERSION = '0.09';
 
-=head1 NAME
-
-Net::Stripe - API client for Stripe.com
+# ABSTRACT: API client for Stripe.com
 
 =head1 SYNOPSIS
 
@@ -57,11 +55,9 @@ This method returns Moose objects for responses from the API.
 
 =head2 API Object
 
-=head3 new PARAMHASH
+=method new PARAMHASH
 
 This creates a new stripe api object.  The following parameters are accepted:
-
-=over
 
 =item api_key
 
@@ -71,8 +67,10 @@ This is required. You get this from your Stripe Account settings.
 
 You can set this to true to see extra debug info.
 
-=back
- 
+=item debug_network
+
+You can set this to true to see the actual network requests.
+
 =cut
 
 has 'debug'         => (is => 'rw', isa => 'Bool',   default    => 0);
@@ -81,19 +79,14 @@ has 'api_key'       => (is => 'ro', isa => 'Str',    required   => 1);
 has 'api_base'      => (is => 'ro', isa => 'Str',    lazy_build => 1);
 has 'ua'            => (is => 'ro', isa => 'Object', lazy_build => 1);
 
-=head2 Charges
 
-All methods accept the same arguments as described in the API.
+=charge_method post_charge( PARAMHASH | OBJECT )
 
-See https://stripe.com/docs/api for full details.
+=charge_method get_charge( CHARGE_ID )
 
-=head3 post_charge( PARAMHASH | OBJECT )
+=charge_method refund_charge( CHARGE_ID )
 
-=head3 get_charge( CHARGE_ID )
-
-=head3 refund_charge( CHARGE_ID )
-
-=head3 get_charges( PARAMHASH )
+=charge_method get_charges( PARAMHASH )
 
 =cut
 
@@ -138,21 +131,16 @@ BalanceTransactions: {
   }
 }
 
-=head2 Customers
 
-All methods accept the same arguments as described in the API.
+=customer_method post_customer( PARAMHASH | OBJECT )
 
-See https://stripe.com/docs/api for full details.
+=customer_method get_customer( CUSTOMER_ID )
 
-=head3 post_customer( PARAMHASH | OBJECT )
+=customer_method delete_customer( CUSTOMER_ID )
 
-=head3 get_customer( CUSTOMER_ID )
+=customer_method post_customer_subscription( CUSTOMER_ID, PARAMHASH )
 
-=head3 delete_customer( CUSTOMER_ID )
-
-=head3 post_customer_subscription( CUSTOMER_ID, PARAMHASH )
-
-=head3 get_customers( PARAMHASH )
+=customer_method get_customers( PARAMHASH )
 
 =cut
 
@@ -197,21 +185,16 @@ Customers: {
     }
 }
 
-=head2 Cards
 
-All methods accept the same arguments as described in the API.
+=card_method post_card( PARAMHASH )
 
-See https://stripe.com/docs/api for full details.
+=card_method get_card( customer_id => CUSTOMER_ID, card_id => CARD_ID )
 
-=head3 post_card( PARAMHASH )
+=card_method get_cards( customer_id => CUSTOMER_ID)
 
-=head3 get_card( customer_id => CUSTOMER_ID, card_id => CARD_ID )
+=card_method update_card( customer_id => CUSTOMER_ID, card_id => CARD_ID)
 
-=head3 get_cards( customer_id => CUSTOMER_ID)
-
-=head3 update_card( customer_id => CUSTOMER_ID, card_id => CARD_ID)
-
-=head3 delete_card( customer_id => CUSTOMER_ID, card_id => CARD_ID )
+=card_method delete_card( customer_id => CUSTOMER_ID, card_id => CARD_ID )
 
 =cut
 
@@ -250,19 +233,11 @@ Cards: {
 }
 
 
+=subscription_method post_subscription( PARAMHASH )
 
+=subscription_method get_subscription( customer_id => CUSTOMER_ID )
 
-=head2 Subscriptions
-
-All methods accept the same arguments as described in the API.
-
-See https://stripe.com/docs/api for full details.
-
-=head3 post_subscription( PARAMHASH )
-
-=head3 get_subscription( customer_id => CUSTOMER_ID )
-
-=head3 delete_subscription( customer_id => CUSTOMER_ID )
+=subscription_method delete_subscription( customer_id => CUSTOMER_ID )
 
 =cut
 
@@ -298,15 +273,10 @@ Subscriptions: {
     }
 }
 
-=head2 Tokens
 
-All methods accept the same arguments as described in the API.
+=token_method post_token( PARAMHASH )
 
-See https://stripe.com/docs/api for full details.
-
-=head3 post_token( PARAMHASH )
-
-=head3 get_token( TOKEN_ID )
+=token_method get_token( TOKEN_ID )
 
 =cut
 
@@ -322,19 +292,13 @@ Tokens: {
     }
 }
 
-=head2 Plans
+=plan_method post_plan( PARAMHASH )
 
-All methods accept the same arguments as described in the API.
+=plan_method get_plan( PLAN_ID )
 
-See https://stripe.com/docs/api for full details.
+=plan_method delete_plan( PLAN_ID )
 
-=head3 post_plan( PARAMHASH )
-
-=head3 get_plan( PLAN_ID )
-
-=head3 delete_plan( PLAN_ID )
-
-=head3 get_plans( PARAMHASH )
+=plan_method get_plans( PARAMHASH )
 
 =cut
 
@@ -360,19 +324,14 @@ Plans: {
     }
 }
 
-=head2 Coupons
 
-All methods accept the same arguments as described in the API.
+=coupon_method post_coupon( PARAMHASH )
 
-See https://stripe.com/docs/api for full details.
+=coupon_method get_coupon( COUPON_ID )
 
-=head3 post_coupon( PARAMHASH )
+=coupon_method delete_coupon( COUPON_ID )
 
-=head3 get_coupon( COUPON_ID )
-
-=head3 delete_coupon( COUPON_ID )
-
-=head3 get_coupons( PARAMHASH )
+=coupon_method get_coupons( PARAMHASH )
 
 =cut
 
@@ -398,19 +357,14 @@ Coupons: {
     }
 }
 
-=head2 Invoices
 
-All methods accept the same arguments as described in the API.
+=invoice_method post_invoice( OBJECT )
 
-See https://stripe.com/docs/api for full details.
+=invoice_method get_invoice( INVOICE_ID )
 
-=head3 post_invoice( OBJECT )
+=invoice_method get_upcominginvoice( COUPON_ID )
 
-=head3 get_invoice( INVOICE_ID )
-
-=head3 get_upcominginvoice( COUPON_ID )
-
-=head3 get_invoices( PARAMHASH )
+=invoice_method get_invoices( PARAMHASH )
 
 =cut
 
@@ -435,19 +389,13 @@ Invoices: {
     }
 }
 
-=head2 InvoiceItems
+=invoiceitem_method post_invoiceitem( PARAMHASH | OBJECT )
 
-All methods accept the same arguments as described in the API.
+=invoiceitem_method get_invoiceitem( INVOICEITEM_ID )
 
-See https://stripe.com/docs/api for full details.
+=invoiceitem_method delete_invoiceitem( INVOICEITEM_ID )
 
-=head3 post_invoiceitem( PARAMHASH | OBJECT )
-
-=head3 get_invoiceitem( INVOICEITEM_ID )
-
-=head3 delete_invoiceitem( INVOICEITEM_ID )
-
-=head3 get_invoiceitems( PARAMHASH )
+=invoiceitem_method get_invoiceitems( PARAMHASH )
 
 =cut
 
@@ -610,8 +558,6 @@ method _build_ua {
 =head1 SEE ALSO
 
 L<https://stripe.com>, L<https://stripe.com/docs/api>
-
-=head1 AUTHORS
 
 =head1 CONTRIBUTORS
 

@@ -4,6 +4,8 @@ use Moose::Util::TypeConstraints;
 use methods;
 extends 'Net::Stripe::Resource';
 
+# ABSTRACT: represent a BalanceTransaction object from Stripe
+
 subtype 'TransactionType',
       as 'Str',
       where { $_ =~ /^(?:charge|refund|adjustment|application_fee(?:_refund)?|transfer_?(?:cancelfailure)?)$/ },
