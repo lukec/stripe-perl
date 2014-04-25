@@ -13,7 +13,7 @@ has 'card'        => (is => 'rw', isa => 'Maybe[StripeCard]');
 has 'plan'        => (is => 'rw', isa => 'Maybe[StripePlan|Str]');
 has 'coupon'      => (is => 'rw', isa => 'Maybe[StripeCoupon]');
 has 'discount'    => (is => 'rw', isa => 'Maybe[Net::Stripe::Discount]');
-has 'metadata'    => (is => 'rw', isa => 'HashRef');
+has 'metadata'    => (is => 'rw', isa => 'Maybe[HashRef]');
 
 # API object args
 has 'id'           => (is => 'ro', isa => 'Maybe[Str]');

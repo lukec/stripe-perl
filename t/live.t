@@ -40,7 +40,7 @@ Card_Tokens: {
         is $token->card->last4, '4242', 'token card';
         ok !$token->used, 'token is not used';
         
-        my $same = $stripe->get_token($token->id);
+        my $same = $stripe->get_token(token_id => $token->id);
         isa_ok $token, 'Net::Stripe::Token', 'got a token back';
         is $same->id, $token->id, 'token id matches';
 
@@ -67,14 +67,14 @@ Plans: {
         isa_ok $plan, 'Net::Stripe::Plan',
             'I love it when a plan comes together';
 
-        my $newplan = $stripe->get_plan($id);
+        my $newplan = $stripe->get_plan(plan_id => $id);
         isa_ok $newplan, 'Net::Stripe::Plan',
             'I love it when another plan comes together';
         is $newplan->id, $id, 'Plan id was encoded correctly';
         is($newplan->$_, $plan->$_, "$_ matches")
             for qw/id amount currency interval name trial_period_days/;
 
-        my $plans = $stripe->get_plans(count => 1);
+        my $plans = $stripe->get_plans(limit => 1);
         is scalar(@$plans), 1, 'got just one plan';
         is $plans->[0]->id, $id, 'plan id matches';
 
@@ -83,7 +83,7 @@ Plans: {
         # swallow the expected warning rather than have it print out durring tests. 
         close STDERR;
         open(STDERR, ">", "/dev/null");
-        eval { $stripe->get_plan($id) };
+        eval { $stripe->get_plan(plan_id => $id) };
         ok $@, "no longer can fetch deleted plans";
         close STDERR;
         open(STDERR, ">&", STDOUT);
@@ -105,7 +105,7 @@ Coupons: {
             'I love it when a coupon comes together';
         is $coupon->id, $id, 'coupon id is the same';
 
-        my $newcoupon = $stripe->get_coupon($id);
+        my $newcoupon = $stripe->get_coupon(coupon_id => $id);
         isa_ok $newcoupon, 'Net::Stripe::Coupon',
             'I love it when another coupon comes together';
         is $newcoupon->id, $id, 'coupon id was encoded correctly';
@@ -113,7 +113,7 @@ Coupons: {
             for qw/id percent_off duration duration_in_months 
                    max_redemptions redeem_by/;
 
-        my $coupons = $stripe->get_coupons(count => 1);
+        my $coupons = $stripe->get_coupons(limit => 1);
         is scalar(@$coupons), 1, 'got just one coupon';
         is $coupons->[0]->id, $id, 'coupon id matches';
 
@@ -122,7 +122,7 @@ Coupons: {
         # swallow the expected warning rather than have it print out durring tests. 
         close STDERR;
         open(STDERR, ">", "/dev/null");
-        eval { $stripe->get_coupon($id) };
+        eval { $stripe->get_coupon(coupon_id => $id) };
         ok $@, "no longer can fetch deleted coupons";
         close STDERR;
         open(STDERR, ">&", STDOUT);
@@ -160,20 +160,20 @@ Charges: {
 
         # Fetch a charge
         my $charge2;
-        lives_ok { $charge2 = $stripe->get_charge($charge->id) }
+        lives_ok { $charge2 = $stripe->get_charge(charge_id => $charge->id) }
             'Fetching a charge works';
         is $charge2->id, $charge->id, 'Charge ids match';
 
         # Refund a charge
         my $charge3;
         # partial refund
-        lives_ok { $charge = $stripe->refund_charge($charge->id, 1000) }
+        lives_ok { $charge = $stripe->refund_charge(charge => $charge->id, amount => 1000) }
             'refunding a charge works';
         is $charge->id, $charge->id, 'returned charge object matches id';
         is $charge->amount_refunded, 1000, 'partial refund $10';
         ok !$charge->refunded, 'charge not yet fully refunded';
         # fully refund
-        lives_ok { $charge = $stripe->refund_charge($charge->id) }
+        lives_ok { $charge = $stripe->refund_charge(charge => $charge->id) }
             'refunding remainder of charge';
         is $charge->id, $charge->id, 'returned charge object matches id';
         ok $charge->refunded, 'charge is refunded';
@@ -181,7 +181,7 @@ Charges: {
         ok $charge->paid, 'charge was paid';
 
         # Fetch list of charges
-        my $charges = $stripe->get_charges( count => 1 );
+        my $charges = $stripe->get_charges( limit => 1 );
         is scalar(@$charges), 1, 'one charge returned';
         is $charges->[0]->id, $charge->id, 'charge ids match';
     }
@@ -277,21 +277,21 @@ Customers: {
 
             # Update an existing customer
             $customer->description("Test user for Net::Stripe");
-            my $samesy = $stripe->post_customer($customer);
+            my $samesy = $stripe->post_customer(customer => $customer);
             is $samesy->description, $customer->description,
                 'post_customer returns an updated customer object';
-            my $same = $stripe->get_customer($id);
+            my $same = $stripe->get_customer(customer_id => $id);
             is $same->description, $customer->description,
                 'get customer retrieves an updated customer';
 
             # Fetch the list of customers
-            my $all = $stripe->get_customers(count => 1);
+            my $all = $stripe->get_customers(limit => 1);
             is scalar(@$all), 1, 'only one customer returned';
             is $all->[0]->id, $customer->id, 'correct customer returned';
 
             # Delete a customer
-            $stripe->delete_customer($customer);
-            $customer = $stripe->get_customer($id);
+            $stripe->delete_customer(customer => $customer);
+            $customer = $stripe->get_customer(customer_id => $id);
             ok $customer->{deleted}, 'customer is now deleted';
         }
 
@@ -341,7 +341,7 @@ Customers: {
             # Now update subscription of an existing customer
             my $other = $stripe->post_customer();
             my $subs = $stripe->post_subscription(
-                customer_id => $other->id,
+                customer => $other->id,
                 plan => $freeplan->id,
             );
             isa_ok $subs, 'Net::Stripe::Subscription',
@@ -349,23 +349,23 @@ Customers: {
             is $subs->plan->id, $freeplan->id;
 
             my $subs_again = $stripe->get_subscription(
-                customer_id => $other->id,
+                customer => $other->id
             );
             is $subs_again->status, 'active', 'subs is active';
             is $subs_again->start, $subs->start, 'same subs was returned';
 
             # Now cancel subscriptions
             my $dsubs = $stripe->delete_subscription(
-                customer_id => $customer->id,
-                subscription_id => $customer->subscription->id,
+                customer => $customer->id,
+                subscription => $customer->subscription->id,
             );
             is $dsubs->status, 'canceled', 'subscription is canceled';
             ok $dsubs->canceled_at, 'has canceled_at';
             ok $dsubs->ended_at, 'has ended_at';
 
             my $other_dsubs = $stripe->delete_subscription(
-                customer_id => $other->id,
-                subscription_id => $subs_again->id,
+                customer => $other->id,
+                subscription => $subs_again->id,
                 at_period_end => 1,
             );
             is $other_dsubs->status, 'active', 'subscription is still active';
@@ -392,18 +392,18 @@ Customers: {
                 'I love it when a coupon pays for the first month';
             is $coupon->id, $coupon_id, 'coupon id is the same';
             $customer->coupon($coupon->id);
-            $stripe->post_customer($customer);
-            $customer = $stripe->get_customer($customer->id);
+            $stripe->post_customer(customer => $customer);
+            $customer = $stripe->get_customer(customer_id => $customer->id);
             is $customer->discount->coupon->id, $coupon_id,
               'got the coupon';
             my $priceysubs = $stripe->post_subscription(
-                customer_id => $customer->id,
+                customer => $customer->id,
                 plan => $priceyplan->id,
             );
             isa_ok $priceysubs, 'Net::Stripe::Subscription',
                 'got a subscription back';
             is $priceysubs->plan->id, $priceyplan->id;
-            $customer = $stripe->get_customer($customer->id);
+            $customer = $stripe->get_customer(customer_id => $customer->id);
             is $customer->subscriptions->data->[0]->plan->id,
               $priceyplan->id, 'subscribed without a creditcard';
         }
@@ -432,7 +432,7 @@ Invoices_and_items: {
         my $card = $stripe->_get( $path );        
         is $card->last4, $token->card->last4, 'customer has a card';
 
-        my $item = $stripe->post_invoiceitem(
+        my $item = $stripe->create_invoiceitem(
             customer => $customer->id,
             amount   => 700,
             currency => 'usd',
@@ -442,19 +442,18 @@ Invoices_and_items: {
             ok $item->$f, "item has $f";
         }
 
-        my $sameitem = $stripe->get_invoiceitem( $item->id );
+        my $sameitem = $stripe->get_invoiceitem(invoice_item => $item->id );
         is $sameitem->id, $item->id, 'get item returns same id';
 
         $item->description('Jerky');
-        my $newitem = $stripe->post_invoiceitem($item);
+        my $newitem = $stripe->post_invoiceitem(invoice_item => $item);
         is $newitem->id, $item->id, 'item id is unchanged';
         is $newitem->currency, $item->currency, 'item currency unchanged';
         is $newitem->description, $item->description, 'item desc changed';
 
         my $items = $stripe->get_invoiceitems(
             customer => $customer->id,
-            count => 1,
-            offset => 0,
+            limit => 1,
         );
         is scalar(@$items), 1, 'only 1 item returned';
         is $items->[0]->id, $item->id, 'item id is correct';
@@ -468,8 +467,7 @@ Invoices_and_items: {
 
         my $all_invoices = $stripe->get_invoices(
             customer => $customer->id,
-            count    => 1,
-            offset   => 0,
+            limit    => 1,
         );
         is scalar(@$all_invoices), 1, 'one invoice returned';
 
@@ -479,14 +477,14 @@ Invoices_and_items: {
         # my $same_invoice = $stripe->get_invoice($invoice->id);
         # is $same_invoice->id, $invoice->id, 'invoice id matches';
 
-        my $resp = $stripe->delete_invoiceitem( $item->id );
+        my $resp = $stripe->delete_invoiceitem(invoice_item => $item->id);
         is $resp->{deleted}, '1', 'invoiceitem deleted';
         is $resp->{id}, $item->id, 'deleted id is correct';
 
         # swallow the expected warning rather than have it print out durring tests. 
         close STDERR;
         open(STDERR, ">", "/dev/null");
-        eval { $stripe->get_invoiceitem($item->id) };
+        eval { $stripe->get_invoiceitem(invoice_item => $item->id) };
         like $@, qr/No such invoiceitem/, 'correct error message';
         close STDERR;
         open(STDERR, ">&", STDOUT);        

@@ -10,7 +10,7 @@ has 'plan' => (is => 'rw', isa => 'Maybe[StripePlan]');
 has 'coupon'    => (is => 'rw', isa => 'Maybe[StripeCoupon]');
 has 'prorate'   => (is => 'rw', isa => 'Maybe[Bool|Object]');
 has 'card'      => (is => 'rw', isa => 'Maybe[StripeCard]');
-has 'quantity'  => (is => 'rw', isa => 'Int', default => 1);
+has 'quantity'  => (is => 'rw', isa => 'Maybe[Int]', default => 1);
 
 # Other fields returned by the API
 has 'customer'             => (is => 'ro', isa => 'Maybe[Str]');
