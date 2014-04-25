@@ -279,6 +279,8 @@ L<https://stripe.com/docs/api#create_customer>
 
 =item * trial_end - Int, optional
 
+=back 
+
 Returns a L<Net::Stripe::Customer> object
 
   my $customer = $stripe->post_customer(
@@ -286,8 +288,6 @@ Returns a L<Net::Stripe::Customer> object
     email => 'stripe@example.com',
     description => 'Test for Net::Stripe',
   );
-
-=back
 
 =customer_method list_subscriptions
 
@@ -447,6 +447,8 @@ L<https://stripe.com/docs/api#retrieve_card>
 
 Returns a L<Net::Stripe::Card>
 
+  $stripe->get_card(customer => 'customer_id', card_id => 'abcdef');
+
 =card_method post_card
 
 Create or update a card
@@ -462,6 +464,8 @@ L<https://stripe.com/docs/api#create_card>
 =back
 
 Returns a L<Net::Stripe::Card>
+
+  $stripe->create_card(customer => $customer, card => $card);
 
 =card_method get_cards
 
@@ -481,6 +485,10 @@ L<https://stripe.com/docs/api#list_cards>
 
 =back
 
+Returns a list of L<Net::Stripe::Card> objects
+
+  $stripe->list_cards(customer => 'abcdec', limit => 10);
+
 =card_method delete_card
 
 Delete a card.
@@ -496,6 +504,8 @@ L<https://stripe.com/docs/api#delete_card>
 =back
 
 Returns a L<Net::Stripe::Card>.
+
+  $stripe->delete_card(customer => $customer, card => $card);
 
 =cut
 
@@ -583,6 +593,8 @@ L<https://stripe.com/docs/api#create_subscription>
 
 Returns a L<Net::Stripe::Customer> object
 
+  $stripe->post_subscription(customer => $customer, plan => 'testplan');
+
 =subscription_method get_subscription
 
 Returns a customers subscription
@@ -594,6 +606,8 @@ Returns a customers subscription
 =back
 
 Returns a L<Net::Stripe::Subscription>
+
+  $stripe->get_subscription(customer => 'test123');
 
 =subscription_method delete_subscription
 
@@ -612,6 +626,8 @@ L<https://stripe.com/docs/api#cancel_subscription>
 =back
 
 Returns a L<Net::Stripe::Subscription> object.
+
+  $stripe->delete_subscription(customer => $customer, subscription => $subscription);
 
 =cut
 
@@ -690,6 +706,8 @@ L<https://stripe.com/docs/api#create_card_token>
 
 Returns a L<Net::Stripe::Token>
 
+  $stripe->post_token(card => $test_card);
+
 =token_method get_token
 
 Retreives an existing token.
@@ -703,6 +721,8 @@ L<https://stripe.com/docs/api#retrieve_token>
 =back
 
 Returns a L<Net::Stripe::Token>
+
+  $stripe->get_token(token_id => 'testtokenid');
 
 =cut
 
@@ -744,6 +764,14 @@ L<https://stripe.com/docs/api#create_plan>
 =back
 
 Returns a L<Net::Stripe::Plan> object
+ 
+  $stripe->post_plan(
+     id => "free-$future_ymdhms",
+     amount => 0,
+     currency => 'usd',
+     interval => 'year',
+     name => "Freeplan $future_ymdhms",
+  );
 
 =plan_method get_plan
 
@@ -756,6 +784,8 @@ Retrieves a plan.
 =back
 
 Returns a L<Net::Stripe::Plan>
+
+  $stripe->get_plan(plan_id => 'plan123');
 
 =plan_method delete_plan
 
@@ -770,6 +800,8 @@ L<https://stripe.com/docs/api#delete_plan>
 =back
 
 Returns a L<Net::Stripe::Plan> object
+
+  $stripe->delete_plan(plan_id => $plan);
 
 =plan_method get_plans
 
@@ -786,6 +818,10 @@ L<https://stripe.com/docs/api#list_plans>
 =item * starting_after - Str, optional
 
 =back
+
+Returns a list of L<Net::Stripe::Plan>
+
+  $stripe->get_plans(limit => 10);
 
 =cut
 
@@ -861,6 +897,14 @@ L<https://stripe.com/docs/api#create_coupon>
 
 Returns a L<Net::Stripe::Coupon> object.
 
+  $stripe->post_coupon(
+     id => $coupon_id,
+     percent_off => 100,
+     duration => 'once',
+     max_redemptions => 1,
+     redeem_by => time() + 100,
+  );
+
 =coupon_method get_coupon
 
 Retreive a coupon
@@ -872,6 +916,10 @@ L<https://stripe.com/docs/api#retrieve_coupon>
 =item * coupon_id - Str
 
 =back
+
+Returns a L<Net::Stripe::Coupon> object.
+
+  $stripe->get_coupon(coupon_id => 'id');
 
 =coupon_method delete_coupon
 
@@ -887,6 +935,8 @@ L<https://stripe.com/docs/api#delete_coupon>
 
 Returns a L<Net::Stripe::Coupon>
 
+  $stripe->delete_coupon(coupon_id => 'coupon123');
+
 =coupon_method get_coupons
 
 =over
@@ -900,6 +950,8 @@ Returns a L<Net::Stripe::Coupon>
 =back
 
 Returns a list of L<Net::Stripe::Coupon>
+
+  $stripe->get_coupons(limit => 15);
 
 =cut
 
