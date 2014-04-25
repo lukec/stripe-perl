@@ -239,6 +239,8 @@ L<https://stripe.com/docs/api#retrieve_balance_transaction>
 
 Returns a L<Net::Stripe::BalanceTransaction>
 
+  $stripe->get_balance_transaction(id => 'id');
+
 =cut 
 
 
@@ -279,6 +281,12 @@ L<https://stripe.com/docs/api#create_customer>
 
 Returns a L<Net::Stripe::Customer> object
 
+  my $customer = $stripe->post_customer(
+    card => $fake_card,
+    email => 'stripe@example.com',
+    description => 'Test for Net::Stripe',
+  );
+
 =back
 
 =customer_method list_subscriptions
@@ -315,6 +323,8 @@ L<https://stripe.com/docs/api#retrieve_customer>
 
 Returns a L<Net::Stripe::Customer> object
 
+  $stripe->get_customer(customer_id => $id);
+
 =customer_method delete_customer
 
 Delete a customer
@@ -328,6 +338,8 @@ L<https://stripe.com/docs/api#delete_customer>
 =back
 
 Returns a L<Net::Stripe::Customer> object
+
+  $stripe->delete_customer(customer => $customer);
 
 =customer_method get_customers
 
@@ -346,6 +358,10 @@ L<https://stripe.com/docs/api#list_customers>
 =item * starting_after - Str, optional
 
 =back
+
+Returns a list of L<Net::Stripe::Customer> objects.
+
+  $stripe->get_customers(limit => 7);
 
 =cut
 
