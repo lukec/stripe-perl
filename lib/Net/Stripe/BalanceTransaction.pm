@@ -1,7 +1,7 @@
 package Net::Stripe::BalanceTransaction;
 use Moose;
-use Moose::Util::TypeConstraints;
-use methods;
+use Moose::Util::TypeConstraints qw(subtype as where message);
+use MooseX::Method::Signatures;
 extends 'Net::Stripe::Resource';
 
 # ABSTRACT: represent a BalanceTransaction object from Stripe
@@ -28,3 +28,6 @@ has 'fee'           => (is => 'ro', isa => 'Int');
 has 'fee_details'   => (is => 'ro', isa => 'Maybe[ArrayRef]');
 has 'source'        => (is => 'ro', isa => 'Str');
 has 'description'   => (is => 'ro', isa => 'Maybe[Str]');
+
+__PACKAGE__->meta->make_immutable;
+1;

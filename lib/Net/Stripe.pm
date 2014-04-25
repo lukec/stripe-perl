@@ -1,6 +1,6 @@
 package Net::Stripe;
 use Moose;
-use methods;
+use MooseX::Method::Signatures;
 use LWP::UserAgent;
 use HTTP::Request::Common qw/GET POST DELETE/;
 use MIME::Base64 qw/encode_base64/;
@@ -91,20 +91,17 @@ has 'ua'            => (is => 'ro', isa => 'Object', lazy_build => 1);
 =cut
 
 Charges: {
-    method post_charge {
-        my %args = @_;
-        my $charge = Net::Stripe::Charge->new(%args);
+    sub post_charge {
+        my $self = shift;
+        my $charge = Net::Stripe::Charge->new(@_);
         return $self->_post('charges', $charge);
     }
 
-    method get_charge {
-        my $id = shift || die "A charge ID is required";
+    method get_charge(Str $id) {
         return $self->_get("charges/$id");
     }
 
-    method refund_charge {
-        my $id = shift || die "A charge ID is required";
-        my $amount = shift;
+    method refund_charge($id, $amount?) {
         $id = $id->id if ref($id);
         
         if($amount) {
@@ -116,17 +113,16 @@ Charges: {
         return $self->_post("charges/$id/refund" . $amount);
     }
 
-    method get_charges {
-        my %args = @_;
-        $self->_get_collections('charges', %args);
+    sub get_charges {
+        my $self = shift;
+        $self->_get_collections('charges', @_);
     }
     
     
 }
 
 BalanceTransactions: {
-  method get_balance_transaction {
-    my $id = shift || die "A transaction ID is required";
+  method get_balance_transaction(Str $id) {
     return $self->_get("balance/history/$id");
   }
 }
@@ -145,7 +141,8 @@ BalanceTransactions: {
 =cut
 
 Customers: {
-    method post_customer {
+    sub post_customer {
+        my $self = shift;
         # Update from an existing object
         if (@_ == 1) {
             my $c = shift;
@@ -157,30 +154,32 @@ Customers: {
     }
 
     # adds a subscription, keeping any existing subscriptions unmodified
-    method post_customer_subscription {
-        my $customer_id = shift || die 'post_customer_subscription() requires a customer_id';
+    sub post_customer_subscription {
+        my $self = shift;
+        my $customer_id = shift;
+        defined($customer_id) || die 'post_customer_subscription() requires a customer_id';
         die 'post_customer_subscription() requires a param hash' unless @_;
         $self->_post("customers/$customer_id/subscriptions", @_);
     }
 
-    method list_subscriptions {
+    sub list_subscriptions {
+        my $self = shift;
         my %args = @_;
         my $cid = delete $args{customer_id};
         return $self->_get("customers/$cid/subscriptions", @_);
     }
 
-    method get_customer {
-        my $id = shift || die 'get_customer() requires a customer id';
+    method get_customer(Str $id) {
         return $self->_get("customers/$id");
     }
 
-    method delete_customer {
-        my $id = shift || die 'delete_customer() requires a customer id';
+    method delete_customer($id) {
         $id = $id->id if ref($id);
         $self->_delete("customers/$id");
     }
 
-    method get_customers {
+    sub get_customers {
+        my $self = shift;
         $self->_get_collections('customers', @_);
     }
 }
@@ -242,34 +241,38 @@ Cards: {
 =cut
 
 Subscriptions: {
-    method get_subscription {
+    sub get_subscription {
+        my $self = shift;
         my %args = @_;
         my $cid = delete $args{customer_id};
         return $self->_get("customers/$cid/subscription");
     }
 
     # adds a subscription, keeping any existing subscriptions unmodified
-    method post_subscription {
+    sub post_subscription {
+        my $self = shift;
         my %args = @_;
         my $cid = delete $args{customer_id};
         my $subs = Net::Stripe::Subscription->new(%args);
         return $self->_post("customers/$cid/subscriptions", $subs);
     }
     
-    method update_subscription {
-      my %args = @_;
-      my $cid  = delete $args{customer_id};
-      my $sid  = delete $args{subscription_id};
-      return $self->_post("customers/$cid/subscriptions/$sid", \%args);
+    sub update_subscription {
+        my $self = shift;
+        my %args = @_;
+        my $cid  = delete $args{customer_id};
+        my $sid  = delete $args{subscription_id};
+        return $self->_post("customers/$cid/subscriptions/$sid", \%args);
     }
 
-    method delete_subscription {
-      my %args = @_;
-      my $cid  = delete $args{customer_id};
-      my $sid  = delete $args{subscription_id};
-      my $query = '';
-      $query .= '?at_period_end=true' if $args{at_period_end};
-      return $self->_delete("customers/$cid/subscriptions/$sid$query");
+    sub delete_subscription {
+        my $self = shift;
+        my %args = @_;
+        my $cid  = delete $args{customer_id};
+        my $sid  = delete $args{subscription_id};
+        my $query = '';
+        $query .= '?at_period_end=true' if $args{at_period_end};
+        return $self->_delete("customers/$cid/subscriptions/$sid$query");
     }
 }
 
@@ -281,13 +284,13 @@ Subscriptions: {
 =cut
 
 Tokens: {
-    method post_token {
+    sub post_token {
+        my $self = shift;
         my $token = Net::Stripe::Token->new(@_);
         return $self->_post('tokens', $token);
     }
 
-    method get_token {
-        my $id = shift || die 'get_token() requires a token id';
+    method get_token(Str $id) {
         return $self->_get("tokens/$id");
     }
 }
@@ -303,23 +306,23 @@ Tokens: {
 =cut
 
 Plans: {
-    method post_plan {
+    sub post_plan {
+        my $self = shift;
         my $plan = Net::Stripe::Plan->new(@_);
         return $self->_post('plans', $plan);
     }
 
-    method get_plan {
-        my $id = shift || die 'get_plan() requires a plan id';
+    method get_plan(Str $id) {
         return $self->_get("plans/" . uri_escape($id));
     }
 
-    method delete_plan {
-        my $id = shift || die 'delete_plan() requires a plan id';
+    method delete_plan($id) {
         $id = $id->id if ref($id);
         $self->_delete("plans/$id");
     }
 
-    method get_plans {
+    sub get_plans {
+        my $self = shift;
         $self->_get_collections('plans', @_);
     }
 }
@@ -336,23 +339,23 @@ Plans: {
 =cut
 
 Coupons: {
-    method post_coupon {
+    sub post_coupon {
+        my $self = shift;
         my $coupon = Net::Stripe::Coupon->new(@_);
         return $self->_post('coupons', $coupon);
     }
 
-    method get_coupon {
-        my $id = shift || die 'get_coupon() requires a coupon id';
+    method get_coupon(Str $id) {
         return $self->_get("coupons/" . uri_escape($id));
     }
 
-    method delete_coupon {
-        my $id = shift || die 'delete_coupon() requires a coupon id';
+    method delete_coupon($id) {
         $id = $id->id if ref($id);
         $self->_delete("coupons/$id");
     }
 
-    method get_coupons {
+    sub get_coupons {
+        my $self = shift;
         $self->_get_collections('coupons', @_);
     }
 }
@@ -369,22 +372,20 @@ Coupons: {
 =cut
 
 Invoices: {
-    method post_invoice {
-        my $i = shift;
+    method post_invoice($i) {
         return $self->_post("invoices/" . $i->id, $i);
     }
 
-    method get_invoice {
-        my $id = shift || die 'get_invoice() requires an invoice id';
+    method get_invoice(Str $id) {
         return $self->_get("invoices/$id");
     }
 
-    method get_invoices {
+    sub get_invoices {
+        my $self = shift;
         $self->_get_collections('invoices', @_);
     }
 
-    method get_upcominginvoice {
-        my $id = shift || die 'get_upcominginvoice() requires a customer id';
+    method get_upcominginvoice(Str $id) {
         return $self->_get("invoices/upcoming?customer=$id");
     }
 }
@@ -400,7 +401,8 @@ Invoices: {
 =cut
 
 InvoiceItems: {
-    method post_invoiceitem {
+    sub post_invoiceitem {
+        my $self = shift;
         # Update from an existing object
         if (@_ == 1) {
             my $i = shift;
@@ -412,40 +414,37 @@ InvoiceItems: {
         return $self->_post('invoiceitems', $invoiceitem);
     }
 
-    method get_invoiceitem {
-        my $id = shift || die 'get_invoiceitem() requires a invoiceitem id';
+    method get_invoiceitem(Str $id) {
         return $self->_get("invoiceitems/$id");
     }
 
-    method delete_invoiceitem {
-        my $id = shift || die 'delete_invoiceitem() requires a invoiceitem id';
+    method delete_invoiceitem($id) {
         $id = $id->id if ref($id);
         $self->_delete("invoiceitems/$id");
     }
 
-    method get_invoiceitems {
+    sub get_invoiceitems {
+        my $self = shift;
         $self->_get_collections('invoiceitems', @_);
     }
 }
 
 # Helper methods
 
-method _get {
-    my $path = shift;
+method _get(Str $path) {
     my $req = GET $self->api_base . '/' . $path;
     return $self->_make_request($req);
 }
 
-method _get_with_args {
-    my $path = shift;
-    my $args = shift;
+method _get_with_args(Str $path, $args?) {
     if (@$args) {
         $path .= "?" . join('&', @$args);
     }
     return $self->_get($path);
 }
 
-method _get_collections { 
+sub _get_collections { 
+    my $self = shift;
     my $path = shift;
     my %args = @_;
     my @path_args;
@@ -471,23 +470,18 @@ method _get_collections {
     return $self->_get_with_args($path, \@path_args);
 }
 
-method _delete {
-    my $path = shift;
+method _delete(Str $path) {
     my $req = DELETE $self->api_base . '/' . $path;
     return $self->_make_request($req);
 }
 
-method _post {
-    my $path = shift;
-    my $obj  = shift;
-
+method _post(Str $path, $obj?) {
     my $req = POST $self->api_base . '/' . $path, 
         ($obj ? (Content => [ref($obj) eq 'HASH' ? %$obj : $obj->form_fields]) : ());
     return $self->_make_request($req);
 }
 
-method _make_request {
-    my $req = shift;
+method _make_request($req) {
     $req->header( Authorization => 
         "Basic " . encode_base64($self->api_key . ':'));
 

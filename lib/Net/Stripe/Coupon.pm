@@ -1,7 +1,7 @@
 package Net::Stripe::Coupon;
 use Moose;
 use Moose::Util::TypeConstraints;
-use methods;
+use MooseX::Method::Signatures;
 extends 'Net::Stripe::Resource';
 
 # ABSTRACT: represent a Coupon object from Stripe

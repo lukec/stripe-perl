@@ -1,6 +1,6 @@
 package Net::Stripe::SubscriptionList;
 use Moose;
-use methods;
+use MooseX::Method::Signatures;
 extends 'Net::Stripe::Resource';
 
 # ABSTRACT: represent a list of Subscriptions from Stripe

@@ -1,6 +1,6 @@
 package Net::Stripe::Invoice;
 use Moose;
-use methods;
+use MooseX::Method::Signatures;
 extends 'Net::Stripe::Resource';
 
 # ABSTRACT: represent an Invoice object from Stripe

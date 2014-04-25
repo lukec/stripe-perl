@@ -1,6 +1,6 @@
 package Net::Stripe::Charge;
 use Moose;
-use methods;
+use MooseX::Method::Signatures;
 extends 'Net::Stripe::Resource';
 
 # ABSTRACT: represent an Charge object from Stripe

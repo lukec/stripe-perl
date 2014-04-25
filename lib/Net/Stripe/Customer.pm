@@ -1,6 +1,6 @@
 package Net::Stripe::Customer;
 use Moose;
-use methods;
+use MooseX::Method::Signatures;
 extends 'Net::Stripe::Resource';
 
 # ABSTRACT: represent a Customer object from Stripe

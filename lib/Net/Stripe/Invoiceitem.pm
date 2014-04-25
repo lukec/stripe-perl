@@ -1,6 +1,6 @@
 package Net::Stripe::Invoiceitem;
 use Moose;
-use methods;
+use MooseX::Method::Signatures;
 extends 'Net::Stripe::Resource';
 with 'MooseX::Clone';
 

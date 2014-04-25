@@ -1,6 +1,6 @@
 package Net::Stripe::Token;
 use Moose;
-use methods;
+use MooseX::Method::Signatures;
 extends 'Net::Stripe::Resource';
 
 # ABSTRACT: represent a Token object from Stripe
