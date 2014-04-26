@@ -81,6 +81,8 @@ Writer: debug
 
 Type: Bool
 
+Additional documentation: The debug flag
+
 =head2 debug_network
 
 Reader: debug_network
@@ -89,11 +91,15 @@ Writer: debug_network
 
 Type: Bool
 
+Additional documentation: The debug network request flag
+
 =head2 ua
 
 Reader: ua
 
 Type: Object
+
+Additional documentation: The LWP::UserAgent that is used for requests
 
 =head1 Balance Transaction Methods
 

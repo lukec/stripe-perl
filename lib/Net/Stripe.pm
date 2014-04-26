@@ -1455,8 +1455,13 @@ method _make_request($req) {
 sub _hash_to_object {
     my $hash   = shift;
 
-    foreach my $k (grep { ref($hash->{$_}) eq 'HASH' && defined($hash->{$_}->{object}) } keys %$hash) {
-        $hash->{$k} = _hash_to_object($hash->{$k});
+    foreach my $k (grep { ref($hash->{$_}) } keys %$hash) {
+        my $v = $hash->{$k};
+        if (ref($v) eq 'HASH' && defined($v->{object})) {
+            $hash->{$k} = _hash_to_object($v);
+        } elsif (ref($v) =~ /^(JSON::XS::Boolean|JSON::PP::Boolean)$/) {
+            $hash->{$k} = $v ? 1 : 0;
+        }
     }
 
     if (defined($hash->{object})) {
