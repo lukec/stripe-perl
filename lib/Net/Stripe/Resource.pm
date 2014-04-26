@@ -1,7 +1,6 @@
 package Net::Stripe::Resource;
 use Moose;
 use MooseX::Method::Signatures;
-use Data::Dumper;
 
 around BUILDARGS => sub {
     my $orig = shift;
