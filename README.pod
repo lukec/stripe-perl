@@ -107,6 +107,8 @@ L<https://stripe.com/docs/api#create_charge>
 
 Returns L<Net::Stripe::Charge>
 
+  $stripe->post_charge(currency => 'USD', amount => 500, customer => 'testcustomer');
+
 =head2 get_charge
 
 Retrieve a charge.
@@ -120,6 +122,8 @@ L<https://stripe.com/docs/api#retrieve_charge>
 =back
 
 Returns L<Net::Stripe::Charge>
+
+  $stripe->get_charge(charge_id => 'chargeid');
 
 =head2 refund_charge
 
@@ -136,6 +140,8 @@ L<https://stripe.com/docs/api#refund_charge>
 =back
 
 Returns a new L<Net::Stripe::Charge>.
+
+  $stripe->refund_charge(charge => $charge, amount => 500);
 
 =head2 get_charges
 
@@ -158,6 +164,8 @@ L<https://stripe.com/docs/api#list_charges>
 =back
 
 Returns a list of L<Net::Stripe::Charge> objects.
+
+  $stripe->get_charges(customer => $customer, limit => 5);
 
 =head1 Customer Methods
 
@@ -841,8 +849,6 @@ Returns a list of L<Net::Stripe::Invoiceitem> objects
 
 L<https://stripe.com>, L<https://stripe.com/docs/api>
 
-=head1 CONTRIBUTORS
-
 =head1 AUTHORS
 
 =over 4
@@ -909,7 +915,7 @@ Tom Eliaz <tom@tomeliaz.com>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2011 by Prime Radiant, Inc., Copyright 2014 Lucky Dinosaur LLC..
+This software is copyright (c) 2011 by Prime Radiant, Inc., (c) copyright 2014 Lucky Dinosaur LLC..
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.

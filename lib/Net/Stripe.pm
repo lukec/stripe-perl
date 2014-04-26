@@ -110,6 +110,8 @@ L<https://stripe.com/docs/api#create_charge>
 
 Returns L<Net::Stripe::Charge>
 
+  $stripe->post_charge(currency => 'USD', amount => 500, customer => 'testcustomer');
+
 =charge_method get_charge
 
 Retrieve a charge.
@@ -123,6 +125,8 @@ L<https://stripe.com/docs/api#retrieve_charge>
 =back
 
 Returns L<Net::Stripe::Charge>
+
+  $stripe->get_charge(charge_id => 'chargeid');
 
 =charge_method refund_charge
 
@@ -139,6 +143,8 @@ L<https://stripe.com/docs/api#refund_charge>
 =back
 
 Returns a new L<Net::Stripe::Charge>.
+
+  $stripe->refund_charge(charge => $charge, amount => 500);
 
 =charge_method get_charges
 
@@ -161,6 +167,8 @@ L<https://stripe.com/docs/api#list_charges>
 =back
 
 Returns a list of L<Net::Stripe::Charge> objects.
+
+  $stripe->get_charges(customer => $customer, limit => 5);
 
 =cut
 
@@ -1474,8 +1482,6 @@ method _build_ua {
 =head1 SEE ALSO
 
 L<https://stripe.com>, L<https://stripe.com/docs/api>
-
-=head1 CONTRIBUTORS
 
 =cut
 
