@@ -716,7 +716,7 @@ L<https://stripe.com/docs/api#retrieve_token>
 
 =over
 
-=item token_id - Str
+=item * token_id - Str
 
 =back
 
@@ -869,7 +869,7 @@ Plans: {
 
 =coupon_method post_coupon
 
-Create a coupon
+Create or update a coupon
 
 L<https://stripe.com/docs/api#create_coupon>
 
@@ -998,9 +998,7 @@ Coupons: {
 
 =invoice_method post_invoice
 
-Create a new invoice
-
-L<https://stripe.com/docs/api#create_invoice>
+Update an invoice
 
 =over
 
@@ -1018,6 +1016,8 @@ L<https://stripe.com/docs/api#create_invoice>
 
 Returns a L<Net::Stripe::Invoice>
 
+  $stripe->post_invoice(invoice => $invoice, closed => 'true')
+
 =invoice_method get_invoice
 
 =over
@@ -1028,7 +1028,7 @@ Returns a L<Net::Stripe::Invoice>
 
 Returns a L<Net::Stripe::Invoice>
 
-=invoice_method get_upcominginvoice( COUPON_ID )
+  $stripe->get_invoice(invoice_id => 'testinvoice');
 
 =invoice_method get_invoices
 
@@ -1052,6 +1052,8 @@ L<https://stripe.com/docs/api#list_customer_invoices>
 
 Returns a list of L<Net::Stripe::Invoices>
 
+  $stripe->get_invoices(limit => 10);
+
 =invoice_method create_invoice
 
 Create a new invoice
@@ -1073,6 +1075,8 @@ L<https://stripe.com/docs/api#create_invoice>
 =back
 
 Returns a L<Net::Stripe::Invoice>
+  
+  $stripe->create_invoice(customer => 'custid', description => 'test');
 
 =invoice_method get_invoice
 
@@ -1084,16 +1088,19 @@ Returns a L<Net::Stripe::Invoice>
 
 Returns a L<Net::Stripe::Invoice>
 
+  $stripe->get_invoice(invoice_id => 'test');
 
 =invoice_method get_upcominginvoice
 
 =over
 
-=item * customer, Net::Stripe::Cusotmer or Str
+=item * customer, L<Net::Stripe::Cusotmer> or Str
 
 =back
 
 Returns a L<Net::Stripe::Invoice>
+
+  $stripe->get_upcominginvoice(customer => $customer);
 
 =cut
 
@@ -1166,7 +1173,7 @@ Invoices: {
     }
 }
 
-=invoiceitem_method create_invoiceitem( PARAMHASH | OBJECT )
+=invoiceitem_method create_invoiceitem
 
 Create an invoice item.
 
@@ -1192,7 +1199,9 @@ L<https://stripe.com/docs/api#create_invoiceitem>
 
 Returns a L<Net::Stripe::Invoiceitem> object
 
-=invoiceitem_method post_invoiteitem
+  $stripe->create_invoiceitem(customer => 'test', amount => 500, currency => 'USD');
+
+=invoiceitem_method post_invoiceitem
 
 Update an invoice item.
 
@@ -1212,6 +1221,8 @@ L<https://stripe.com/docs/api#create_invoiceitem>
 
 Returns a L<Net::Stripe::Invoiceitem>
 
+  $stripe->post_invoiceitem(invoice_item => 'itemid', amount => 750);
+
 =invoiceitem_method get_invoiceitem
 
 Retrieve an invoice item.
@@ -1224,6 +1235,8 @@ Retrieve an invoice item.
 
 Returns a L<Net::Stripe::Invoiceitem>
 
+  $stripe->get_invoiceitem(invoice_item => 'testitemid');
+
 =invoiceitem_method delete_invoiceitem
 
 Delete an invoice item
@@ -1235,6 +1248,8 @@ Delete an invoice item
 =back
 
 Returns a L<Net::Stripe::Invoiceitem>
+
+  $stripe->delete_invoiceitem(invoice_item => $invoice_item);
 
 =invoiceitem_method get_invoiceitems
 
@@ -1253,6 +1268,8 @@ Returns a L<Net::Stripe::Invoiceitem>
 =back
 
 Returns a list of L<Net::Stripe::Invoiceitem> objects
+
+  $stripe->get_invoiceitems(customer => 'test', limit => 30);
 
 =cut
 

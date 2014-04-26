@@ -445,7 +445,7 @@ L<https://stripe.com/docs/api#retrieve_token>
 
 =over
 
-=item token_id - Str
+=item * token_id - Str
 
 =back
 
@@ -545,7 +545,7 @@ Returns a list of L<Net::Stripe::Plan>
 
 =head2 post_coupon
 
-Create a coupon
+Create or update a coupon
 
 L<https://stripe.com/docs/api#create_coupon>
 
@@ -633,9 +633,7 @@ Returns a list of L<Net::Stripe::Coupon>
 
 =head2 post_invoice
 
-Create a new invoice
-
-L<https://stripe.com/docs/api#create_invoice>
+Update an invoice
 
 =over
 
@@ -653,6 +651,8 @@ L<https://stripe.com/docs/api#create_invoice>
 
 Returns a L<Net::Stripe::Invoice>
 
+  $stripe->post_invoice(invoice => $invoice, closed => 'true')
+
 =head2 get_invoice
 
 =over
@@ -663,7 +663,7 @@ Returns a L<Net::Stripe::Invoice>
 
 Returns a L<Net::Stripe::Invoice>
 
-=head2 get_upcominginvoice( COUPON_ID )
+  $stripe->get_invoice(invoice_id => 'testinvoice');
 
 =head2 get_invoices
 
@@ -687,6 +687,8 @@ L<https://stripe.com/docs/api#list_customer_invoices>
 
 Returns a list of L<Net::Stripe::Invoices>
 
+  $stripe->get_invoices(limit => 10);
+
 =head2 create_invoice
 
 Create a new invoice
@@ -709,6 +711,8 @@ L<https://stripe.com/docs/api#create_invoice>
 
 Returns a L<Net::Stripe::Invoice>
 
+  $stripe->create_invoice(customer => 'custid', description => 'test');
+
 =head2 get_invoice
 
 =over
@@ -719,19 +723,23 @@ Returns a L<Net::Stripe::Invoice>
 
 Returns a L<Net::Stripe::Invoice>
 
+  $stripe->get_invoice(invoice_id => 'test');
+
 =head2 get_upcominginvoice
 
 =over
 
-=item * customer, Net::Stripe::Cusotmer or Str
+=item * customer, L<Net::Stripe::Cusotmer> or Str
 
 =back
 
 Returns a L<Net::Stripe::Invoice>
 
+  $stripe->get_upcominginvoice(customer => $customer);
+
 =head1 Invoice Item Methods
 
-=head2 create_invoiceitem( PARAMHASH | OBJECT )
+=head2 create_invoiceitem
 
 Create an invoice item.
 
@@ -757,7 +765,9 @@ L<https://stripe.com/docs/api#create_invoiceitem>
 
 Returns a L<Net::Stripe::Invoiceitem> object
 
-=head2 post_invoiteitem
+  $stripe->create_invoiceitem(customer => 'test', amount => 500, currency => 'USD');
+
+=head2 post_invoiceitem
 
 Update an invoice item.
 
@@ -777,6 +787,8 @@ L<https://stripe.com/docs/api#create_invoiceitem>
 
 Returns a L<Net::Stripe::Invoiceitem>
 
+  $stripe->post_invoiceitem(invoice_item => 'itemid', amount => 750);
+
 =head2 get_invoiceitem
 
 Retrieve an invoice item.
@@ -789,6 +801,8 @@ Retrieve an invoice item.
 
 Returns a L<Net::Stripe::Invoiceitem>
 
+  $stripe->get_invoiceitem(invoice_item => 'testitemid');
+
 =head2 delete_invoiceitem
 
 Delete an invoice item
@@ -800,6 +814,8 @@ Delete an invoice item
 =back
 
 Returns a L<Net::Stripe::Invoiceitem>
+
+  $stripe->delete_invoiceitem(invoice_item => $invoice_item);
 
 =head2 get_invoiceitems
 
@@ -819,15 +835,27 @@ Returns a L<Net::Stripe::Invoiceitem>
 
 Returns a list of L<Net::Stripe::Invoiceitem> objects
 
+  $stripe->get_invoiceitems(customer => 'test', limit => 30);
+
 =head1 SEE ALSO
 
 L<https://stripe.com>, L<https://stripe.com/docs/api>
 
 =head1 CONTRIBUTORS
 
-=head1 AUTHOR
+=head1 AUTHORS
+
+=over 4
+
+=item *
 
 Luke Closs
+
+=item *
+
+Rusty Conover
+
+=back
 
 =head1 CONTRIBUTORS
 
@@ -881,7 +909,7 @@ Tom Eliaz <tom@tomeliaz.com>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2011 by Copyright 2011, Prime Radiant, Inc..
+This software is copyright (c) 2011 by Prime Radiant, Inc., Copyright 2014 Lucky Dinosaur LLC..
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
