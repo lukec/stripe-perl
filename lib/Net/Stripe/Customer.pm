@@ -19,7 +19,7 @@ has 'metadata'    => (is => 'rw', isa => 'Maybe[HashRef]');
 has 'id'           => (is => 'ro', isa => 'Maybe[Str]');
 has 'deleted'      => (is => 'ro', isa => 'Maybe[Bool|Object]', default => 0);
 has 'default_card' => (is => 'ro', isa => 'Maybe[StripeCard]');
-has 'subscriptions' => (is => 'ro', isa => 'Net::Stripe::SubscriptionList');
+has 'subscriptions' => (is => 'ro', isa => 'Net::Stripe::List');
 has 'subscription' => (is => 'ro',
                        lazy => 1,
                        builder => '_build_subscription');

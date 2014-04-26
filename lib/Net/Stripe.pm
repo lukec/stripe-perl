@@ -16,9 +16,9 @@ use Net::Stripe::Charge;
 use Net::Stripe::Customer;
 use Net::Stripe::Discount;
 use Net::Stripe::Subscription;
-use Net::Stripe::SubscriptionList;
 use Net::Stripe::Error;
 use Net::Stripe::BalanceTransaction;
+use Net::Stripe::List;
 
 our $VERSION = '0.09';
 
@@ -148,7 +148,7 @@ Returns a new L<Net::Stripe::Charge>.
 
 =charge_method get_charges
 
-Return a list of charges based on criteria.
+Returns a L<Net::Stripe::List> object containing L<Net::Stripe::Charge> objects.
 
 L<https://stripe.com/docs/api#list_charges>
 
@@ -329,7 +329,7 @@ L<https://stripe.com/docs/api#retrieve_customer>
 
 =back
 
-Returns a L<Net::Stripe::Customer> object
+Returns a L<Net::Stripe::List> object containing L<Net::Stripe::Customer> objects.
 
   $stripe->get_customer(customer_id => $id);
 
@@ -367,7 +367,7 @@ L<https://stripe.com/docs/api#list_customers>
 
 =back
 
-Returns a list of L<Net::Stripe::Customer> objects.
+Returns a L<Net::Stripe::List> object containing L<Net::Stripe::Customer> objects.
 
   $stripe->get_customers(limit => 7);
 
@@ -493,7 +493,7 @@ L<https://stripe.com/docs/api#list_cards>
 
 =back
 
-Returns a list of L<Net::Stripe::Card> objects
+Returns a L<Net::Stripe::List> object containing L<Net::Stripe::Card> objects.
 
   $stripe->list_cards(customer => 'abcdec', limit => 10);
 
@@ -827,7 +827,7 @@ L<https://stripe.com/docs/api#list_plans>
 
 =back
 
-Returns a list of L<Net::Stripe::Plan>
+Returns a L<Net::Stripe::List> object containing L<Net::Stripe::Plan> objects.
 
   $stripe->get_plans(limit => 10);
 
@@ -957,7 +957,7 @@ Returns a L<Net::Stripe::Coupon>
 
 =back
 
-Returns a list of L<Net::Stripe::Coupon>
+Returns a L<Net::Stripe::List> object containing L<Net::Stripe::Coupon> objects.
 
   $stripe->get_coupons(limit => 15);
 
@@ -1058,7 +1058,7 @@ L<https://stripe.com/docs/api#list_customer_invoices>
 
 =back
 
-Returns a list of L<Net::Stripe::Invoices>
+Returns a L<Net::Stripe::List> object containing L<Net::Stripe::Invoice> objects.
 
   $stripe->get_invoices(limit => 10);
 
@@ -1275,7 +1275,7 @@ Returns a L<Net::Stripe::Invoiceitem>
 
 =back
 
-Returns a list of L<Net::Stripe::Invoiceitem> objects
+Returns a L<Net::Stripe::List> object containing L<Net::Stripe::Invoiceitem> objects.
 
   $stripe->get_invoiceitems(customer => 'test', limit => 30);
 
@@ -1432,7 +1432,11 @@ method _make_request($req) {
           foreach my $object_data (@{$hash->{data}}) {
             push @objects, hash_to_object($object_data);            
           }
-          return \@objects;
+          return Net::Stripe::List->new(count => $hash->{count},
+                                        url =>$hash->{url},
+                                        has_more => $hash->{has_more} ? 1 : 0,
+                                        data => \@objects);
+
         }     
         return hash_to_object($hash) if $hash->{object};
         if (my $data = $hash->{data}) {

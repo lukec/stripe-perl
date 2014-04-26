@@ -25,7 +25,7 @@ around BUILDARGS => sub {
             if (defined($s->{data}) && ref($s->{data}) eq 'ARRAY') {
                 $s->{data} = [map { Net::Stripe::Subscription->new($_) } @{$s->{data}}];
             }
-            $args{subscriptions} = Net::Stripe::SubscriptionList->new($s);
+            $args{subscriptions} = Net::Stripe::List->new($s);
         }
     }
 
