@@ -76,10 +76,9 @@ You can set this to true to see the actual network requests.
 
 has 'debug'         => (is => 'rw', isa => 'Bool',   default    => 0, documentation => "The debug flag");
 has 'debug_network' => (is => 'rw', isa => 'Bool',   default    => 0, documentation => "The debug network request flag");
-has 'api_key'       => (is => 'ro', isa => 'Str',    required   => 1);
-has 'api_base'      => (is => 'ro', isa => 'Str',    lazy_build => 1);
+has 'api_key'       => (is => 'ro', isa => 'Str',    required   => 1, documentation => "You get this from your Stripe Account settings");
+has 'api_base'      => (is => 'ro', isa => 'Str',    lazy_build => 1, documentation => "This is the base part of the URL for every request made");
 has 'ua'            => (is => 'ro', isa => 'Object', lazy_build => 1, documentation => "The LWP::UserAgent that is used for requests");
-
 
 =charge_method post_charge
 
