@@ -10,7 +10,7 @@ has 'created'             => (is => 'ro', isa => 'Maybe[Int]');
 has 'amount'              => (is => 'ro', isa => 'Maybe[Int]', required => 1);
 has 'currency'            => (is => 'ro', isa => 'Maybe[Str]', required => 1);
 has 'customer'            => (is => 'ro', isa => 'Maybe[Str]');
-has 'card'                => (is => 'ro', isa => 'Maybe[StripeCard]');
+has 'card'                => (is => 'ro', isa => 'Maybe[Net::Stripe::Token|Net::Stripe::Card|Str]');
 has 'description'         => (is => 'ro', isa => 'Maybe[Str]');
 has 'livemode'            => (is => 'ro', isa => 'Maybe[Bool|Object]');
 has 'paid'                => (is => 'ro', isa => 'Maybe[Bool|Object]');

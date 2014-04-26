@@ -9,16 +9,16 @@ extends 'Net::Stripe::Resource';
 has 'email'       => (is => 'rw', isa => 'Maybe[Str]');
 has 'description' => (is => 'rw', isa => 'Maybe[Str]');
 has 'trial_end'   => (is => 'rw', isa => 'Maybe[Int|Str]');
-has 'card'        => (is => 'rw', isa => 'Maybe[StripeCard]');
-has 'plan'        => (is => 'rw', isa => 'Maybe[StripePlan|Str]');
-has 'coupon'      => (is => 'rw', isa => 'Maybe[StripeCoupon]');
+has 'card'        => (is => 'rw', isa => 'Maybe[Net::Stripe::Token|Net::Stripe::Card|Str]');
+has 'plan'        => (is => 'rw', isa => 'Maybe[Net::Stripe::Plan|Str]');
+has 'coupon'      => (is => 'rw', isa => 'Maybe[Net::Stripe::Coupon|Str]');
 has 'discount'    => (is => 'rw', isa => 'Maybe[Net::Stripe::Discount]');
 has 'metadata'    => (is => 'rw', isa => 'Maybe[HashRef]');
 
 # API object args
 has 'id'           => (is => 'ro', isa => 'Maybe[Str]');
 has 'deleted'      => (is => 'ro', isa => 'Maybe[Bool|Object]', default => 0);
-has 'default_card' => (is => 'ro', isa => 'Maybe[StripeCard]');
+has 'default_card' => (is => 'ro', isa => 'Maybe[Net::Stripe::Token|Net::Stripe::Card|Str]');
 has 'subscriptions' => (is => 'ro', isa => 'Net::Stripe::List');
 has 'subscription' => (is => 'ro',
                        lazy => 1,

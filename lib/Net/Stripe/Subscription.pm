@@ -6,10 +6,10 @@ extends 'Net::Stripe::Resource';
 # ABSTRACT: represent a Subscription object from Stripe
 
 has 'id' => (is => 'ro', isa => 'Maybe[Str]');
-has 'plan' => (is => 'rw', isa => 'Maybe[StripePlan]');
-has 'coupon'    => (is => 'rw', isa => 'Maybe[StripeCoupon]');
+has 'plan' => (is => 'rw', isa => 'Maybe[Net::Stripe::Plan|Str]');
+has 'coupon'    => (is => 'rw', isa => 'Maybe[Net::Stripe::Coupon|Str]');
 has 'prorate'   => (is => 'rw', isa => 'Maybe[Bool|Object]');
-has 'card'      => (is => 'rw', isa => 'Maybe[StripeCard]');
+has 'card'      => (is => 'rw', isa => 'Maybe[Net::Stripe::Token|Net::Stripe::Card|Str]');
 has 'quantity'  => (is => 'rw', isa => 'Maybe[Int]', default => 1);
 
 # Other fields returned by the API

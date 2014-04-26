@@ -6,8 +6,6 @@ extends 'Net::Stripe::Resource';
 
 # ABSTRACT: represent a Plan object from Stripe
 
-union 'StripePlan', ['Str', 'Net::Stripe::Plan'];
-
 subtype 'StatementDescription',
     as 'Str',
     where { !defined($_) || $_ =~ /^[^<>"']{0,15}$/ },
