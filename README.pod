@@ -6,7 +6,7 @@ Net::Stripe - API client for Stripe.com
 
 =head1 VERSION
 
-version 0.11
+version 0.13
 
 =head1 SYNOPSIS
 
@@ -22,7 +22,7 @@ version 0.11
  my $card = $charge->card;           # Net::Stripe::Card
 
  # look up a charge by id
- my $same_charge = $stripe->get_charge($charge->id);
+ my $same_charge = $stripe->get_charge(charge_id => $charge->id);
 
  # ... and the api mirrors https://stripe.com/docs/api
  # Charges: post_charge() get_charge() refund_charge() get_charges()
@@ -57,103 +57,811 @@ You can set this to true to see the actual network requests.
 
 =back
 
+=head1 Balance Transaction Methods
+
+=head2 get_balance_transaction
+
+Retrieve a balance transaction
+
+L<https://stripe.com/docs/api#retrieve_balance_transaction>
+
+=over
+
+=item * id - Str - balance transaction ID to retrieve.
+
+=back
+
+Returns a L<Net::Stripe::BalanceTransaction>
+
+  $stripe->get_balance_transaction(id => 'id');
+
 =head1 Charge Methods
 
-=head2 post_charge( PARAMHASH | OBJECT )
+=head2 post_charge
 
-=head2 get_charge( CHARGE_ID )
+Create a new charge
 
-=head2 refund_charge( CHARGE_ID )
+L<https://stripe.com/docs/api#create_charge>
 
-=head2 get_charges( PARAMHASH )
+=over
+
+=item * amount - Int - amount to charge
+
+=item * currency - Str - currency for charge
+
+=item * customer - L<Net::Stripe::Customer>, HashRef or Str - customer to charge - optional
+
+=item * card - L<Net::Stripe::Card>, L<Net::Stripe::Token>, Str or HashRef - card to use - optional
+
+=item * description - Str - description for the charge - optional
+
+=item * metadata - HashRef - metadata for the charge - optional
+
+=item * capture - Bool - optional
+
+=item * statement_description - Str - description for statement - optional
+
+=item * application_fee - Int - optional
+
+=back
+
+Returns L<Net::Stripe::Charge>
+
+  $stripe->post_charge(currency => 'USD', amount => 500, customer => 'testcustomer');
+
+=head2 get_charge
+
+Retrieve a charge.
+
+L<https://stripe.com/docs/api#retrieve_charge>
+
+=over
+
+=item * charge_id - Str - charge id to retrieve
+
+=back
+
+Returns L<Net::Stripe::Charge>
+
+  $stripe->get_charge(charge_id => 'chargeid');
+
+=head2 refund_charge
+
+Refunds a charge
+
+L<https://stripe.com/docs/api#refund_charge>
+
+=over
+
+=item * charge - L<Net::Stripe::Charge> or Str - charge or charge_id to refund
+
+=item * amount - Int - amount to refund in cents, optional
+
+=back
+
+Returns a new L<Net::Stripe::Charge>.
+
+  $stripe->refund_charge(charge => $charge, amount => 500);
+
+=head2 get_charges
+
+Return a list of charges based on criteria.
+
+L<https://stripe.com/docs/api#list_charges>
+
+=over
+
+=item * created - HashRef - created conditions to match, optional
+
+=item * customer - L<Net::Stripe::Customer> or Str - customer to match
+
+=item * ending_before - Str - ending before condition, optional
+
+=item * limit - Int - maximum number of charges to return, optional
+
+=item * starting_after - Str - starting after condition, optional
+
+=back
+
+Returns a list of L<Net::Stripe::Charge> objects.
+
+  $stripe->get_charges(customer => $customer, limit => 5);
 
 =head1 Customer Methods
 
-=head2 post_customer( PARAMHASH | OBJECT )
+=head2 post_customer
 
-=head2 get_customer( CUSTOMER_ID )
+Create or update a customer.
 
-=head2 delete_customer( CUSTOMER_ID )
+L<https://stripe.com/docs/api#create_customer>
 
-=head2 post_customer_subscription( CUSTOMER_ID, PARAMHASH )
+=over
 
-=head2 get_customers( PARAMHASH )
+=item * customer - L<Net::Stripe::Customer> - existing customer to update, optional
+
+=item * account_balance - Int, optional
+
+=item * card - L<Net::Stripe::Card>, L<Net::Stripe::Token>, Str or HashRef, default card for the customer, optional
+
+=item * coupon - Str, optional
+
+=item * description - Str, optional
+
+=item * email - Str, optional
+
+=item * metadata - HashRef, optional
+
+=item * plan - Str, optional
+
+=item * quantity - Int, optional
+
+=item * trial_end - Int, optional
+
+=back
+
+Returns a L<Net::Stripe::Customer> object
+
+  my $customer = $stripe->post_customer(
+    card => $fake_card,
+    email => 'stripe@example.com',
+    description => 'Test for Net::Stripe',
+  );
+
+=head2 list_subscriptions
+
+Returns the subscriptions for a customer
+
+L<https://stripe.com/docs/api#list_subscriptions>
+
+=over
+
+=item * customer - L<Net::Stripe::Customer> or Str
+
+=item * ending_before - Str, optional
+
+=item * limit - Int, optional
+
+=item * starting_after - Str, optional
+
+=back
+
+Returns a list of L<Net::Stripe::Subscription> objects
+
+=head2 get_customer
+
+Retrieve a customer
+
+L<https://stripe.com/docs/api#retrieve_customer>
+
+=over
+
+=item * customer_id - Str - the customer id to retrieve
+
+=back
+
+Returns a L<Net::Stripe::Customer> object
+
+  $stripe->get_customer(customer_id => $id);
+
+=head2 delete_customer
+
+Delete a customer
+
+L<https://stripe.com/docs/api#delete_customer>
+
+=over
+
+=item * customer - L<Net::Stripe::Customer> or Str - the customer to delete
+
+=back
+
+Returns a L<Net::Stripe::Customer> object
+
+  $stripe->delete_customer(customer => $customer);
+
+=head2 get_customers
+
+Returns a list of customers.
+
+L<https://stripe.com/docs/api#list_customers>
+
+=over
+
+=item * created - HashRef - created conditions, optional
+
+=item * ending_before - Str, optional
+
+=item * limit - Int, optional
+
+=item * starting_after - Str, optional
+
+=back
+
+Returns a list of L<Net::Stripe::Customer> objects.
+
+  $stripe->get_customers(limit => 7);
 
 =head1 Card Methods
 
-=head2 post_card( PARAMHASH )
+=head2 get_card
 
-=head2 get_card( customer_id => CUSTOMER_ID, card_id => CARD_ID )
+Retrieve information about a customer's card.
 
-=head2 get_cards( customer_id => CUSTOMER_ID)
+L<https://stripe.com/docs/api#retrieve_card>
 
-=head2 update_card( customer_id => CUSTOMER_ID, card_id => CARD_ID)
+=over
 
-=head2 delete_card( customer_id => CUSTOMER_ID, card_id => CARD_ID )
+=item * customer - L<Net::Stripe::Customer> or Str - the customer
+
+=item * card_id - Str - the card ID to retrieve
+
+=back
+
+Returns a L<Net::Stripe::Card>
+
+  $stripe->get_card(customer => 'customer_id', card_id => 'abcdef');
+
+=head2 post_card
+
+Create or update a card
+
+L<https://stripe.com/docs/api#create_card>
+
+=over
+
+=item * customer - L<Net::Stripe::Customer> or Str
+
+=item * card - L<Net::Stripe::Card> or HashRef
+
+=back
+
+Returns a L<Net::Stripe::Card>
+
+  $stripe->create_card(customer => $customer, card => $card);
+
+=head2 get_cards
+
+Returns a list of cards
+
+L<https://stripe.com/docs/api#list_cards>
+
+=over
+
+=item * customer - L<Net::Stripe::Customer> or Str 
+
+=item * ending_before - Str, optional
+
+=item * limit - Int, optional
+
+=item * starting_after - Str, optional
+
+=back
+
+Returns a list of L<Net::Stripe::Card> objects
+
+  $stripe->list_cards(customer => 'abcdec', limit => 10);
+
+=head2 delete_card
+
+Delete a card.
+
+L<https://stripe.com/docs/api#delete_card>
+
+=over
+
+=item * customer - L<Net::Stripe::Customer> or Str
+
+=item * card - L<Net::Stripe::Card> or Str
+
+=back
+
+Returns a L<Net::Stripe::Card>.
+
+  $stripe->delete_card(customer => $customer, card => $card);
 
 =head1 Subscription Methods
 
-=head2 post_subscription( PARAMHASH )
+=head2 post_subscription
 
-=head2 get_subscription( customer_id => CUSTOMER_ID )
+Adds or updates a subscription for a customer.
 
-=head2 delete_subscription( customer_id => CUSTOMER_ID )
+L<https://stripe.com/docs/api#create_subscription>
+
+=over
+
+=item * customer - L<Net::Stripe::Customer>
+
+=item * subscription - L<Net::Stripe::Subscription> or Str 
+
+=item * card - L<Net::Stripe::Card>, L<Net::Stripe::Token>, Str or HashRef, default card for the customer, optional
+
+=item * coupon - Str, optional
+
+=item * description - Str, optional
+
+=item * plan - Str, optional
+
+=item * quantity - Int, optional
+
+=item * trial_end - Int, optional
+
+=item * application_fee_percent - Int, optional
+
+=back
+
+Returns a L<Net::Stripe::Customer> object
+
+  $stripe->post_subscription(customer => $customer, plan => 'testplan');
+
+=head2 get_subscription
+
+Returns a customers subscription
+
+=over
+
+=item * customer - L<Net::Stripe::Customer> or Str
+
+=back
+
+Returns a L<Net::Stripe::Subscription>
+
+  $stripe->get_subscription(customer => 'test123');
+
+=head2 delete_subscription
+
+Cancel a customer's subscription
+
+L<https://stripe.com/docs/api#cancel_subscription>
+
+=over
+
+=item * customer - L<Net::Stripe::Customer> or Str 
+
+=item * subscription - L<Net::Stripe::Subscription> or Str 
+
+=item * at_period_end - Bool, optional
+
+=back
+
+Returns a L<Net::Stripe::Subscription> object.
+
+  $stripe->delete_subscription(customer => $customer, subscription => $subscription);
 
 =head1 Token Methods
 
-=head2 post_token( PARAMHASH )
+=head2 post_token
 
-=head2 get_token( TOKEN_ID )
+Create a new token
+
+L<https://stripe.com/docs/api#create_card_token>
+
+=over
+
+=item card - L<Net::Stripe::Card> or HashRef 
+
+=back
+
+Returns a L<Net::Stripe::Token>
+
+  $stripe->post_token(card => $test_card);
+
+=head2 get_token
+
+Retreives an existing token.
+
+L<https://stripe.com/docs/api#retrieve_token>
+
+=over
+
+=item * token_id - Str
+
+=back
+
+Returns a L<Net::Stripe::Token>
+
+  $stripe->get_token(token_id => 'testtokenid');
 
 =head1 Plan Methods
 
-=head2 post_plan( PARAMHASH )
+=head2 post_plan
 
-=head2 get_plan( PLAN_ID )
+Create a new plan
 
-=head2 delete_plan( PLAN_ID )
+L<https://stripe.com/docs/api#create_plan>
 
-=head2 get_plans( PARAMHASH )
+=over
+
+=item * id - Str - identifier of the plan
+
+=item * amount - Int - cost of the plan in cents
+
+=item * currency - Str
+
+=item * interval - Str
+
+=item * interval_count - Int - optional
+
+=item * name - Str - name of the plan
+
+=item * trial_period_days - Int - optional
+
+=item * statement_description - Str - optional
+
+=back
+
+Returns a L<Net::Stripe::Plan> object
+
+  $stripe->post_plan(
+     id => "free-$future_ymdhms",
+     amount => 0,
+     currency => 'usd',
+     interval => 'year',
+     name => "Freeplan $future_ymdhms",
+  );
+
+=head2 get_plan
+
+Retrieves a plan.
+
+=over
+
+=item * plan_id - Str
+
+=back
+
+Returns a L<Net::Stripe::Plan>
+
+  $stripe->get_plan(plan_id => 'plan123');
+
+=head2 delete_plan
+
+Delete a plan.
+
+L<https://stripe.com/docs/api#delete_plan>
+
+=over
+
+=item * plan_id - L<Net::Stripe::Plan> or Str
+
+=back
+
+Returns a L<Net::Stripe::Plan> object
+
+  $stripe->delete_plan(plan_id => $plan);
+
+=head2 get_plans
+
+Return a list of Plans
+
+L<https://stripe.com/docs/api#list_plans>
+
+=over
+
+=item * ending_before - Str, optional
+
+=item * limit - Int, optional
+
+=item * starting_after - Str, optional
+
+=back
+
+Returns a list of L<Net::Stripe::Plan>
+
+  $stripe->get_plans(limit => 10);
 
 =head1 Coupon Methods
 
-=head2 post_coupon( PARAMHASH )
+=head2 post_coupon
 
-=head2 get_coupon( COUPON_ID )
+Create or update a coupon
 
-=head2 delete_coupon( COUPON_ID )
+L<https://stripe.com/docs/api#create_coupon>
 
-=head2 get_coupons( PARAMHASH )
+=over
+
+=item * id - Str, optional
+
+=item * duration - Str
+
+=item * amount_offset - Int, optional
+
+=item * currency - Str, optional
+
+=item * duration_in_months - Int, optional
+
+=item * max_redemptions - Int, optional
+
+=item * metadata - HashRef, optional
+
+=item * percent_off - Int, optional
+
+=item * redeem_by - Int, optional
+
+=back
+
+Returns a L<Net::Stripe::Coupon> object.
+
+  $stripe->post_coupon(
+     id => $coupon_id,
+     percent_off => 100,
+     duration => 'once',
+     max_redemptions => 1,
+     redeem_by => time() + 100,
+  );
+
+=head2 get_coupon
+
+Retreive a coupon
+
+L<https://stripe.com/docs/api#retrieve_coupon>
+
+=over
+
+=item * coupon_id - Str
+
+=back
+
+Returns a L<Net::Stripe::Coupon> object.
+
+  $stripe->get_coupon(coupon_id => 'id');
+
+=head2 delete_coupon
+
+Delete a coupon
+
+L<https://stripe.com/docs/api#delete_coupon>
+
+=over
+
+=item * coupon_id - Str
+
+=back
+
+Returns a L<Net::Stripe::Coupon>
+
+  $stripe->delete_coupon(coupon_id => 'coupon123');
+
+=head2 get_coupons
+
+=over
+
+=item * ending_before - Str, optional
+
+=item * limit - Int, optional
+
+=item * starting_after - Str, optional
+
+=back
+
+Returns a list of L<Net::Stripe::Coupon>
+
+  $stripe->get_coupons(limit => 15);
 
 =head1 Invoice Methods
 
-=head2 post_invoice( OBJECT )
+=head2 post_invoice
 
-=head2 get_invoice( INVOICE_ID )
+Update an invoice
 
-=head2 get_upcominginvoice( COUPON_ID )
+=over
 
-=head2 get_invoices( PARAMHASH )
+=item * invoice - L<Net::Stripe::Invoice>, Str 
+
+=item * application_fee - Int - optional
+
+=item * closed - Bool - optional
+
+=item * description - Str - optional
+
+=item * metadata - HashRef - optional
+
+=back
+
+Returns a L<Net::Stripe::Invoice>
+
+  $stripe->post_invoice(invoice => $invoice, closed => 'true')
+
+=head2 get_invoice
+
+=over
+
+=item * invoice_id - Str
+
+=back
+
+Returns a L<Net::Stripe::Invoice>
+
+  $stripe->get_invoice(invoice_id => 'testinvoice');
+
+=head2 get_invoices
+
+Returns a list of invoices
+
+L<https://stripe.com/docs/api#list_customer_invoices>
+
+=over
+
+=item * customer - L<Net::Stripe::Customer> or Str, optional
+
+=item * date - Int or HashRef, optional
+
+=item * ending_before - Str, optional
+
+=item * limit - Int, optional
+
+=item * starting_after - Str, optional
+
+=back
+
+Returns a list of L<Net::Stripe::Invoices>
+
+  $stripe->get_invoices(limit => 10);
+
+=head2 create_invoice
+
+Create a new invoice
+
+L<https://stripe.com/docs/api#create_invoice>
+
+=over
+
+=item * customer - L<Net::Stripe::Customer>, Str 
+
+=item * application_fee - Int - optional
+
+=item * description - Str - optional
+
+=item * metadata - HashRef - optional
+
+=item * subscription - L<Net::Stripe::Subscription> or Str, optional
+
+=back
+
+Returns a L<Net::Stripe::Invoice>
+
+  $stripe->create_invoice(customer => 'custid', description => 'test');
+
+=head2 get_invoice
+
+=over
+
+=item * invoice_id - Str
+
+=back
+
+Returns a L<Net::Stripe::Invoice>
+
+  $stripe->get_invoice(invoice_id => 'test');
+
+=head2 get_upcominginvoice
+
+=over
+
+=item * customer, L<Net::Stripe::Cusotmer> or Str
+
+=back
+
+Returns a L<Net::Stripe::Invoice>
+
+  $stripe->get_upcominginvoice(customer => $customer);
 
 =head1 Invoice Item Methods
 
-=head2 post_invoiceitem( PARAMHASH | OBJECT )
+=head2 create_invoiceitem
 
-=head2 get_invoiceitem( INVOICEITEM_ID )
+Create an invoice item.
 
-=head2 delete_invoiceitem( INVOICEITEM_ID )
+L<https://stripe.com/docs/api#create_invoiceitem>
 
-=head2 get_invoiceitems( PARAMHASH )
+=over
+
+=item * customer - L<Net::Stripe::Customer> or Str
+
+=item * amount - Int
+
+=item * currency - Str
+
+=item * invoice - L<Net::Stripe::Invoice> or Str, optional
+
+=item * subscription - L<Net::Stripe::Subscription> or Str, optional
+
+=item * description - Str, optional
+
+=item * metadata - HashRef, optional
+
+=back
+
+Returns a L<Net::Stripe::Invoiceitem> object
+
+  $stripe->create_invoiceitem(customer => 'test', amount => 500, currency => 'USD');
+
+=head2 post_invoiceitem
+
+Update an invoice item.
+
+L<https://stripe.com/docs/api#create_invoiceitem>
+
+=over
+
+=item * invoice_item - L<Net::Stripe::Invoiceitem> or Str
+
+=item * amount - Int, optional
+
+=item * description - Str, optional
+
+=item * metadata - HashRef, optional
+
+=back
+
+Returns a L<Net::Stripe::Invoiceitem>
+
+  $stripe->post_invoiceitem(invoice_item => 'itemid', amount => 750);
+
+=head2 get_invoiceitem
+
+Retrieve an invoice item.
+
+=over
+
+=item * invoice_item - Str
+
+=back
+
+Returns a L<Net::Stripe::Invoiceitem>
+
+  $stripe->get_invoiceitem(invoice_item => 'testitemid');
+
+=head2 delete_invoiceitem
+
+Delete an invoice item
+
+=over
+
+=item * invoice_item - L<Net::Stripe::Invoiceitem> or Str
+
+=back
+
+Returns a L<Net::Stripe::Invoiceitem>
+
+  $stripe->delete_invoiceitem(invoice_item => $invoice_item);
+
+=head2 get_invoiceitems
+
+=over
+
+=item * customer - L<Net::Stripe::Customer> or Str, optional
+
+=item * date - Int or HashRef, optional
+
+=item * ending_before - Str, optional
+
+=item * limit - Int, optional
+
+=item * starting_after - Str, optional
+
+=back
+
+Returns a list of L<Net::Stripe::Invoiceitem> objects
+
+  $stripe->get_invoiceitems(customer => 'test', limit => 30);
 
 =head1 SEE ALSO
 
 L<https://stripe.com>, L<https://stripe.com/docs/api>
 
-=head1 CONTRIBUTORS
+=head1 AUTHORS
 
-=head1 AUTHOR
+=over 4
+
+=item *
 
 Luke Closs
+
+=item *
+
+Rusty Conover
+
+=back
 
 =head1 CONTRIBUTORS
 
@@ -207,7 +915,7 @@ Tom Eliaz <tom@tomeliaz.com>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2011 by Copyright 2011, Prime Radiant, Inc..
+This software is copyright (c) 2011 by Prime Radiant, Inc., (c) copyright 2014 Lucky Dinosaur LLC..
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
