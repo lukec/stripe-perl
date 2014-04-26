@@ -19,6 +19,7 @@ use Net::Stripe::Subscription;
 use Net::Stripe::Error;
 use Net::Stripe::BalanceTransaction;
 use Net::Stripe::List;
+use Net::Stripe::LineItem;
 
 our $VERSION = '0.09';
 
@@ -1426,23 +1427,7 @@ method _make_request($req) {
     }
 
     if ($resp->code == 200) {
-        my $hash = decode_json($resp->content);
-        if( $hash->{object} && 'list' eq $hash->{object} ) {
-          my @objects = ();
-          foreach my $object_data (@{$hash->{data}}) {
-            push @objects, hash_to_object($object_data);            
-          }
-          return Net::Stripe::List->new(count => $hash->{count},
-                                        url =>$hash->{url},
-                                        has_more => $hash->{has_more} ? 1 : 0,
-                                        data => \@objects);
-
-        }     
-        return hash_to_object($hash) if $hash->{object};
-        if (my $data = $hash->{data}) {
-            return [ map { hash_to_object($_) } @$data ];
-        }
-        return $hash;
+        return _hash_to_object(decode_json($resp->content));
     } elsif ($resp->code == 500) {
         die Net::Stripe::Error->new(
             type => "HTTP request error",
@@ -1467,12 +1452,24 @@ method _make_request($req) {
 }
 
 
-sub hash_to_object {
+sub _hash_to_object {
     my $hash   = shift;
-    my @words  = map { ucfirst($_) } split('_', $hash->{object});
-    my $object = join('', @words);
-    my $class  = 'Net::Stripe::' . $object;
-    return $class->new($hash);
+
+    foreach my $k (grep { ref($hash->{$_}) eq 'HASH' && defined($hash->{$_}->{object}) } keys %$hash) {
+        $hash->{$k} = _hash_to_object($hash->{$k});
+    }
+
+    if (defined($hash->{object})) {
+        if ($hash->{object} eq 'list') {
+            $hash->{data} = [map { _hash_to_object($_) } @{$hash->{data}}];        
+            return Net::Stripe::List->new($hash);
+        }
+        my @words  = map { ucfirst($_) } split('_', $hash->{object});
+        my $object = join('', @words);
+        my $class  = 'Net::Stripe::' . $object;
+        return $class->new($hash);
+    }
+    return $hash;
 }
 
 method _build_api_base { 'https://api.stripe.com/v1' }

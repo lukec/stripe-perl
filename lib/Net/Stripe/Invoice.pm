@@ -14,7 +14,7 @@ has 'attempted'     => ( is => 'ro', isa => 'Maybe[Bool|Object]', required => 1 
 has 'closed'        => ( is => 'ro', isa => 'Maybe[Bool|Object]', required => 1, trigger => \&_closed_change_detector);
 has 'customer'      => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
 has 'date'          => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
-has 'lines'         => ( is => 'ro', isa => 'ArrayRef[Object]', required => 1 );
+has 'lines'         => ( is => 'ro', isa => 'Net::Stripe::List', required => 1 );
 has 'paid'          => ( is => 'ro', isa => 'Maybe[Bool|Object]', required => 1 );
 has 'period_end'    => ( is => 'ro', isa => 'Maybe[Int]' );
 has 'period_start'  => ( is => 'ro', isa => 'Maybe[Int]' );
@@ -26,11 +26,6 @@ has 'ending_balance'   => ( is => 'ro', isa => 'Maybe[Int]' );
 has 'next_payment_attempt' => ( is => 'ro', isa => 'Maybe[Int]' );
 has 'metadata'         => ( is => 'rw', isa => 'HashRef');
 has 'description' => (is => 'rw', isa => 'Maybe[Str]');
-
-has 'invoiceitems' =>
-    (is => 'ro', isa => 'ArrayRef[Net::Stripe::Invoiceitem]');
-has 'subscriptions' =>
-    (is => 'ro', isa => 'ArrayRef[Net::Stripe::Subscription]');
 
 sub _closed_change_detector {
     my ($instance, $new_value, $orig_value) = @_;
@@ -51,50 +46,6 @@ method form_fields {
             grep { defined $self->$_ } qw/description/
     );
 }
-
-
-around BUILDARGS => sub {
-    my $orig = shift;
-    my $class = shift;
-    my %args = @_ == 1 ? %{ $_[0] } : @_;
-
-
-    my (@lines, @items, @subs);
-    # Old style?
-    for my $i (@{ $args{lines}{invoiceitems} || [] }) {
-        my $item = Net::Stripe::Invoiceitem->new($i);
-        push @lines, $item;
-        push @items, $item;
-    }
-    for my $s (@{ $args{lines}{subscriptions} || [] }) {
-        my $sub = Net::Stripe::Subscription->new($s);
-        push @lines, $sub;
-        push @subs, $sub;
-    }
-
-    # New style?
-    if ($args{lines}{object} eq 'list') {
-        for my $line (@{ $args{lines}{data} }) {
-            if ($line->{type} eq 'invoiceitem') {
-                $line->{customer} = $args{customer};
-                my $item = Net::Stripe::Invoiceitem->new($line);
-                push @lines, $item;
-                push @items, $item;
-            }
-            elsif ($line->{type} eq 'subscription') {
-                my $sub = Net::Stripe::Subscription->new($line);
-                push @lines, $sub;
-                push @subs, $sub;
-            }
-        }
-    }
-
-
-    $args{subscriptions} = \@subs;
-    $args{invoiceitems}  = \@items;
-    $args{lines} = \@lines;
-    $class->$orig(%args);
-};
 
 __PACKAGE__->meta->make_immutable;
 1;

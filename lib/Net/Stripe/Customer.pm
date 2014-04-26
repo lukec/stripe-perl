@@ -26,13 +26,8 @@ has 'subscription' => (is => 'ro',
 
 sub _build_subscription {
     my $self = shift;
-    if (scalar(@{$self->subscriptions->data}) > 0) {
-        return $self->subscriptions->data->[0];
-    }
-    return;
+    return $self->subscriptions->get(0);
 }
-
-#has 'subscription' => (is => 'ro', isa => 'Maybe[Net::Stripe::Subscription]');
 
 method form_fields {
     return (

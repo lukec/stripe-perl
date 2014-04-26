@@ -1,6 +1,7 @@
 package Net::Stripe::Resource;
 use Moose;
 use MooseX::Method::Signatures;
+use Data::Dumper;
 
 around BUILDARGS => sub {
     my $orig = shift;
@@ -18,15 +19,6 @@ around BUILDARGS => sub {
         next unless $args{$f};
         next unless ref($args{$f}) eq 'HASH';
         $args{$f} = Net::Stripe::Card->new($args{$f});
-    }
-
-    if (my $s = $args{subscriptions}) {
-        if (ref($s) eq 'HASH') {
-            if (defined($s->{data}) && ref($s->{data}) eq 'ARRAY') {
-                $s->{data} = [map { Net::Stripe::Subscription->new($_) } @{$s->{data}}];
-            }
-            $args{subscriptions} = Net::Stripe::List->new($s);
-        }
     }
 
     if (my $s = $args{subscription}) {

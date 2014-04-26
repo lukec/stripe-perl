@@ -464,7 +464,7 @@ Invoices_and_items: {
         isa_ok $invoice, 'Net::Stripe::Invoice';
         is $invoice->{subtotal}, 1700, 'subtotal';
         is $invoice->{total}, 1700, 'total';
-        is scalar(@{ $invoice->lines }), 2, '2 lines';
+        is scalar(@{ $invoice->lines->data }), 2, '2 lines';
 
         my $all_invoices = $stripe->get_invoices(
             customer => $customer->id,
