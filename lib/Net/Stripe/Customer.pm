@@ -1,6 +1,11 @@
 package Net::Stripe::Customer;
 use Moose;
 use MooseX::Method::Signatures;
+use Net::Stripe::Plan;
+use Net::Stripe::Token;
+use Net::Stripe::Card;
+use Net::Stripe::Discount;
+use Net::Stripe::List;
 extends 'Net::Stripe::Resource';
 
 # ABSTRACT: represent a Customer object from Stripe
