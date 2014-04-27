@@ -2,10 +2,9 @@ package Net::Stripe::Card;
 use Moose;
 use Moose::Util::TypeConstraints qw(union);
 use MooseX::Method::Signatures;
+use Net::Stripe::Token;
 
 # ABSTRACT: represent a Card object from Stripe
-
-union 'StripeCard', ['Str', 'Net::Stripe::Card', 'Net::Stripe::Token'];
 
 # Input fields
 has 'number'          => (is => 'ro', isa => 'Maybe[Str]');

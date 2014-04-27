@@ -57,6 +57,50 @@ You can set this to true to see the actual network requests.
 
 =back
 
+=head1 ATTRIBUTES
+
+=head2 api_base
+
+Reader: api_base
+
+Type: Str
+
+=head2 api_key
+
+Reader: api_key
+
+Type: Str
+
+This attribute is required.
+
+=head2 debug
+
+Reader: debug
+
+Writer: debug
+
+Type: Bool
+
+Additional documentation: The debug flag
+
+=head2 debug_network
+
+Reader: debug_network
+
+Writer: debug_network
+
+Type: Bool
+
+Additional documentation: The debug network request flag
+
+=head2 ua
+
+Reader: ua
+
+Type: Object
+
+Additional documentation: The LWP::UserAgent that is used for requests
+
 =head1 Balance Transaction Methods
 
 =head2 get_balance_transaction
@@ -145,7 +189,7 @@ Returns a new L<Net::Stripe::Charge>.
 
 =head2 get_charges
 
-Return a list of charges based on criteria.
+Returns a L<Net::Stripe::List> object containing L<Net::Stripe::Charge> objects.
 
 L<https://stripe.com/docs/api#list_charges>
 
@@ -239,7 +283,7 @@ L<https://stripe.com/docs/api#retrieve_customer>
 
 =back
 
-Returns a L<Net::Stripe::Customer> object
+Returns a L<Net::Stripe::List> object containing L<Net::Stripe::Customer> objects.
 
   $stripe->get_customer(customer_id => $id);
 
@@ -277,7 +321,7 @@ L<https://stripe.com/docs/api#list_customers>
 
 =back
 
-Returns a list of L<Net::Stripe::Customer> objects.
+Returns a L<Net::Stripe::List> object containing L<Net::Stripe::Customer> objects.
 
   $stripe->get_customers(limit => 7);
 
@@ -337,7 +381,7 @@ L<https://stripe.com/docs/api#list_cards>
 
 =back
 
-Returns a list of L<Net::Stripe::Card> objects
+Returns a L<Net::Stripe::List> object containing L<Net::Stripe::Card> objects.
 
   $stripe->list_cards(customer => 'abcdec', limit => 10);
 
@@ -545,7 +589,7 @@ L<https://stripe.com/docs/api#list_plans>
 
 =back
 
-Returns a list of L<Net::Stripe::Plan>
+Returns a L<Net::Stripe::List> object containing L<Net::Stripe::Plan> objects.
 
   $stripe->get_plans(limit => 10);
 
@@ -633,7 +677,7 @@ Returns a L<Net::Stripe::Coupon>
 
 =back
 
-Returns a list of L<Net::Stripe::Coupon>
+Returns a L<Net::Stripe::List> object containing L<Net::Stripe::Coupon> objects.
 
   $stripe->get_coupons(limit => 15);
 
@@ -693,7 +737,7 @@ L<https://stripe.com/docs/api#list_customer_invoices>
 
 =back
 
-Returns a list of L<Net::Stripe::Invoices>
+Returns a L<Net::Stripe::List> object containing L<Net::Stripe::Invoice> objects.
 
   $stripe->get_invoices(limit => 10);
 
@@ -841,7 +885,7 @@ Returns a L<Net::Stripe::Invoiceitem>
 
 =back
 
-Returns a list of L<Net::Stripe::Invoiceitem> objects
+Returns a L<Net::Stripe::List> object containing L<Net::Stripe::Invoiceitem> objects.
 
   $stripe->get_invoiceitems(customer => 'test', limit => 30);
 

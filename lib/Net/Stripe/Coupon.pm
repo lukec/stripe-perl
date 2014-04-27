@@ -6,8 +6,6 @@ extends 'Net::Stripe::Resource';
 
 # ABSTRACT: represent a Coupon object from Stripe
 
-union 'StripeCoupon', ['Str', 'Net::Stripe::Coupon'];
-
 has 'id'                 => (is => 'rw', isa => 'Maybe[Str]');
 has 'percent_off'        => (is => 'rw', isa => 'Maybe[Int]', required => 1);
 has 'duration'           => (is => 'rw', isa => 'Maybe[Str]', required => 1);

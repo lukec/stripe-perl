@@ -75,8 +75,9 @@ Plans: {
             for qw/id amount currency interval name trial_period_days/;
 
         my $plans = $stripe->get_plans(limit => 1);
-        is scalar(@$plans), 1, 'got just one plan';
-        is $plans->[0]->id, $id, 'plan id matches';
+        is scalar(@{$plans->data}), 1, 'got just one plan';
+        is $plans->get(0)->id, $id, 'plan id matches';
+        is $plans->last->id, $id, 'plan id matches';
 
         my $hash = $stripe->delete_plan($plan);
         ok $hash->{deleted}, 'delete response indicates delete was successful';
@@ -114,8 +115,8 @@ Coupons: {
                    max_redemptions redeem_by/;
 
         my $coupons = $stripe->get_coupons(limit => 1);
-        is scalar(@$coupons), 1, 'got just one coupon';
-        is $coupons->[0]->id, $id, 'coupon id matches';
+        is scalar(@{$coupons->data}), 1, 'got just one coupon';
+        is $coupons->get(0)->id, $id, 'coupon id matches';
 
         my $hash = $stripe->delete_coupon($coupon);
         ok $hash->{deleted}, 'delete response indicates delete was successful';
@@ -182,8 +183,8 @@ Charges: {
 
         # Fetch list of charges
         my $charges = $stripe->get_charges( limit => 1 );
-        is scalar(@$charges), 1, 'one charge returned';
-        is $charges->[0]->id, $charge->id, 'charge ids match';
+        is scalar(@{$charges->data}), 1, 'one charge returned';
+        is $charges->get(0)->id, $charge->id, 'charge ids match';
     }
 
     Post_charge_using_customer: {
@@ -286,8 +287,8 @@ Customers: {
 
             # Fetch the list of customers
             my $all = $stripe->get_customers(limit => 1);
-            is scalar(@$all), 1, 'only one customer returned';
-            is $all->[0]->id, $customer->id, 'correct customer returned';
+            is scalar(@{$all->data}), 1, 'only one customer returned';
+            is $all->get(0)->id, $customer->id, 'correct customer returned';
 
             # Delete a customer
             $stripe->delete_customer(customer => $customer);
@@ -404,7 +405,7 @@ Customers: {
                 'got a subscription back';
             is $priceysubs->plan->id, $priceyplan->id;
             $customer = $stripe->get_customer(customer_id => $customer->id);
-            is $customer->subscriptions->data->[0]->plan->id,
+            is $customer->subscriptions->get(0)->plan->id,
               $priceyplan->id, 'subscribed without a creditcard';
         }
     }
@@ -455,21 +456,21 @@ Invoices_and_items: {
             customer => $customer->id,
             limit => 1,
         );
-        is scalar(@$items), 1, 'only 1 item returned';
-        is $items->[0]->id, $item->id, 'item id is correct';
+        is scalar(@{$items->data}), 1, 'only 1 item returned';
+        is $items->get(0)->id, $item->id, 'item id is correct';
 
 
         my $invoice = $stripe->get_upcominginvoice($customer->id);
         isa_ok $invoice, 'Net::Stripe::Invoice';
         is $invoice->{subtotal}, 1700, 'subtotal';
         is $invoice->{total}, 1700, 'total';
-        is scalar(@{ $invoice->lines }), 2, '2 lines';
+        is scalar(@{ $invoice->lines->data }), 2, '2 lines';
 
         my $all_invoices = $stripe->get_invoices(
             customer => $customer->id,
             limit    => 1,
         );
-        is scalar(@$all_invoices), 1, 'one invoice returned';
+        is scalar(@{$all_invoices->data}), 1, 'one invoice returned';
 
         # We can't fetch the upcoming invoice because it does not have an ID
         # So to test get_invoice() we need a way to create an invoice.
