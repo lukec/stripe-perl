@@ -374,23 +374,37 @@ Returns a L<Net::Stripe::List> object containing L<Net::Stripe::Customer> object
 =cut
 
 Customers: {
-    method post_customer(Net::Stripe::Customer :$customer?,
+    method post_customer(Net::Stripe::Customer|Str :$customer?,
                          Int :$account_balance?,
                          Net::Stripe::Card|Net::Stripe::Token|Str|HashRef :$card?,
                          Str :$coupon?,
+                         Str :$default_card?,
                          Str :$description?,
                          Str :$email?, 
                          HashRef :$metadata?, 
                          Str :$plan?, 
                          Int :$quantity?, 
                          Int :$trial_end?) {
-        if ($customer) {
-            return $self->_post("customers/" . $customer->id, $customer);
-        }
 
         if (defined($card) && ref($card) eq 'HASH') {
             $card = Net::Stripe::Card->new($card);
         } 
+        
+        if (ref($customer) eq 'Net::Stripe::Customer') {
+            return $self->_post("customers/" . $customer->id, $customer);
+        } elsif (defined($customer)) {
+            my %args = (
+                account_balance => $account_balance,
+                card => $card,
+                coupon => $coupon,
+                default_card => $default_card,
+                email => $email,
+                metadata => $metadata,
+            );
+    
+            return $self->_post("customers/" . $customer, _defined_arguments(\%args));
+        }
+
 
         $customer = Net::Stripe::Customer->new(account_balance => $account_balance,
                                                card => $card,
@@ -672,15 +686,13 @@ Subscriptions: {
                     quantity => $quantity,
                     application_fee_percent => $application_fee_percent);
 
-        map { delete $args{$_} } grep {  !defined($args{$_}) } keys %args;
-
         if (ref($subscription) && $subscription eq 'Net::Stripe::Subscription') {
             return $self->_post("customers/$customer/subscriptions/" . $subscription->id, $subscription);
         } elsif (defined($subscription) && !ref($subscription)) {
-            return $self->_post("customers/$customer/subscriptions/" . $subscription, \%args);
+            return $self->_post("customers/$customer/subscriptions/" . $subscription, _defined_arguments(\%args));
         }
         
-        return $self->_post("customers/$customer/subscriptions", \%args);
+        return $self->_post("customers/$customer/subscriptions", _defined_arguments(\%args));
     }
     
     method delete_subscription(Net::Stripe::Customer|Str :$customer,
@@ -1405,9 +1417,25 @@ method _delete(Str $path) {
     return $self->_make_request($req);
 }
 
+sub convert_to_form_fields {
+    my $hash = shift;
+    if (ref($hash) eq 'HASH') {
+        foreach my $key (keys %$hash) {
+            if (ref($hash->{$key}) =~ /^Net::Stripe/) {
+                my %fields = $hash->{$key}->form_fields();
+                foreach my $fn (keys %fields) {
+                    $hash->{$fn} = $fields{$fn};
+                }
+                delete $hash->{$key};
+            }
+        }
+    }
+    return $hash;
+}
+
 method _post(Str $path, $obj?) {
     my $req = POST $self->api_base . '/' . $path, 
-        ($obj ? (Content => [ref($obj) eq 'HASH' ? %$obj : $obj->form_fields]) : ());
+        ($obj ? (Content => [ref($obj) eq 'HASH' ? %{convert_to_form_fields($obj)} : $obj->form_fields]) : ());
     return $self->_make_request($req);
 }
 
@@ -1450,6 +1478,12 @@ method _make_request($req) {
     die $e;
 }
 
+sub _defined_arguments {
+    my $args = shift;
+
+    map { delete $args->{$_} } grep {  !defined($args->{$_}) } keys %$args;
+    return $args;
+}
 
 sub _hash_to_object {
     my $hash   = shift;

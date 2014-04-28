@@ -19,6 +19,7 @@ has 'plan'        => (is => 'rw', isa => 'Maybe[Net::Stripe::Plan|Str]');
 has 'coupon'      => (is => 'rw', isa => 'Maybe[Net::Stripe::Coupon|Str]');
 has 'discount'    => (is => 'rw', isa => 'Maybe[Net::Stripe::Discount]');
 has 'metadata'    => (is => 'rw', isa => 'Maybe[HashRef]');
+has 'cards'       => (is => 'ro', isa => 'Net::Stripe::List');
 
 # API object args
 has 'id'           => (is => 'ro', isa => 'Maybe[Str]');

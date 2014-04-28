@@ -6,7 +6,7 @@ Net::Stripe - API client for Stripe.com
 
 =head1 VERSION
 
-version 0.13
+version 0.15
 
 =head1 SYNOPSIS
 
@@ -65,6 +65,8 @@ Reader: api_base
 
 Type: Str
 
+Additional documentation: This is the base part of the URL for every request made
+
 =head2 api_key
 
 Reader: api_key
@@ -72,6 +74,8 @@ Reader: api_key
 Type: Str
 
 This attribute is required.
+
+Additional documentation: You get this from your Stripe Account settings
 
 =head2 debug
 

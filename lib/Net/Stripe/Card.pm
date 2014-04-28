@@ -21,6 +21,7 @@ has 'exp_month'       => (is => 'ro', isa => 'Maybe[Int]', required => 1);
 has 'exp_year'        => (is => 'ro', isa => 'Maybe[Int]', required => 1);
 
 # Output fields
+has 'id'                   => (is => 'ro', isa => 'Maybe[Str]');
 has 'address_line_1_check' => (is => 'ro', isa => 'Maybe[Str]');
 has 'address_zip_check'    => (is => 'ro', isa => 'Maybe[Str]');
 has 'country'              => (is => 'ro', isa => 'Maybe[Str]');
