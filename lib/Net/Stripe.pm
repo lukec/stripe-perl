@@ -21,7 +21,7 @@ use Net::Stripe::BalanceTransaction;
 use Net::Stripe::List;
 use Net::Stripe::LineItem;
 
-our $VERSION = '0.09';
+our $VERSION = '0.15';
 
 # ABSTRACT: API client for Stripe.com
 
@@ -1513,7 +1513,7 @@ sub _hash_to_object {
 method _build_api_base { 'https://api.stripe.com/v1' }
 
 method _build_ua {
-    my $ua = LWP::UserAgent->new();
+    my $ua = LWP::UserAgent->new(keep_alive => 4);
     $ua->agent("Net::Stripe/$VERSION");
     return $ua;
 }
