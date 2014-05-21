@@ -1,7 +1,7 @@
 package Net::Stripe::Plan;
 use Moose;
 use Moose::Util::TypeConstraints;
-use MooseX::Method::Signatures;
+use Kavorka;
 extends 'Net::Stripe::Resource';
 
 # ABSTRACT: represent a Plan object from Stripe

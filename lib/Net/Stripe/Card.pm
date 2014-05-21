@@ -1,7 +1,7 @@
 package Net::Stripe::Card;
 use Moose;
 use Moose::Util::TypeConstraints qw(union);
-use MooseX::Method::Signatures;
+use Kavorka;
 use Net::Stripe::Token;
 
 # ABSTRACT: represent a Card object from Stripe

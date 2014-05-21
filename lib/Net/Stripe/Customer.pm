@@ -1,6 +1,6 @@
 package Net::Stripe::Customer;
 use Moose;
-use MooseX::Method::Signatures;
+use Kavorka;
 use Net::Stripe::Plan;
 use Net::Stripe::Token;
 use Net::Stripe::Card;

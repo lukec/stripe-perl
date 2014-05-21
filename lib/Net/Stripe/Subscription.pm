@@ -1,6 +1,6 @@
 package Net::Stripe::Subscription;
 use Moose;
-use MooseX::Method::Signatures;
+use Kavorka;
 extends 'Net::Stripe::Resource';
 
 # ABSTRACT: represent a Subscription object from Stripe

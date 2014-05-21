@@ -1,6 +1,6 @@
 package Net::Stripe;
 use Moose;
-use MooseX::Method::Signatures;
+use Kavorka;
 use LWP::UserAgent;
 use HTTP::Request::Common qw/GET POST DELETE/;
 use MIME::Base64 qw/encode_base64/;
