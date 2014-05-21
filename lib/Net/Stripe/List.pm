@@ -1,6 +1,6 @@
 package Net::Stripe::List;
 use Moose;
-use MooseX::Method::Signatures;
+use Kavorka;
 
 # ABSTRACT: represent a list of objects from Stripe
 
