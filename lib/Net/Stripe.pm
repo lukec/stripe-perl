@@ -569,7 +569,10 @@ Cards: {
         if (ref($card) eq 'HASH') {
             $card = Net::Stripe::Card->new($card);
         }
-        return $self->_post("customers/$customer/cards/" . $card->id, $card);
+        if (defined($card->id)) {
+            return $self->_post("customers/$customer/cards/" . $card->id, $card);
+        }
+        return $self->_post("customers/$customer/cards", $card);
     }
 
     method delete_card(Net::Stripe::Customer|Str :$customer, Net::Stripe::Card|Str :$card) {
@@ -1167,6 +1170,10 @@ Invoices: {
 
     method get_invoice(Str :$invoice_id) {
         return $self->_get("invoices/$invoice_id");
+    }
+
+    method pay_invoice(Str :$invoice_id) {
+        return $self->_post("invoices/$invoice_id/pay");
     }
 
     method get_invoices(Net::Stripe::Customer|Str :$customer?,
