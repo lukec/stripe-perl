@@ -1,4 +1,5 @@
 package Net::Stripe::LineItem;
+
 use Moose;
 
 # ABSTRACT: represent an Line Item object from Stripe

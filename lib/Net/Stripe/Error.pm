@@ -1,4 +1,5 @@
 package Net::Stripe::Error;
+
 use Moose;
 with 'Throwable';
 use namespace::clean -except => 'meta';

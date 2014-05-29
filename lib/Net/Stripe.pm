@@ -1,4 +1,5 @@
 package Net::Stripe;
+
 use Moose;
 use Kavorka;
 use LWP::UserAgent;
@@ -20,8 +21,6 @@ use Net::Stripe::Error;
 use Net::Stripe::BalanceTransaction;
 use Net::Stripe::List;
 use Net::Stripe::LineItem;
-
-our $VERSION = '0.15';
 
 # ABSTRACT: API client for Stripe.com
 
@@ -569,7 +568,10 @@ Cards: {
         if (ref($card) eq 'HASH') {
             $card = Net::Stripe::Card->new($card);
         }
-        return $self->_post("customers/$customer/cards/" . $card->id, $card);
+        if (defined($card->id)) {
+            return $self->_post("customers/$customer/cards/" . $card->id, $card);
+        }
+        return $self->_post("customers/$customer/cards", $card);
     }
 
     method delete_card(Net::Stripe::Customer|Str :$customer, Net::Stripe::Card|Str :$card) {
@@ -1050,6 +1052,18 @@ Returns a L<Net::Stripe::Invoice>
 
   $stripe->get_invoice(invoice_id => 'testinvoice');
 
+=invoice_method pay_invoice
+
+=over
+
+=item * invoice_id - Str
+
+=back
+
+Returns a L<Net::Stripe::Invoice>
+
+  $stripe->pay_invoice(invoice_id => 'testinvoice');
+
 =invoice_method get_invoices
 
 Returns a list of invoices
@@ -1167,6 +1181,10 @@ Invoices: {
 
     method get_invoice(Str :$invoice_id) {
         return $self->_get("invoices/$invoice_id");
+    }
+
+    method pay_invoice(Str :$invoice_id) {
+        return $self->_post("invoices/$invoice_id/pay");
     }
 
     method get_invoices(Net::Stripe::Customer|Str :$customer?,
@@ -1514,7 +1532,7 @@ method _build_api_base { 'https://api.stripe.com/v1' }
 
 method _build_ua {
     my $ua = LWP::UserAgent->new(keep_alive => 4);
-    $ua->agent("Net::Stripe/$VERSION");
+    $ua->agent("Net::Stripe/" . $Net::Stripe::VERSION);
     return $ua;
 }
 

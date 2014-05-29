@@ -1,4 +1,5 @@
 package Net::Stripe::Invoiceitem;
+
 use Moose;
 use Kavorka;
 extends 'Net::Stripe::Resource';

@@ -1,4 +1,5 @@
 package Net::Stripe::Customer;
+
 use Moose;
 use Kavorka;
 use Net::Stripe::Plan;
