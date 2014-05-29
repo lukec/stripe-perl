@@ -1532,7 +1532,7 @@ method _build_api_base { 'https://api.stripe.com/v1' }
 
 method _build_ua {
     my $ua = LWP::UserAgent->new(keep_alive => 4);
-    $ua->agent("Net::Stripe/$VERSION");
+    $ua->agent("Net::Stripe/" . $Net::Stripe::VERSION);
     return $ua;
 }
 
