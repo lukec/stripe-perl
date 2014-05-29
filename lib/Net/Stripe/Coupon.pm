@@ -1,4 +1,5 @@
 package Net::Stripe::Coupon;
+
 use Moose;
 use Moose::Util::TypeConstraints;
 use Kavorka;

@@ -1,4 +1,5 @@
 package Net::Stripe::BalanceTransaction;
+
 use Moose;
 use Moose::Util::TypeConstraints qw(subtype as where message);
 extends 'Net::Stripe::Resource';

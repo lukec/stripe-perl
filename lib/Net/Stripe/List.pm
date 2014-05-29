@@ -1,4 +1,5 @@
 package Net::Stripe::List;
+
 use Moose;
 use Kavorka;
 

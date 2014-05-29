@@ -1,4 +1,5 @@
 package Net::Stripe;
+
 use Moose;
 use Kavorka;
 use LWP::UserAgent;
@@ -20,8 +21,6 @@ use Net::Stripe::Error;
 use Net::Stripe::BalanceTransaction;
 use Net::Stripe::List;
 use Net::Stripe::LineItem;
-
-our $VERSION = '0.15';
 
 # ABSTRACT: API client for Stripe.com
 

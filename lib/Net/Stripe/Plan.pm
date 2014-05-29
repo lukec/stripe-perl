@@ -1,4 +1,5 @@
 package Net::Stripe::Plan;
+
 use Moose;
 use Moose::Util::TypeConstraints;
 use Kavorka;

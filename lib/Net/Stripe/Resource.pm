@@ -1,4 +1,5 @@
 package Net::Stripe::Resource;
+
 use Moose;
 use Kavorka;
 

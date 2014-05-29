@@ -1,4 +1,5 @@
 package Net::Stripe::Token;
+
 use Moose;
 use Kavorka;
 extends 'Net::Stripe::Resource';
