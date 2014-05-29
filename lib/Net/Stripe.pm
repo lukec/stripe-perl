@@ -1053,6 +1053,18 @@ Returns a L<Net::Stripe::Invoice>
 
   $stripe->get_invoice(invoice_id => 'testinvoice');
 
+=invoice_method pay_invoice
+
+=over
+
+=item * invoice_id - Str
+
+=back
+
+Returns a L<Net::Stripe::Invoice>
+
+  $stripe->pay_invoice(invoice_id => 'testinvoice');
+
 =invoice_method get_invoices
 
 Returns a list of invoices
