@@ -6,7 +6,7 @@ Net::Stripe - API client for Stripe.com
 
 =head1 VERSION
 
-version 0.17
+version 0.18
 
 =head1 SYNOPSIS
 
@@ -243,7 +243,7 @@ L<https://stripe.com/docs/api#create_customer>
 
 =item * quantity - Int, optional
 
-=item * trial_end - Int, optional
+=item * trial_end - Int or Str, optional
 
 =back
 
@@ -431,7 +431,7 @@ L<https://stripe.com/docs/api#create_subscription>
 
 =item * quantity - Int, optional
 
-=item * trial_end - Int, optional
+=item * trial_end - Int, or Str optional
 
 =item * application_fee_percent - Int, optional
 

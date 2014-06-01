@@ -284,7 +284,7 @@ L<https://stripe.com/docs/api#create_customer>
 
 =item * quantity - Int, optional
 
-=item * trial_end - Int, optional
+=item * trial_end - Int or Str, optional
 
 =back 
 
@@ -383,7 +383,7 @@ Customers: {
                          HashRef :$metadata?, 
                          Str :$plan?, 
                          Int :$quantity?, 
-                         Int :$trial_end?) {
+                         Int|Str :$trial_end?) {
 
         if (defined($card) && ref($card) eq 'HASH') {
             $card = Net::Stripe::Card->new($card);
@@ -609,7 +609,7 @@ L<https://stripe.com/docs/api#create_subscription>
 
 =item * quantity - Int, optional
 
-=item * trial_end - Int, optional
+=item * trial_end - Int, or Str optional
 
 =item * application_fee_percent - Int, optional
 
@@ -668,7 +668,7 @@ Subscriptions: {
                              Net::Stripe::Subscription|Str :$subscription?, 
                              Net::Stripe::Plan|Str :$plan?,
                              Str :$coupon?,
-                             Int :$trial_end?,
+                             Int|Str :$trial_end?,
                              Net::Stripe::Card|Net::Stripe::Token|Str|HashRef :$card?,
                              Int :$quantity?,
                              Num :$application_fee_percent?
