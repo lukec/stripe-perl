@@ -338,7 +338,7 @@ Customers: {
             );
             is $customer->subscription->plan->id, $freeplan->id,
                 'customer has freeplan';
-
+                
             # Now update subscription of an existing customer
             my $other = $stripe->post_customer();
             my $subs = $stripe->post_subscription(
@@ -407,6 +407,18 @@ Customers: {
             $customer = $stripe->get_customer(customer_id => $customer->id);
             is $customer->subscriptions->get(0)->plan->id,
               $priceyplan->id, 'subscribed without a creditcard';
+
+            # Test ability to add, retrieve lists of subscriptions, since we can now have > 1
+            my $subs_list = $stripe->list_subscriptions(customer => $customer);
+            isa_ok $subs_list, 'Net::Stripe::List', 'Subscription List object returned';
+            is scalar @{$subs_list->data}, 1, 'Customer has one subscription';
+            
+            $subs = $stripe->post_subscription(
+                customer => $customer->id,
+                plan => $freeplan->id,
+            );
+            $subs_list = $stripe->list_subscriptions(customer => $customer);
+            is scalar @{$subs_list->data}, 2, 'Customer now has two subscriptions';
         }
     }
 }
