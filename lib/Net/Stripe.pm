@@ -424,7 +424,7 @@ Customers: {
         if (ref($customer)) {
             $customer = $customer->id;
         }
-        return $self->_get("customers/$customer/subscriptions", 
+        return $self->_get_collections("customers/$customer/subscriptions", 
                            ending_before => $ending_before,
                            limit => $limit,
                            starting_after => $starting_after
