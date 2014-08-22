@@ -26,11 +26,11 @@ version 0.18
 
  # ... and the api mirrors https://stripe.com/docs/api
  # Charges: post_charge() get_charge() refund_charge() get_charges()
- # Customer: post_customer() 
+ # Customer: post_customer()
 
 =head1 DESCRIPTION
 
-This module is a wrapper around the Stripe.com HTTP API.  Methods are 
+This module is a wrapper around the Stripe.com HTTP API.  Methods are
 generally named after the HTTP method and the object name.
 
 This method returns Moose objects for responses from the API.
@@ -375,7 +375,7 @@ L<https://stripe.com/docs/api#list_cards>
 
 =over
 
-=item * customer - L<Net::Stripe::Customer> or Str 
+=item * customer - L<Net::Stripe::Customer> or Str
 
 =item * ending_before - Str, optional
 
@@ -419,7 +419,7 @@ L<https://stripe.com/docs/api#create_subscription>
 
 =item * customer - L<Net::Stripe::Customer>
 
-=item * subscription - L<Net::Stripe::Subscription> or Str 
+=item * subscription - L<Net::Stripe::Subscription> or Str
 
 =item * card - L<Net::Stripe::Card>, L<Net::Stripe::Token>, Str or HashRef, default card for the customer, optional
 
@@ -463,9 +463,9 @@ L<https://stripe.com/docs/api#cancel_subscription>
 
 =over
 
-=item * customer - L<Net::Stripe::Customer> or Str 
+=item * customer - L<Net::Stripe::Customer> or Str
 
-=item * subscription - L<Net::Stripe::Subscription> or Str 
+=item * subscription - L<Net::Stripe::Subscription> or Str
 
 =item * at_period_end - Bool, optional
 
@@ -485,7 +485,7 @@ L<https://stripe.com/docs/api#create_card_token>
 
 =over
 
-=item card - L<Net::Stripe::Card> or HashRef 
+=item card - L<Net::Stripe::Card> or HashRef
 
 =back
 
@@ -693,7 +693,7 @@ Update an invoice
 
 =over
 
-=item * invoice - L<Net::Stripe::Invoice>, Str 
+=item * invoice - L<Net::Stripe::Invoice>, Str
 
 =item * application_fee - Int - optional
 
@@ -765,7 +765,7 @@ L<https://stripe.com/docs/api#create_invoice>
 
 =over
 
-=item * customer - L<Net::Stripe::Customer>, Str 
+=item * customer - L<Net::Stripe::Customer>, Str
 
 =item * application_fee - Int - optional
 
@@ -925,11 +925,17 @@ Rusty Conover
 
 =head1 CONTRIBUTORS
 
+=for stopwords Andrew Solomon Tom Eliaz Brian Collins Devin M. Certas Dimitar Petrov Dylan Reinhold Jonathan "Duke" Leto Luke Closs Olaf Alders Rusty Conover Sachin Sebastian
+
 =over 4
 
 =item *
 
 Andrew Solomon <andrew@illywhacker.net>
+
+=item *
+
+Tom Eliaz <tom@tomeliaz.com>
 
 =item *
 
@@ -966,10 +972,6 @@ Rusty Conover <rusty@luckydinosaur.com>
 =item *
 
 Sachin Sebastian <sachinjsk@users.noreply.github.com>
-
-=item *
-
-Tom Eliaz <tom@tomeliaz.com>
 
 =back
 
