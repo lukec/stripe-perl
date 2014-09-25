@@ -1017,6 +1017,38 @@ Coupons: {
     }
 }
 
+=discount_method delete_customer_discount
+
+Deleting a Customer-wide Discount
+
+L<https://stripe.com/docs/api/curl#delete_discount>
+
+=over
+
+=item * customer - L<Net::Stripe::Customer> or Str - the customer with a discount to delete
+
+=back
+
+  $stripe->delete_customer_discount(customer => $customer);
+
+returns hashref of the form
+
+  {
+    deleted => <bool>
+  }
+
+
+=cut
+
+Discounts: {
+    method delete_customer_discount(Net::Stripe::Customer|Str :$customer) {
+        if (ref($customer)) {
+            $customer = $customer->id;
+        }
+        $self->_delete("customers/$customer/discount");
+    }
+}
+
 
 =invoice_method post_invoice
 

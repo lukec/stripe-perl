@@ -386,12 +386,23 @@ Customers: {
                 id => $coupon_id,
                 percent_off => 100,
                 duration => 'once',
-                max_redemptions => 1,
+                max_redemptions => 2,
                 redeem_by => time() + 100,
             );
             isa_ok $coupon, 'Net::Stripe::Coupon',
                 'I love it when a coupon pays for the first month';
             is $coupon->id, $coupon_id, 'coupon id is the same';
+
+            $customer->coupon($coupon->id);
+            $stripe->post_customer(customer => $customer);
+            $customer = $stripe->get_customer(customer_id => $customer->id);
+            is $customer->discount->coupon->id, $coupon_id,
+              'got the coupon';
+            my $delete_resp = $stripe->delete_customer_discount(customer => $customer);
+            ok $delete_resp->{deleted}, 'stripe reports discount deleted';
+            $customer = $stripe->get_customer(customer_id => $customer->id);
+            ok !$customer->discount, 'customer really has no discount';
+
             my $coupon_assign_epoch = time;
             $customer->coupon($coupon->id);
             $stripe->post_customer(customer => $customer);
