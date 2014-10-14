@@ -1185,12 +1185,15 @@ Invoices: {
             $subscription = $subscription->id;
         }
 
-        return $self->_post("invoices", 
-                            customer => $customer,
-                            application_fee => $application_fee,
-                            description => $description,
-                            metadata => $metadata,
-                            subscription =>$subscription);
+        my %args = (
+            customer => $customer,
+            application_fee => $application_fee,
+            description => $description,
+            metadata => $metadata,
+            subscription =>$subscription
+        );
+
+        return $self->_post("invoices", _defined_arguments(\%args));
     }
 
 
@@ -1203,12 +1206,14 @@ Invoices: {
             $invoice = $invoice->id;
         }
 
-        return $self->_post("invoices/$invoice", 
-                            application_fee => $application_fee,
-                            closed => $closed,
-                            description => $description,
-                            metadata => $metadata
-                        );
+        my %args = (
+            application_fee => $application_fee,
+            closed => $closed,
+            description => $description,
+            metadata => $metadata
+        );
+
+        return $self->_post("invoices/$invoice", _defined_arguments(\%args));
     }
 
     method get_invoice(Str :$invoice_id) {
@@ -1387,10 +1392,13 @@ InvoiceItems: {
             $invoice_item = $invoice_item->id;
         }
 
-        return $self->_post("invoiceitems/" . $invoice_item, 
-                            amount => $amount,
-                            description => $description,
-                            metadata => $metadata);
+        my %args = (
+            amount => $amount,
+            description => $description,
+            metadata => $metadata
+        );
+
+        return $self->_post("invoiceitems/" . $invoice_item, _defined_arguments(\%args));
     }
 
     method get_invoiceitem(Str :$invoice_item) {
