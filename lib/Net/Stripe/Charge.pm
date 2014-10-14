@@ -21,14 +21,14 @@ has 'captured'            => (is => 'ro', isa => 'Maybe[Bool|Object]');
 has 'balance_transaction' => (is => 'ro', isa => 'Maybe[Str]');
 has 'failure_message'     => (is => 'ro', isa => 'Maybe[Str]');
 has 'failure_code'        => (is => 'ro', isa => 'Maybe[Str]');
-
+has 'application_fee'     => (is => 'ro', isa => 'Maybe[Int]');
 
 method form_fields {
     return (
         $self->fields_for('card'),
         map { $_ => $self->$_ }
             grep { defined $self->$_ }
-                qw/amount currency customer description/
+                qw/amount currency customer description application_fee/
     );
 }
 
