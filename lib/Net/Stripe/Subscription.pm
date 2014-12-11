@@ -29,6 +29,7 @@ has 'current_period_start' => (is => 'ro', isa => 'Maybe[Int]');
 has 'current_period_end'   => (is => 'ro', isa => 'Maybe[Int]');
 has 'trial_start'          => (is => 'ro', isa => 'Maybe[Str]');
 has 'trial_end'            => (is => 'rw', isa => 'Maybe[Str|Int]');
+has 'cancel_at_period_end' => (is => 'rw', isa => 'Maybe[Bool]');
 
 
 method form_fields {
