@@ -2,6 +2,12 @@ package Net::Stripe::Subscription;
 
 use Moose;
 use Kavorka;
+use Net::Stripe::Token;
+use Net::Stripe::Card;
+use Net::Stripe::Plan;
+use Net::Stripe::Coupon;
+
+
 extends 'Net::Stripe::Resource';
 
 # ABSTRACT: represent a Subscription object from Stripe

@@ -613,6 +613,8 @@ L<https://stripe.com/docs/api#create_subscription>
 
 =item * application_fee_percent - Int, optional
 
+=item * prorate - Bool, optional
+
 =back
 
 Returns a L<Net::Stripe::Customer> object
@@ -670,8 +672,9 @@ Subscriptions: {
                              Str :$coupon?,
                              Int|Str :$trial_end?,
                              Net::Stripe::Card|Net::Stripe::Token|Str|HashRef :$card?,
-                             Int :$quantity?,
-                             Num :$application_fee_percent?
+                             Int :$quantity? where { $_ >= 0 },
+                             Num :$application_fee_percent?,
+                             Bool :$prorate? = 1
                          ) {
         if (ref($customer)) {
             $customer = $customer->id;
@@ -685,6 +688,7 @@ Subscriptions: {
                     coupon => $coupon,
                     trial_end => $trial_end,
                     card => $card,
+                    prorate => $prorate ? 'true' : 'false',
                     quantity => $quantity,
                     application_fee_percent => $application_fee_percent);
 
