@@ -1190,11 +1190,13 @@ Invoices: {
         }
 
         return $self->_post("invoices", 
-                            customer => $customer,
-                            application_fee => $application_fee,
-                            description => $description,
-                            metadata => $metadata,
-                            subscription =>$subscription);
+                            {
+                                customer => $customer,
+                                application_fee => $application_fee,
+                                description => $description,
+                                metadata => $metadata,
+                                subscription =>$subscription
+                            });
     }
 
 
@@ -1208,11 +1210,12 @@ Invoices: {
         }
 
         return $self->_post("invoices/$invoice", 
-                            application_fee => $application_fee,
-                            closed => $closed,
-                            description => $description,
-                            metadata => $metadata
-                        );
+                            {
+                                application_fee => $application_fee,
+                                closed => $closed,
+                                description => $description,
+                                metadata => $metadata
+                            });
     }
 
     method get_invoice(Str :$invoice_id) {
@@ -1392,9 +1395,11 @@ InvoiceItems: {
         }
 
         return $self->_post("invoiceitems/" . $invoice_item, 
-                            amount => $amount,
-                            description => $description,
-                            metadata => $metadata);
+                            {
+                                amount => $amount,
+                                description => $description,
+                                metadata => $metadata
+                            });
     }
 
     method get_invoiceitem(Str :$invoice_item) {
@@ -1474,15 +1479,18 @@ method _delete(Str $path) {
 sub convert_to_form_fields {
     my $hash = shift;
     if (ref($hash) eq 'HASH') {
-        foreach my $key (keys %$hash) {
+        my $r = {};
+        foreach my $key (grep { defined($hash->{$_}) }keys %$hash) {
             if (ref($hash->{$key}) =~ /^Net::Stripe/) {
                 my %fields = $hash->{$key}->form_fields();
                 foreach my $fn (keys %fields) {
-                    $hash->{$fn} = $fields{$fn};
+                    $r->{$fn} = $fields{$fn};
                 }
-                delete $hash->{$key};
+            } else {
+                $r->{$key} = $hash->{$key};
             }
         }
+        return $r;
     }
     return $hash;
 }

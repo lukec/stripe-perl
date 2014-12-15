@@ -6,7 +6,7 @@ Net::Stripe - API client for Stripe.com
 
 =head1 VERSION
 
-version 0.23
+version 0.25
 
 =head1 SYNOPSIS
 
