@@ -29,7 +29,7 @@ has 'country'              => (is => 'ro', isa => 'Maybe[Str]');
 has 'cvc_check'            => (is => 'ro', isa => 'Maybe[Str]');
 has 'fingerprint'          => (is => 'ro', isa => 'Maybe[Str]');
 has 'last4'                => (is => 'ro', isa => 'Maybe[Str]');
-has 'type'                 => (is => 'ro', isa => 'Maybe[Str]');
+has 'brand'                => (is => 'ro', isa => 'Maybe[Str]');  # formerly 'type'
 
 method form_fields {
     return (
