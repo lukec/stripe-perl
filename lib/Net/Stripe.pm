@@ -1,5 +1,5 @@
 package Net::Stripe;
-$Net::Stripe::VERSION = '0.25b';
+$Net::Stripe::VERSION = '0.26';
 use Moose;
 use Kavorka;
 use LWP::UserAgent;
@@ -142,7 +142,7 @@ L<https://stripe.com/docs/api#refund_charge>
 
 =back
 
-Returns a new L<Net::Stripe::Charge>.
+Returns a new L<Net::Stripe::Refund>.
 
   $stripe->refund_charge(charge => $charge, amount => 500);
 
