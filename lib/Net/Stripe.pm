@@ -1,5 +1,5 @@
 package Net::Stripe;
-
+$Net::Stripe::VERSION = '0.26';
 use Moose;
 use Kavorka;
 use LWP::UserAgent;
@@ -21,6 +21,7 @@ use Net::Stripe::Error;
 use Net::Stripe::BalanceTransaction;
 use Net::Stripe::List;
 use Net::Stripe::LineItem;
+use Net::Stripe::Refund;
 
 # ABSTRACT: API client for Stripe.com
 
@@ -141,7 +142,7 @@ L<https://stripe.com/docs/api#refund_charge>
 
 =back
 
-Returns a new L<Net::Stripe::Charge>.
+Returns a new L<Net::Stripe::Refund>.
 
   $stripe->refund_charge(charge => $charge, amount => 500);
 
@@ -204,13 +205,10 @@ Charges: {
             $charge = $charge->id;
         }
         
-        if($amount) {
-            $amount = "?amount=$amount";
-        } else {
-            $amount = '';
-        }
-        
-        return $self->_post("charges/$charge/refund" . $amount);
+        my $refund = Net::Stripe::Refund->new(id => $charge,
+                                              amount => $amount
+                                          );
+        return $self->_post("charges/$charge/refunds", $refund);
     }
 
     method get_charges(HashRef :$created?, 

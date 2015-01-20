@@ -156,7 +156,7 @@ Charges: {
         is $card->exp_month, $future->month, 'card exp_month';
         is $card->exp_year,  $future->year, 'card exp_year';
         is $card->last4, '4242', 'card last4';
-        is $card->type, 'Visa', 'card type';
+        is $card->brand, 'Visa', 'card brand';
         is $card->cvc_check, 'pass', 'card cvc_check';
 
         # Fetch a charge
@@ -166,20 +166,22 @@ Charges: {
         is $charge2->id, $charge->id, 'Charge ids match';
 
         # Refund a charge
-        my $charge3;
+        my $refund;
         # partial refund
-        lives_ok { $charge = $stripe->refund_charge(charge => $charge->id, amount => 1000) }
+        lives_ok { $refund = $stripe->refund_charge(charge => $charge->id, amount => 1000) }
             'refunding a charge works';
-        is $charge->id, $charge->id, 'returned charge object matches id';
-        is $charge->amount_refunded, 1000, 'partial refund $10';
+        is $refund->charge, $charge->id, 'returned charge object matches id';
+        is $refund->amount, 1000, 'partial refund $10';
+        lives_ok { $charge = $stripe->get_charge(charge_id => $charge->id) }
+            'Fetching updated charge works';
         ok !$charge->refunded, 'charge not yet fully refunded';
         # fully refund
-        lives_ok { $charge = $stripe->refund_charge(charge => $charge->id) }
+        lives_ok { $refund = $stripe->refund_charge(charge => $charge->id) }
             'refunding remainder of charge';
-        is $charge->id, $charge->id, 'returned charge object matches id';
-        ok $charge->refunded, 'charge is refunded';
-        ok $charge->paid, 'charge was paid';
-        ok $charge->paid, 'charge was paid';
+        is $refund->charge, $charge->id, 'returned charge object matches id';
+        lives_ok { $charge = $stripe->get_charge(charge_id => $charge->id) }
+            'Fetching updated charge works';
+        ok $charge->refunded, 'charge is fully refunded';
 
         # Fetch list of charges
         my $charges = $stripe->get_charges( limit => 1 );
@@ -309,7 +311,7 @@ Customers: {
             is $card->exp_month, $future->month, 'card exp_month';
             is $card->exp_year,  $future->year, 'card exp_year';
             is $card->last4, '4242', 'card last4';
-            is $card->type, 'Visa', 'card type';
+            is $card->brand, 'Visa', 'card brand';
         }
 
         Create_with_a_token: {
