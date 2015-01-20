@@ -1,5 +1,5 @@
 package Net::Stripe;
-$Net::Stripe::VERSION = '0.26';
+
 use Moose;
 use Kavorka;
 use LWP::UserAgent;
