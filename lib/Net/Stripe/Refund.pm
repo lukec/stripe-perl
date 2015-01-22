@@ -4,7 +4,8 @@ use Moose;
 use Kavorka;
 extends 'Net::Stripe::Resource';
 
-# ABSTRACT Refund object
+# ABSTRACT: represent a Refund object from Stripe
+
 has 'id'                  => (is => 'ro', isa => 'Maybe[Str]');
 has 'amount'              => (is => 'ro', isa => 'Maybe[Int]');
 has 'created'             => (is => 'ro', isa => 'Maybe[Int]');

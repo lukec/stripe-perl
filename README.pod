@@ -187,7 +187,7 @@ L<https://stripe.com/docs/api#refund_charge>
 
 =back
 
-Returns a new L<Net::Stripe::Charge>.
+Returns a new L<Net::Stripe::Refund>.
 
   $stripe->refund_charge(charge => $charge, amount => 500);
 
@@ -947,13 +947,17 @@ Rusty Conover
 
 =head1 CONTRIBUTORS
 
-=for stopwords Andrew Solomon Tom Eliaz Brian Collins Devin M. Certas Dimitar Petrov Dylan Reinhold Jonathan "Duke" Leto Luke Closs Olaf Alders Rusty Conover Sachin Sebastian
+=for stopwords Andrew Solomon Sachin Sebastian Tom Eliaz Brian Collins Devin M. Certas Dimitar Petrov Dylan Reinhold Hermann Calabria Jonathan "Duke" Leto Luke Closs Olaf Alders Rusty Conover
 
 =over 4
 
 =item *
 
 Andrew Solomon <andrew@illywhacker.net>
+
+=item *
+
+Sachin Sebastian <sachinjsk@users.noreply.github.com>
 
 =item *
 
@@ -977,6 +981,10 @@ Dylan Reinhold <dylan@gasdasoftware.com>
 
 =item *
 
+Hermann Calabria <hermann@ivouch.com>
+
+=item *
+
 Jonathan "Duke" Leto <jonathan@leto.net>
 
 =item *
@@ -990,10 +998,6 @@ Olaf Alders <olaf@wundersolutions.com>
 =item *
 
 Rusty Conover <rusty@luckydinosaur.com>
-
-=item *
-
-Sachin Sebastian <sachinjsk@users.noreply.github.com>
 
 =back
 
