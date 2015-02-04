@@ -188,6 +188,25 @@ Charges: {
         is scalar(@{$charges->data}), 1, 'one charge returned';
         is $charges->get(0)->id, $charge->id, 'charge ids match';
     }
+    
+    Charge_with_metadata: {
+        my $charge;
+        lives_ok { 
+            $charge = $stripe->post_charge(
+                amount => 2500,
+                currency => 'usd',
+                card => $fake_card,
+                description => 'Testing Metadata',
+                metadata => {'hasmetadata' => 'hello world'},
+            );
+        } 'Created a charge object with metadata';
+        isa_ok $charge, 'Net::Stripe::Charge';
+        ok defined($charge->metadata), "charge has metadata";
+        is $charge->metadata->{'hasmetadata'}, 'hello world', 'charge metadata';
+        my $charge2 = $stripe->get_charge(charge_id => $charge->id);
+        is $charge2->metadata->{'hasmetadata'}, 'hello world', 'charge metadata in retrieved object';
+    }
+
 
     Post_charge_using_customer: {
         my $token = $stripe->post_token( card => $fake_card );
@@ -303,6 +322,7 @@ Customers: {
                 card => $fake_card,
                 email => 'stripe@example.com',
                 description => 'Test for Net::Stripe',
+                metadata => {'somemetadata' => 'hello world'},
             );
             my $path = 'customers/'.$customer->id.'/cards/'.$customer->default_card;
             my $card = $stripe->_get( $path );
@@ -312,6 +332,7 @@ Customers: {
             is $card->exp_year,  $future->year, 'card exp_year';
             is $card->last4, '4242', 'card last4';
             is $card->brand, 'Visa', 'card brand';
+            is $customer->metadata->{'somemetadata'}, 'hello world', 'customer metadata';
         }
 
         Create_with_a_token: {
