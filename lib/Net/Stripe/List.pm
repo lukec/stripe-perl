@@ -9,8 +9,8 @@ has 'count'    => (is => 'ro', isa => 'Maybe[Int]'); # no longer included by def
 has 'url'      => (is => 'ro', isa => 'Str', required => 1);
 has 'has_more' => (is => 'ro', isa => 'Bool|Object', required => 1);
 has 'data'     => (traits => ['Array'],
-                   is => 'ro', 
-                   isa => 'ArrayRef', 
+                   is => 'ro',
+                   isa => 'ArrayRef',
                    required => 1,
                    handles => {
                        elements => 'elements',
