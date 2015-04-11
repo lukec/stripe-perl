@@ -1,5 +1,7 @@
 package Net::Stripe::Resource;
 
+# ABSTRACT: represent a Resource object from Stripe
+
 use Moose;
 use Kavorka;
 
