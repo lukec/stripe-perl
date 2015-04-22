@@ -365,7 +365,7 @@ L<https://stripe.com/docs/api#create_card>
 
 Returns a L<Net::Stripe::Card>
 
-  $stripe->create_card(customer => $customer, card => $card);
+  $stripe->post_card(customer => $customer, card => $card);
 
 =head2 get_cards
 
