@@ -546,7 +546,7 @@ Cards: {
             $customer = $customer->id;
         }
 
-        $self->_get_collections('cards',
+        $self->_get_collections("customers/$customer/sources",
                                 id => $customer,
                                 created => $created,
                                 ending_before => $ending_before,
