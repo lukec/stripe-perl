@@ -621,7 +621,7 @@ Returns a L<Net::Stripe::Customer> object
 
 =subscription_method get_subscription
 
-Returns a customers subscription
+Returns a customer's subscription
 
 =over
 
