@@ -734,7 +734,7 @@ Returns a L<Net::Stripe::Token>
 
 =token_method get_token
 
-Retreives an existing token.
+Retrieves an existing token.
 
 L<https://stripe.com/docs/api#retrieve_token>
 
@@ -931,7 +931,7 @@ Returns a L<Net::Stripe::Coupon> object.
 
 =coupon_method get_coupon
 
-Retreive a coupon
+Retrieve a coupon
 
 L<https://stripe.com/docs/api#retrieve_coupon>
 
