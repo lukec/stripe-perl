@@ -41,7 +41,7 @@ use Net::Stripe::Refund;
  # look up a charge by id
  my $same_charge = $stripe->get_charge(charge_id => $charge->id);
 
- # ... and the api mirrors https://stripe.com/docs/api
+ # ... and the API mirrors https://stripe.com/docs/api
  # Charges: post_charge() get_charge() refund_charge() get_charges()
  # Customer: post_customer()
 
@@ -54,7 +54,7 @@ This method returns Moose objects for responses from the API.
 
 =method new PARAMHASH
 
-This creates a new stripe api object.  The following parameters are accepted:
+This creates a new stripe API object.  The following parameters are accepted:
 
 =over
 
