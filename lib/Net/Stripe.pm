@@ -1033,12 +1033,11 @@ L<https://stripe.com/docs/api/curl#delete_discount>
 
   $stripe->delete_customer_discount(customer => $customer);
 
-returns hashref of the form
+Returns hashref of the form
 
   {
     deleted => <bool>
   }
-
 
 =cut
 
