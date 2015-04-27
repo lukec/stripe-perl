@@ -1021,7 +1021,7 @@ Coupons: {
 
 =discount_method delete_customer_discount
 
-Deleting a Customer-wide Discount
+Deletes a customer-wide discount
 
 L<https://stripe.com/docs/api/curl#delete_discount>
 
