@@ -1456,6 +1456,12 @@ sub _get_collections {
     if (my $c = $args{customer}) {
         push @path_args, "customer=$c";
     }
+    if (my $s = $args{starting_after}) {
+        push @path_args, "starting_after=$s";
+    }
+    if (my $e = $args{ending_before}) {
+        push @path_args, "ending_before=$e";
+    }
 
     # example: $Stripe->get_charges( 'count' => 100, 'created' => { 'gte' => 1397663381 } );
     if (defined($args{created})) {
