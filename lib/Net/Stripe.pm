@@ -43,11 +43,11 @@ use Net::Stripe::Refund;
 
  # ... and the api mirrors https://stripe.com/docs/api
  # Charges: post_charge() get_charge() refund_charge() get_charges()
- # Customer: post_customer() 
+ # Customer: post_customer()
 
 =head1 DESCRIPTION
 
-This module is a wrapper around the Stripe.com HTTP API.  Methods are 
+This module is a wrapper around the Stripe.com HTTP API.  Methods are
 generally named after the HTTP method and the object name.
 
 This method returns Moose objects for responses from the API.
@@ -86,7 +86,7 @@ Create a new charge
 
 L<https://stripe.com/docs/api#create_charge>
 
-=over 
+=over
 
 =item * amount - Int - amount to charge
 
@@ -118,7 +118,7 @@ Retrieve a charge.
 
 L<https://stripe.com/docs/api#retrieve_charge>
 
-=over 
+=over
 
 =item * charge_id - Str - charge id to retrieve
 
@@ -134,7 +134,7 @@ Refunds a charge
 
 L<https://stripe.com/docs/api#refund_charge>
 
-=over 
+=over
 
 =item * charge - L<Net::Stripe::Charge> or Str - charge or charge_id to refund
 
@@ -152,7 +152,7 @@ Returns a L<Net::Stripe::List> object containing L<Net::Stripe::Charge> objects.
 
 L<https://stripe.com/docs/api#list_charges>
 
-=over 
+=over
 
 =item * created - HashRef - created conditions to match, optional
 
@@ -204,22 +204,22 @@ Charges: {
         if (ref($charge)) {
             $charge = $charge->id;
         }
-        
+
         my $refund = Net::Stripe::Refund->new(id => $charge,
                                               amount => $amount
                                           );
         return $self->_post("charges/$charge/refunds", $refund);
     }
 
-    method get_charges(HashRef :$created?, 
+    method get_charges(HashRef :$created?,
                        Net::Stripe::Customer|Str :$customer?,
-                       Str :$ending_before?, 
-                       Int :$limit?, 
+                       Str :$ending_before?,
+                       Int :$limit?,
                        Str :$starting_after?) {
         if (ref($customer)) {
             $customer = $customer->id;
         }
-        $self->_get_collections('charges', 
+        $self->_get_collections('charges',
                                 created => $created,
                                 customer => $customer,
                                 ending_before => $ending_before,
@@ -236,7 +236,7 @@ Retrieve a balance transaction
 
 L<https://stripe.com/docs/api#retrieve_balance_transaction>
 
-=over 
+=over
 
 =item * id - Str - balance transaction ID to retrieve.
 
@@ -246,7 +246,7 @@ Returns a L<Net::Stripe::BalanceTransaction>
 
   $stripe->get_balance_transaction(id => 'id');
 
-=cut 
+=cut
 
 
 BalanceTransactions: {
@@ -284,7 +284,7 @@ L<https://stripe.com/docs/api#create_customer>
 
 =item * trial_end - Int or Str, optional
 
-=back 
+=back
 
 Returns a L<Net::Stripe::Customer> object
 
@@ -377,16 +377,16 @@ Customers: {
                          Str :$coupon?,
                          Str :$default_card?,
                          Str :$description?,
-                         Str :$email?, 
-                         HashRef :$metadata?, 
-                         Str :$plan?, 
-                         Int :$quantity?, 
+                         Str :$email?,
+                         HashRef :$metadata?,
+                         Str :$plan?,
+                         Int :$quantity?,
                          Int|Str :$trial_end?) {
 
         if (defined($card) && ref($card) eq 'HASH') {
             $card = Net::Stripe::Card->new($card);
-        } 
-        
+        }
+
         if (ref($customer) eq 'Net::Stripe::Customer') {
             return $self->_post("customers/" . $customer->id, $customer);
         } elsif (defined($customer)) {
@@ -398,7 +398,7 @@ Customers: {
                 email => $email,
                 metadata => $metadata,
             );
-    
+
             return $self->_post("customers/" . $customer, _defined_arguments(\%args));
         }
 
@@ -415,14 +415,14 @@ Customers: {
         return $self->_post('customers', $customer);
     }
 
-    method list_subscriptions(Net::Stripe::Customer|Str :$customer, 
-                              Str :$ending_before?, 
-                              Int :$limit?, 
+    method list_subscriptions(Net::Stripe::Customer|Str :$customer,
+                              Str :$ending_before?,
+                              Int :$limit?,
                               Str :$starting_after?) {
         if (ref($customer)) {
             $customer = $customer->id;
         }
-        return $self->_get_collections("customers/$customer/subscriptions", 
+        return $self->_get_collections("customers/$customer/subscriptions",
                            ending_before => $ending_before,
                            limit => $limit,
                            starting_after => $starting_after
@@ -441,7 +441,7 @@ Customers: {
     }
 
     method get_customers(HashRef :$created?, Str :$ending_before?, Int :$limit?, Str :$starting_after?) {
-        $self->_get_collections('customers', 
+        $self->_get_collections('customers',
                                 created => $created,
                                 ending_before => $ending_before,
                                 limit => $limit,
@@ -494,7 +494,7 @@ L<https://stripe.com/docs/api#list_cards>
 
 =over
 
-=item * customer - L<Net::Stripe::Customer> or Str 
+=item * customer - L<Net::Stripe::Customer> or Str
 
 =item * ending_before - Str, optional
 
@@ -529,7 +529,7 @@ Returns a L<Net::Stripe::Card>.
 =cut
 
 Cards: {
-    method get_card(Net::Stripe::Customer|Str :$customer, 
+    method get_card(Net::Stripe::Customer|Str :$customer,
                     Str :$card_id) {
         if (ref($customer)) {
             $customer = $customer->id;
@@ -538,15 +538,15 @@ Cards: {
     }
 
     method get_cards(Net::Stripe::Customer|Str $customer,
-                     HashRef :$created?, 
-                     Str :$ending_before?, 
-                     Int :$limit?, 
+                     HashRef :$created?,
+                     Str :$ending_before?,
+                     Int :$limit?,
                      Str :$starting_after?) {
         if (ref($customer)) {
             $customer = $customer->id;
         }
 
-        $self->_get_collections('cards', 
+        $self->_get_collections('cards',
                                 id => $customer,
                                 created => $created,
                                 ending_before => $ending_before,
@@ -554,7 +554,7 @@ Cards: {
                                 starting_after => $starting_after);
     }
 
-    method post_card(Net::Stripe::Customer|Str :$customer, 
+    method post_card(Net::Stripe::Customer|Str :$customer,
                      HashRef|Net::Stripe::Card :$card) {
         if (ref($customer)) {
             $customer = $customer->id;
@@ -595,7 +595,7 @@ L<https://stripe.com/docs/api#create_subscription>
 
 =item * customer - L<Net::Stripe::Customer>
 
-=item * subscription - L<Net::Stripe::Subscription> or Str 
+=item * subscription - L<Net::Stripe::Subscription> or Str
 
 =item * card - L<Net::Stripe::Card>, L<Net::Stripe::Token>, Str or HashRef, default card for the customer, optional
 
@@ -641,9 +641,9 @@ L<https://stripe.com/docs/api#cancel_subscription>
 
 =over
 
-=item * customer - L<Net::Stripe::Customer> or Str 
+=item * customer - L<Net::Stripe::Customer> or Str
 
-=item * subscription - L<Net::Stripe::Subscription> or Str 
+=item * subscription - L<Net::Stripe::Subscription> or Str
 
 =item * at_period_end - Bool, optional
 
@@ -665,7 +665,7 @@ Subscriptions: {
 
     # adds a subscription, keeping any existing subscriptions unmodified
     method post_subscription(Net::Stripe::Customer|Str :$customer,
-                             Net::Stripe::Subscription|Str :$subscription?, 
+                             Net::Stripe::Subscription|Str :$subscription?,
                              Net::Stripe::Plan|Str :$plan?,
                              Str :$coupon?,
                              Int|Str :$trial_end?,
@@ -695,10 +695,10 @@ Subscriptions: {
         } elsif (defined($subscription) && !ref($subscription)) {
             return $self->_post("customers/$customer/subscriptions/" . $subscription, _defined_arguments(\%args));
         }
-        
+
         return $self->_post("customers/$customer/subscriptions", _defined_arguments(\%args));
     }
-    
+
     method delete_subscription(Net::Stripe::Customer|Str :$customer,
                                Net::Stripe::Subscription|Str :$subscription,
                                Bool :$at_period_end?
@@ -722,9 +722,9 @@ Create a new token
 
 L<https://stripe.com/docs/api#create_card_token>
 
-=over 
+=over
 
-=item card - L<Net::Stripe::Card> or HashRef 
+=item card - L<Net::Stripe::Card> or HashRef
 
 =back
 
@@ -788,7 +788,7 @@ L<https://stripe.com/docs/api#create_plan>
 =back
 
 Returns a L<Net::Stripe::Plan> object
- 
+
   $stripe->post_plan(
      id => "free-$future_ymdhms",
      amount => 0,
@@ -883,7 +883,7 @@ Plans: {
     }
 
     method get_plans(Str :$ending_before?, Int :$limit?, Str :$starting_after?) {
-        $self->_get_collections('plans', 
+        $self->_get_collections('plans',
                                 ending_before => $ending_before,
                                 limit => $limit,
                                 starting_after => $starting_after);
@@ -1012,7 +1012,7 @@ Coupons: {
     }
 
     method get_coupons(Str :$ending_before?, Int :$limit?, Str :$starting_after?) {
-        $self->_get_collections('coupons', 
+        $self->_get_collections('coupons',
                                 ending_before => $ending_before,
                                 limit => $limit,
                                 starting_after => $starting_after);
@@ -1058,7 +1058,7 @@ Update an invoice
 
 =over
 
-=item * invoice - L<Net::Stripe::Invoice>, Str 
+=item * invoice - L<Net::Stripe::Invoice>, Str
 
 =item * application_fee - Int - optional
 
@@ -1130,7 +1130,7 @@ L<https://stripe.com/docs/api#create_invoice>
 
 =over
 
-=item * customer - L<Net::Stripe::Customer>, Str 
+=item * customer - L<Net::Stripe::Customer>, Str
 
 =item * application_fee - Int - optional
 
@@ -1143,7 +1143,7 @@ L<https://stripe.com/docs/api#create_invoice>
 =back
 
 Returns a L<Net::Stripe::Invoice>
-  
+
   $stripe->create_invoice(customer => 'custid', description => 'test');
 
 =invoice_method get_invoice
@@ -1182,12 +1182,12 @@ Invoices: {
         if (ref($customer)) {
             $customer = $customer->id;
         }
-        
+
         if (ref($subscription)) {
             $subscription = $subscription->id;
         }
 
-        return $self->_post("invoices", 
+        return $self->_post("invoices",
                             {
                                 customer => $customer,
                                 application_fee => $application_fee,
@@ -1207,7 +1207,7 @@ Invoices: {
             $invoice = $invoice->id;
         }
 
-        return $self->_post("invoices/$invoice", 
+        return $self->_post("invoices/$invoice",
                             {
                                 application_fee => $application_fee,
                                 closed => $closed,
@@ -1226,8 +1226,8 @@ Invoices: {
 
     method get_invoices(Net::Stripe::Customer|Str :$customer?,
                         Int|HashRef :$date?,
-                        Str :$ending_before?, 
-                        Int :$limit?, 
+                        Str :$ending_before?,
+                        Int :$limit?,
                         Str :$starting_after?) {
         if (ref($customer)) {
             $customer = $customer->id
@@ -1363,7 +1363,7 @@ InvoiceItems: {
         if (ref($invoice)) {
             $invoice = $invoice->id;
         }
-        
+
         if (ref($subscription)) {
             $subscription = $subscription->id;
         }
@@ -1392,7 +1392,7 @@ InvoiceItems: {
             $invoice_item = $invoice_item->id;
         }
 
-        return $self->_post("invoiceitems/" . $invoice_item, 
+        return $self->_post("invoiceitems/" . $invoice_item,
                             {
                                 amount => $amount,
                                 description => $description,
@@ -1413,13 +1413,13 @@ InvoiceItems: {
 
     method get_invoiceitems(HashRef :$created?,
                             Net::Stripe::Customer|Str :$customer?,
-                            Str :$ending_before?, 
-                            Int :$limit?, 
+                            Str :$ending_before?,
+                            Int :$limit?,
                             Str :$starting_after?) {
         if (ref($customer)) {
             $customer = $customer->id;
         }
-        $self->_get_collections('invoiceitems', 
+        $self->_get_collections('invoiceitems',
                                 created => $created,
                                 ending_before => $ending_before,
                                 limit => $limit,
@@ -1442,7 +1442,7 @@ method _get_with_args(Str $path, $args?) {
     return $self->_get($path);
 }
 
-sub _get_collections { 
+sub _get_collections {
     my $self = shift;
     my $path = shift;
     my %args = @_;
@@ -1456,15 +1456,15 @@ sub _get_collections {
     if (my $c = $args{customer}) {
         push @path_args, "customer=$c";
     }
-    
+
     # example: $Stripe->get_charges( 'count' => 100, 'created' => { 'gte' => 1397663381 } );
     if (defined($args{created})) {
-      my %c = %{$args{created}};   
+      my %c = %{$args{created}};
       foreach my $key (keys %c) {
         if ($key =~ /(?:l|g)te?/) {
           push @path_args, "created[".$key."]=".$c{$key};
         }
-      }        
+      }
     }
     return $self->_get_with_args($path, \@path_args);
 }
@@ -1494,13 +1494,13 @@ sub convert_to_form_fields {
 }
 
 method _post(Str $path, $obj?) {
-    my $req = POST $self->api_base . '/' . $path, 
+    my $req = POST $self->api_base . '/' . $path,
         ($obj ? (Content => [ref($obj) eq 'HASH' ? %{convert_to_form_fields($obj)} : $obj->form_fields]) : ());
     return $self->_make_request($req);
 }
 
 method _make_request($req) {
-    $req->header( Authorization => 
+    $req->header( Authorization =>
         "Basic " . encode_base64($self->api_key . ':'));
 
     if ($self->debug_network) {
@@ -1559,7 +1559,7 @@ sub _hash_to_object {
 
     if (defined($hash->{object})) {
         if ($hash->{object} eq 'list') {
-            $hash->{data} = [map { _hash_to_object($_) } @{$hash->{data}}];        
+            $hash->{data} = [map { _hash_to_object($_) } @{$hash->{data}}];
             return Net::Stripe::List->new($hash);
         }
         my @words  = map { ucfirst($_) } split('_', $hash->{object});

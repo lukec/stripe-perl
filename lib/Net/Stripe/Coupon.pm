@@ -18,7 +18,7 @@ method form_fields {
     return (
         map { ($_ => $self->$_) }
             grep { defined $self->$_ }
-                qw/id percent_off duration duration_in_months 
+                qw/id percent_off duration duration_in_months
                    max_redemptions redeem_by/
     );
 }
