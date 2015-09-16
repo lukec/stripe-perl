@@ -11,6 +11,7 @@ use Net::Stripe::Token;
 use Net::Stripe::Invoiceitem;
 use Net::Stripe::Invoice;
 use Net::Stripe::Card;
+use Net::Stripe::BitcoinReceiver;
 use Net::Stripe::Plan;
 use Net::Stripe::Coupon;
 use Net::Stripe::Charge;
@@ -22,6 +23,7 @@ use Net::Stripe::BalanceTransaction;
 use Net::Stripe::List;
 use Net::Stripe::LineItem;
 use Net::Stripe::Refund;
+use Net::Stripe::BitcoinTransaction;
 
 # ABSTRACT: API client for Stripe.com
 
@@ -94,7 +96,7 @@ L<https://stripe.com/docs/api#create_charge>
 
 =item * customer - L<Net::Stripe::Customer>, HashRef or Str - customer to charge - optional
 
-=item * card - L<Net::Stripe::Card>, L<Net::Stripe::Token>, Str or HashRef - card to use - optional
+=item * card - L<Net::Stripe::Card>, L<Net::Stripe::Token>, Str or HashRef - card to use; also accepts bitcoin receiver id - optional
 
 =item * description - Str - description for the charge - optional
 
@@ -1425,6 +1427,118 @@ InvoiceItems: {
                                 limit => $limit,
                                 starting_after => $starting_after
                             );
+    }
+}
+
+=bitcoinreceiver_method create_bitcoin_receiver
+
+Create a new bitcoin receiver
+
+L<https://stripe.com/docs/api#create_bitcoin_receiver>
+
+=over
+
+=item * amount - Int, required
+
+=item * currency - Str, required (as of Stripe API v2015-09-08, usd only)
+
+=item * email - Str, required
+
+=item * description - Str, optional
+
+=item * metadata - HashRef, optional
+
+=item * refund_mispayments - Bool, optional
+
+=back
+
+Returns a L<Net::Stripe::BitcoinReceiver>
+
+  $stripe->create_bitcoin_receiver(amount => 1000, currency => 'usd', email => 'stripe@example.com');
+
+=bitcoinreceiver_method get_bitcoin_receiver
+
+Retreives an existing Bitcoin receiver.
+
+L<https://stripe.com/docs/api#retrieve_bitcoin_receiver>
+
+=over
+
+=item * receiver_id - Str, required
+
+=back
+
+Returns a L<Net::Stripe::BitcoinReceiver>
+
+  $stripe->get_bitcoin_receiver(receiver_id => 'btcreceiverid');
+
+=bitcoinreceiver_method list_bitcoin_receivers
+
+Return a list of Bitcoin receivers
+
+L<https://stripe.com/docs/api#list_bitcoin_receivers>
+
+=over
+
+=item * ending_before - Str, optional
+
+=item * limit - Int, optional
+
+=item * starting_after - Str, optional
+
+=item * filled - Bool, optional
+
+=item * active - Bool, optional
+
+=item * uncaptured_funds - Bool, optional
+
+=back
+
+Returns a L<Net::Stripe::List> object containing L<Net::Stripe::BitcoinReceiver> objects.
+
+  $stripe->list_bitcoin_receivers();
+
+=cut
+
+BitcoinReceivers: {
+    method create_bitcoin_receiver(Int :$amount,
+                                   Str :$currency,
+                                   Str :$email,
+                                   Str :$description?,
+                                   HashRef :$metadata?,
+                                   Bool :$refund_mispayments?) {                     
+        
+        my $receiver = Net::Stripe::BitcoinReceiver->new(
+            amount             => $amount,
+            currency           => $currency,
+            email              => $email,
+            description        => $description,
+            metadata           => $metadata,
+            refund_mispayments => $refund_mispayments
+        );
+        return $self->_post( 'bitcoin/receivers', $receiver );
+    }
+
+    method get_bitcoin_receiver(Str :$receiver_id) {
+        return $self->_get("bitcoin/receivers/$receiver_id");
+    }
+
+    method list_bitcoin_receivers(Bool :$active?,
+                              Bool :$filled?,
+                              Str :$ending_before?,
+                              Int :$limit?,
+                              Str :$starting_after?,
+                              Bool :$uncaptured_funds?) {
+
+        return $self->_get_collections(
+            "bitcoin/receivers",
+            ending_before    => $ending_before,
+            limit            => $limit,
+            starting_after   => $starting_after,
+            active           => $active,
+            filled           => $filled,
+            uncaptured_funds => $uncaptured_funds
+        );
     }
 }
 
