@@ -181,7 +181,7 @@ Charges: {
                        HashRef :$metadata?,
                        Bool :$capture?,
                        Str :$statement_description?,
-                       Int :$application_fee?
+                       Str :$application_fee?
                      ) {
         my $charge = Net::Stripe::Charge->new(amount => $amount,
                                               currency => $currency,
