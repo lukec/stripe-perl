@@ -21,7 +21,7 @@ has 'captured'            => (is => 'ro', isa => 'Maybe[Bool|Object]');
 has 'balance_transaction' => (is => 'ro', isa => 'Maybe[Str]');
 has 'failure_message'     => (is => 'ro', isa => 'Maybe[Str]');
 has 'failure_code'        => (is => 'ro', isa => 'Maybe[Str]');
-has 'application_fee'     => (is => 'ro', isa => 'Maybe[Int]');
+has 'application_fee'     => (is => 'ro', isa => 'Maybe[Str]');
 has 'metadata'            => (is => 'rw', isa => 'Maybe[HashRef]');
 has 'invoice'             => (is => 'ro', isa => 'Maybe[Str]');
 
