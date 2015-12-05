@@ -14,7 +14,7 @@ my $API_KEY = 'MOCK';
 my $future = DateTime->now + DateTime::Duration->new(years => 1);
 my $future_ymdhms = $future->ymd('-') . '-' . $future->hms('-');
 
-my $ua = mock_ua();
+my $ua = mock_ua(q());
 my $stripe = Net::Stripe->new( api_key => $API_KEY,
                                debug   => 1,
                                debug_network => 0,
@@ -81,6 +81,29 @@ sub mock_ua {
       "has_more": false,
       "data": [ $plan ]}%;
 
+    my $coupon = qq/{
+  "id": "coupon-$future_ymdhms",
+  "object": "coupon",
+  "amount_off": null,
+  "created": 1449265763,
+  "currency": "usd",
+  "duration": "once",
+  "duration_in_months": null,
+  "livemode": false,
+  "max_redemptions": null,
+  "metadata": {
+  },
+  "percent_off": 25,
+  "redeem_by": null,
+  "times_redeemed": 0,
+  "valid": true
+}/;
+
+    my $coupon_list = qq%{"object": "list",
+    "url": "/v1/plans",
+      "has_more": false,
+      "data": [ $coupon ]}%;
+
 
     $myua = 'Test::LWP::UserAgent'->new;
 
@@ -97,7 +120,7 @@ sub mock_ua {
     $myua->map_response(sub { my $r = shift;
                             if ($r->url =~ m{v1/plans}
                                 && 'DELETE' eq $r->method) {
-                                $stripe->{ua} = mock_ua(1);
+                                $stripe->{ua} = mock_ua('plan');
                                 return 1
                             }
                             return 0
@@ -106,7 +129,7 @@ sub mock_ua {
                           ['Content-Type' => 'text/json'],
                           '{"deleted": true,"id": "basic_plan_1"}'));;
 
-    if ($delete) {
+    if ('plan' eq $delete) {
         $myua->map_response(qr{v1/plans},
                           'HTTP::Response'->new(500, 'Deleted', []));
     } else {
@@ -114,6 +137,34 @@ sub mock_ua {
                           'HTTP::Response'->new(200, 'OK',
                               ['Content-Type' => 'text/json'], $plan));
     }
+
+    $myua->map_response(qr{v1/coupons\?},
+            'HTTP::Response'->new(200, 'OK',
+                                  ['Content-Type' => 'text/json'],
+                                  $coupon_list
+                                 ));
+
+    $myua->map_response(sub { my $r = shift;
+                            if ($r->url =~ m{v1/coupons}
+                                && 'DELETE' eq $r->method) {
+                                $stripe->{ua} = mock_ua('coupon');
+                                return 1
+                            }
+                            return 0
+                        },
+                      'HTTP::Response'->new(200, 'OK',
+                          ['Content-Type' => 'text/json'],
+                          '{"deleted": true,"id": "coupon-$future_ymdhms"}'));;
+
+    if ('coupon' eq $delete) {
+        $myua->map_response(qr{v1/coupons},
+                           'HTTP::Response'->new(500, 'Deleted'));
+    } else {
+        $myua->map_response(qr{v1/coupons},
+                'HTTP::Response'->new(200, 'OK',
+                    ['Content-Type' => 'text/json'], $coupon));
+    }
+
 
     use Data::Dumper;
     $myua->map_response(sub { warn Dumper \@_}, 'HTTP::Response'->new(500));
