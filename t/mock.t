@@ -25,7 +25,7 @@ sub _list {
     qq%{"object": "list", "url": "/v1/plans", "has_more": false, "data": [ $member ]}%}
 
 sub mock_ua {
-    my $delete = shift;
+    my $changed = shift;
     my $myua;
 
     # Examples from the API documentation
@@ -103,11 +103,18 @@ sub mock_ua {
       "data": [ $coupon ]}%;
 
     $myua = 'Test::LWP::UserAgent'->new;
+
     my $ok = sub {
         my ($regex, $data) = @_;
         $myua->map_response(qr/$regex/,
             'HTTP::Response'->new(200, 'OK',
                 ['Content-Type' => 'text/json'], $data));
+    };
+
+    my $deleted = sub {
+        my $regex = shift;
+        $myua->map_response(qr/$regex/,
+                          'HTTP::Response'->new(500, 'Deleted', []));
     };
 
     $ok->('v1/tokens', $token);
@@ -125,9 +132,8 @@ sub mock_ua {
                           ['Content-Type' => 'text/json'],
                           '{"deleted": true,"id": "basic_plan_1"}'));;
 
-    if ('plan' eq $delete) {
-        $myua->map_response(qr{v1/plans},
-                          'HTTP::Response'->new(500, 'Deleted', []));
+    if ('plan' eq $changed) {
+        $deleted->('v1/plans');
     } else {
         $ok->('v1/plans', $plan);
     }
@@ -146,9 +152,8 @@ sub mock_ua {
                           ['Content-Type' => 'text/json'],
                           '{"deleted": true,"id": "coupon-$future_ymdhms"}'));;
 
-    if ('coupon' eq $delete) {
-        $myua->map_response(qr{v1/coupons},
-                           'HTTP::Response'->new(500, 'Deleted'));
+    if ('coupon' eq $changed) {
+        $deleted->('v1/coupons');
     } else {
         $ok->('v1/coupons', $coupon);
     }
