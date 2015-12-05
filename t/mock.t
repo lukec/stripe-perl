@@ -20,6 +20,9 @@ my $stripe = Net::Stripe->new( api_key => $API_KEY,
                                debug_network => 0,
                                ua      => $ua,
                              );
+sub _list {
+    my $member = shift;
+    qq%{"object": "list", "url": "/v1/plans", "has_more": false, "data": [ $member ]}%}
 
 sub mock_ua {
     my $delete = shift;
@@ -76,11 +79,6 @@ sub mock_ua {
       "trial_period_days": null
     }/;
 
-    my $plan_list = qq%{"object": "list",
-    "url": "/v1/plans",
-      "has_more": false,
-      "data": [ $plan ]}%;
-
     my $coupon = qq/{
   "id": "coupon-$future_ymdhms",
   "object": "coupon",
@@ -104,7 +102,6 @@ sub mock_ua {
       "has_more": false,
       "data": [ $coupon ]}%;
 
-
     $myua = 'Test::LWP::UserAgent'->new;
 
     $myua->map_response(qr{v1/tokens},
@@ -114,7 +111,7 @@ sub mock_ua {
     $myua->map_response(qr{v1/plans\?limit=1},
             'HTTP::Response'->new(200, 'OK',
                                   ['Content-Type' => 'text/json'],
-                                  $plan_list
+                                  _list($plan)
                                  ));
 
     $myua->map_response(sub { my $r = shift;
@@ -141,7 +138,7 @@ sub mock_ua {
     $myua->map_response(qr{v1/coupons\?},
             'HTTP::Response'->new(200, 'OK',
                                   ['Content-Type' => 'text/json'],
-                                  $coupon_list
+                                  _list($coupon)
                                  ));
 
     $myua->map_response(sub { my $r = shift;
@@ -164,7 +161,6 @@ sub mock_ua {
                 'HTTP::Response'->new(200, 'OK',
                     ['Content-Type' => 'text/json'], $coupon));
     }
-
 
     use Data::Dumper;
     $myua->map_response(sub { warn Dumper \@_}, 'HTTP::Response'->new(500));
