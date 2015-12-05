@@ -285,6 +285,8 @@ Charges: {
             is $e->type, 'invalid_request_error', 'error type';
             like $e->message, '/^Invalid currency: zzz/', 'error message';
             is $e->param, 'currency', 'error param';
+        } else {
+            fail 'report invalid currency';
         }
         close STDERR;
         open(STDERR, ">&", STDOUT);
