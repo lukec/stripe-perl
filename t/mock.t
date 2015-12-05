@@ -103,16 +103,15 @@ sub mock_ua {
       "data": [ $coupon ]}%;
 
     $myua = 'Test::LWP::UserAgent'->new;
-
-    $myua->map_response(qr{v1/tokens},
-             'HTTP::Response'->new(200, 'OK',
-                                   ['Content-Type' => 'text/json'], $token));
-
-    $myua->map_response(qr{v1/plans\?limit=1},
+    my $ok = sub {
+        my ($regex, $data) = @_;
+        $myua->map_response(qr/$regex/,
             'HTTP::Response'->new(200, 'OK',
-                                  ['Content-Type' => 'text/json'],
-                                  _list($plan)
-                                 ));
+                ['Content-Type' => 'text/json'], $data));
+    };
+
+    $ok->('v1/tokens', $token);
+    $ok->('v1/plans\?limit=1', _list($plan));
 
     $myua->map_response(sub { my $r = shift;
                             if ($r->url =~ m{v1/plans}
@@ -130,16 +129,10 @@ sub mock_ua {
         $myua->map_response(qr{v1/plans},
                           'HTTP::Response'->new(500, 'Deleted', []));
     } else {
-        $myua->map_response(qr{v1/plans},
-                          'HTTP::Response'->new(200, 'OK',
-                              ['Content-Type' => 'text/json'], $plan));
+        $ok->('v1/plans', $plan);
     }
 
-    $myua->map_response(qr{v1/coupons\?},
-            'HTTP::Response'->new(200, 'OK',
-                                  ['Content-Type' => 'text/json'],
-                                  _list($coupon)
-                                 ));
+    $ok->('v1/coupons\?', _list($coupon));
 
     $myua->map_response(sub { my $r = shift;
                             if ($r->url =~ m{v1/coupons}
@@ -157,9 +150,7 @@ sub mock_ua {
         $myua->map_response(qr{v1/coupons},
                            'HTTP::Response'->new(500, 'Deleted'));
     } else {
-        $myua->map_response(qr{v1/coupons},
-                'HTTP::Response'->new(200, 'OK',
-                    ['Content-Type' => 'text/json'], $coupon));
+        $ok->('v1/coupons', $coupon);
     }
 
     use Data::Dumper;
