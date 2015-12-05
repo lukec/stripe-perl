@@ -14,9 +14,16 @@ my $API_KEY = 'MOCK';
 my $future = DateTime->now + DateTime::Duration->new(years => 1);
 my $future_ymdhms = $future->ymd('-') . '-' . $future->hms('-');
 
+my $ua = mock_ua();
+my $stripe = Net::Stripe->new( api_key => $API_KEY,
+                               debug   => 1,
+                               debug_network => 0,
+                               ua      => $ua,
+                             );
+
 sub mock_ua {
     my $delete = shift;
-    my $ua;
+    my $myua;
 
     # Examples from the API documentation
     my $token = '{
@@ -75,22 +82,22 @@ sub mock_ua {
       "data": [ $plan ]}%;
 
 
-    $ua = 'Test::LWP::UserAgent'->new;
+    $myua = 'Test::LWP::UserAgent'->new;
 
-    $ua->map_response(qr{v1/tokens},
+    $myua->map_response(qr{v1/tokens},
              'HTTP::Response'->new(200, 'OK',
                                    ['Content-Type' => 'text/json'], $token));
 
-    $ua->map_response(qr{v1/plans\?limit=1},
+    $myua->map_response(qr{v1/plans\?limit=1},
             'HTTP::Response'->new(200, 'OK',
                                   ['Content-Type' => 'text/json'],
                                   $plan_list
                                  ));
 
-    $ua->map_response(sub { my $r = shift;
+    $myua->map_response(sub { my $r = shift;
                             if ($r->url =~ m{v1/plans}
                                 && 'DELETE' eq $r->method) {
-                                $ua = mock_ua(1);
+                                $stripe->{ua} = mock_ua(1);
                                 return 1
                             }
                             return 0
@@ -100,26 +107,19 @@ sub mock_ua {
                           '{"deleted": true,"id": "basic_plan_1"}'));;
 
     if ($delete) {
-        $ua->map_response(qr{v1/plans},
-                          'HTTP::Response'->new(200, 'OK',
-                              ['Content-Type' => 'text/json'], ''));
+        $myua->map_response(qr{v1/plans},
+                          'HTTP::Response'->new(500, 'Deleted', []));
     } else {
-        $ua->map_response(qr{v1/plans},
+        $myua->map_response(qr{v1/plans},
                           'HTTP::Response'->new(200, 'OK',
                               ['Content-Type' => 'text/json'], $plan));
     }
 
     use Data::Dumper;
-    $ua->map_response(sub { warn Dumper \@_}, 'HTTP::Response'->new(500));
-    return $ua
+    $myua->map_response(sub { warn Dumper \@_}, 'HTTP::Response'->new(500));
+    return $myua
 }
 
-my $ua = mock_ua();
-my $stripe = Net::Stripe->new( api_key => $API_KEY,
-                               debug   => 1,
-                               debug_network => 0,
-                               ua      => $ua,
-                             );
 isa_ok $stripe, 'Net::Stripe', 'API object created today';
 
 my $fake_card = {
