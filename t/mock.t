@@ -6,30 +6,62 @@ use Test::Exception;
 use Net::Stripe;
 use DateTime;
 use DateTime::Duration;
-use Test::LWP::UserAgent;
 use JSON;
+
+{   package My::UA;
+    use parent 'Test::LWP::UserAgent';
+
+    sub new {
+        my $self = shift->SUPER::new(@_);
+        return $self
+    }
+
+    sub send_request {
+        if ('CODE' eq ref $_[-1]) {
+            $_[-1] = $_[1]->();
+        }
+        shift->SUPER::send_request(@_);
+    }
+
+}
+
 
 my $API_KEY = 'MOCK';
 
 my $future = DateTime->now + DateTime::Duration->new(years => 1);
 my $future_ymdhms = $future->ymd('-') . '-' . $future->hms('-');
 
-my $ua = mock_ua(q());
+my $fake_card = {
+    number    => '4242-4242-4242-4242',
+    exp_month => $future->month,
+    exp_year  => $future->year,
+    cvc       => 123,
+    name      => 'Anonymous',
+    object    => 'card',
+    country   => 'US',
+    last4     => '4242',
+    brand     => 'Visa',
+    cvc_check => 'pass',
+};
+
+my $fcj = to_json($fake_card);
+
+my $myua = 'My::UA'->new;
 my $stripe = Net::Stripe->new( api_key => $API_KEY,
                                debug   => 1,
-                               debug_network => 0,
-                               ua      => $ua,
+                               debug_network => $ENV{DEBUG},
+                               ua      => $myua,
                              );
+
+
 sub _list {
     my $member = shift;
-    qq%{"object": "list", "url": "/v1/plans", "has_more": false, "data": [ $member ]}%}
+    qq%{"object": "list", "url": "/v1/plans", "has_more": false, "data": [ $member ]}%
+}
 
-sub mock_ua {
-    my $changed = shift;
-    my $myua;
 
-    # Examples from the API documentation
-    my $token = '{
+# Examples from the API documentation
+my $token = qq/{
       "id": "tok_17ELBv2eZvKYlo2CNk0Zk5an",
       "object": "token",
       "card": {
@@ -61,9 +93,9 @@ sub mock_ua {
       "livemode": false,
       "type": "card",
       "used": false
-    }';
+}/;
 
-    my $plan = qq/{
+my $plan = qq/{
       "id": "$future_ymdhms",
       "object": "plan",
       "amount": 50,
@@ -79,7 +111,7 @@ sub mock_ua {
       "trial_period_days": null
     }/;
 
-    my $coupon = qq/{
+my $coupon = qq/{
   "id": "coupon-$future_ymdhms",
   "object": "coupon",
   "amount_off": null,
@@ -97,71 +129,74 @@ sub mock_ua {
   "valid": true
 }/;
 
-    my $coupon_list = qq%{"object": "list",
-    "url": "/v1/plans",
-      "has_more": false,
-      "data": [ $coupon ]}%;
 
-    $myua = 'Test::LWP::UserAgent'->new;
+my $changed = q();
 
-    my $ok = sub {
-        my ($regex, $data) = @_;
-        $myua->map_response(qr/$regex/,
-            'HTTP::Response'->new(200, 'OK',
-                ['Content-Type' => 'text/json'], $data));
-    };
+my @r200 = (200, 'OK', ['Content-Type' => 'text/json']);
+sub r200 { 'HTTP::Response'->new(@r200, @_) }
 
-    my $deleted = sub {
-        my $regex = shift;
-        $myua->map_response(qr/$regex/,
-                          'HTTP::Response'->new(500, 'Deleted', []));
-    };
+my $ok = sub {
+    my ($regex, $data) = @_;
+    $myua->map_response(qr/$regex/, r200($data));
+};
 
-    $ok->('v1/tokens', $token);
-    $ok->('v1/plans\?limit=1', _list($plan));
+my $deleted = sub {
+    my $regex = shift;
+    $myua->map_response(qr/$regex/,
+                        'HTTP::Response'->new(500, 'Deleted', []));
+};
 
-    $myua->map_response(sub { my $r = shift;
-                            if ($r->url =~ m{v1/plans}
-                                && 'DELETE' eq $r->method) {
-                                $stripe->{ua} = mock_ua('plan');
-                                return 1
+$ok->('v1/tokens', $token);
+$ok->('v1/plans\?limit=1', _list($plan));
+
+$myua->map_response(sub { my $r = shift;
+                          if ($r->url =~ m{v1/plans}
+                              && 'DELETE' eq $r->method) {
+                              $myua->{state}{plan} = 1;
+                              return 1
+                          }
+                          return 0
+                      },
+                    r200('{"deleted": true,"id": "basic_plan_1"}'));
+
+$myua->map_response(sub { my $r = shift;
+                          if ($r->url =~ m{v1/plans}
+                              && $r->content =~ /id=free/
+                             ){
+                              $myua->{state}{plan} = 0;
+                              return 1
+                          }
+                          return 0
+                      },
+                    r200($plan));
+
+
+
+$myua->map_response(qr{v1/plans},
+            sub { 'HTTP::Response'->new(
+                      $myua->{state}{plan} ? (500, 'Deleted')
+                                           : (@r200, $plan))});
+
+$ok->('v1/coupons\?', _list($coupon));
+
+$myua->map_response(sub { my $r = shift;
+                          if ($r->url =~ m{v1/coupons}
+                              && 'DELETE' eq $r->method) {
+                              $myua->{state}{coupon} = 1;
+                              return 1
                             }
-                            return 0
-                        },
-                      'HTTP::Response'->new(200, 'OK',
-                          ['Content-Type' => 'text/json'],
-                          '{"deleted": true,"id": "basic_plan_1"}'));;
+                          return 0
+                      },
+                    r200('{"deleted": true,"id": "coupon-$future_ymdhms"}'));
 
-    if ('plan' eq $changed) {
-        $deleted->('v1/plans');
-    } else {
-        $ok->('v1/plans', $plan);
-    }
+$myua->map_response(qr{v1/coupons},
+                    sub { 'HTTP::Response'->new(
+                              $myua->{state}{coupon} ? (500, 'Deleted')
+                                                     : (@r200, $coupon))});
+use Data::Dumper;
+$myua->map_response(sub { warn Dumper \@_}, 'HTTP::Response'->new(500));
 
-    $ok->('v1/coupons\?', _list($coupon));
-
-    $myua->map_response(sub { my $r = shift;
-                            if ($r->url =~ m{v1/coupons}
-                                && 'DELETE' eq $r->method) {
-                                $stripe->{ua} = mock_ua('coupon');
-                                return 1
-                            }
-                            return 0
-                        },
-                      'HTTP::Response'->new(200, 'OK',
-                          ['Content-Type' => 'text/json'],
-                          '{"deleted": true,"id": "coupon-$future_ymdhms"}'));;
-
-    if ('coupon' eq $changed) {
-        $deleted->('v1/coupons');
-    } else {
-        $ok->('v1/coupons', $coupon);
-    }
-
-    use Data::Dumper;
-    $myua->map_response(sub { warn Dumper \@_}, 'HTTP::Response'->new(500));
-    return $myua
-}
+# -------------------------------------
 
 isa_ok $stripe, 'Net::Stripe', 'API object created today';
 
