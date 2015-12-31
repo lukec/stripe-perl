@@ -7,6 +7,7 @@ use Net::Stripe;
 use DateTime;
 use DateTime::Duration;
 use JSON;
+use Test::LWP::UserAgent;
 
 my $API_KEY = $ENV{STRIPE_API_KEY};
 if ($API_KEY) {
@@ -16,7 +17,6 @@ if ($API_KEY) {
 
 
 {   package My::UA;
-    use Test::LWP::UserAgent;
 
     sub new {
         bless { UA => 'Test::LWP::UserAgent'->new }, shift
@@ -33,9 +33,9 @@ if ($API_KEY) {
 
 
     sub AUTOLOAD {
+        ( my $method = our $AUTOLOAD ) =~ s/.*:://;
         my $self = shift;
-        our $AUTOLOAD =~ s/.*:://;
-        return $self->{UA}->$AUTOLOAD(@_)
+        return $self->{UA}->$method(@_)
     }
 
 }
