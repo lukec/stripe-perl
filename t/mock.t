@@ -11,23 +11,31 @@ use JSON;
 my $API_KEY = $ENV{STRIPE_API_KEY};
 if ($API_KEY) {
     plan skip_all => "STRIPE_API_KEY env var is defined.";
-    exit;
+    exit
 }
 
 
 {   package My::UA;
-    use parent 'Test::LWP::UserAgent';
+    use Test::LWP::UserAgent;
 
     sub new {
-        my $self = shift->SUPER::new(@_);
-        return $self
+        bless { UA => 'Test::LWP::UserAgent'->new }, shift
     }
 
-    sub send_request {
-        if ('CODE' eq ref $_[-1]) {
-            $_[-1] = $_[1]->();
+
+    sub state {
+        my ($self, $key, $value) = @_;
+        if (3 == @_) {
+            $self->{STATE}{$key} = $value;
         }
-        shift->SUPER::send_request(@_);
+        return ($self->{STATE}{$key})
+    }
+
+
+    sub AUTOLOAD {
+        my $self = shift;
+        our $AUTOLOAD =~ s/.*:://;
+        return $self->{UA}->$AUTOLOAD(@_)
     }
 
 }
@@ -157,7 +165,7 @@ $ok->('v1/plans\?limit=1', _list($plan));
 $myua->map_response(sub { my $r = shift;
                           if ($r->url =~ m{v1/plans}
                               && 'DELETE' eq $r->method) {
-                              $myua->{state}{plan} = 1;
+                              $myua->state(plan => 1);
                               return 1
                           }
                           return 0
@@ -168,7 +176,7 @@ $myua->map_response(sub { my $r = shift;
                           if ($r->url =~ m{v1/plans}
                               && $r->content =~ /id=free/
                              ){
-                              $myua->{state}{plan} = 0;
+                              $myua->state(plan => 0);
                               return 1
                           }
                           return 0
@@ -179,7 +187,7 @@ $myua->map_response(sub { my $r = shift;
 
 $myua->map_response(qr{v1/plans},
             sub { 'HTTP::Response'->new(
-                      $myua->{state}{plan} ? (500, 'Deleted')
+                      $myua->state('plan') ? (500, 'Deleted')
                                            : (@r200, $plan))});
 
 $ok->('v1/coupons\?', _list($coupon));
@@ -187,7 +195,7 @@ $ok->('v1/coupons\?', _list($coupon));
 $myua->map_response(sub { my $r = shift;
                           if ($r->url =~ m{v1/coupons}
                               && 'DELETE' eq $r->method) {
-                              $myua->{state}{coupon} = 1;
+                              $myua->state(coupon => 1);
                               return 1
                             }
                           return 0
@@ -196,7 +204,7 @@ $myua->map_response(sub { my $r = shift;
 
 $myua->map_response(qr{v1/coupons},
                     sub { 'HTTP::Response'->new(
-                              $myua->{state}{coupon} ? (500, 'Deleted')
+                              $myua->state('coupon') ? (500, 'Deleted')
                                                      : (@r200, $coupon))});
 
 # ---------------------------------------------------------------------------
