@@ -23,6 +23,7 @@ use Net::Stripe::BalanceTransaction;
 use Net::Stripe::List;
 use Net::Stripe::LineItem;
 use Net::Stripe::Refund;
+use Net::Stripe::Capture;
 
 # ABSTRACT: API client for Stripe.com
 
@@ -210,6 +211,17 @@ Charges: {
                                               amount => $amount
                                           );
         return $self->_post("charges/$charge/refunds", $refund);
+    }
+
+    method capture_charge(Net::Stripe::Charge|Str :$charge, Int :$amount?) {
+        if (ref($charge)) {
+            $charge = $charge->id;
+        }
+
+        my $capture = Net::Stripe::Capture->new(id => $charge,
+                                                amount => $amount
+                                            );
+        return $self->_post("charges/$charge/capture", $capture);
     }
 
     method get_charges(HashRef :$created?,
