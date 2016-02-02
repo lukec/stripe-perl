@@ -188,6 +188,29 @@ Charges: {
         my $charges = $stripe->get_charges( limit => 1 );
         is scalar(@{$charges->data}), 1, 'one charge returned';
         is $charges->get(0)->id, $charge->id, 'charge ids match';
+
+        # capture a charge
+        my $charge3;
+        lives_ok {
+            $charge3 = $stripe->post_charge(
+                amount => 3300,
+                currency => 'usd',
+                card => $fake_card,
+                description => 'Wikileaks donation',
+                capture => 0
+            );
+        } 'Created a non captured-charge object';
+        ok $charge3->paid, 'charge was paid';
+        ok !$charge3->captured, 'charge was not captured';
+        my $charge4;
+        lives_ok {
+            $charge4 = $stripe->capture_charge(
+                amount => 3300,
+                charge => $charge3
+            )
+        } 'Create a capture';
+        isa_ok $charge4, 'Net::Stripe::Charge';
+        ok $charge4->captured, 'charge was captured';
     }
 
     Charge_with_metadata: {
