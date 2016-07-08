@@ -24,6 +24,7 @@ has 'failure_code'        => (is => 'ro', isa => 'Maybe[Str]');
 has 'application_fee'     => (is => 'ro', isa => 'Maybe[Int]');
 has 'metadata'            => (is => 'rw', isa => 'Maybe[HashRef]');
 has 'invoice'             => (is => 'ro', isa => 'Maybe[Str]');
+has 'receipt_email'       => (is => 'ro', isa => 'Maybe[Str]');
 
 method form_fields {
     return (

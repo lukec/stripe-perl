@@ -106,6 +106,8 @@ L<https://stripe.com/docs/api#create_charge>
 
 =item * application_fee - Int - optional
 
+=item * receipt_email - Str - The email address to send this charge's receipt to - optional
+
 =back
 
 Returns L<Net::Stripe::Charge>
@@ -181,7 +183,8 @@ Charges: {
                        HashRef :$metadata?,
                        Bool :$capture?,
                        Str :$statement_description?,
-                       Int :$application_fee?
+                       Int :$application_fee?,
+                       Str :$receipt_email?
                      ) {
         my $charge = Net::Stripe::Charge->new(amount => $amount,
                                               currency => $currency,
@@ -191,7 +194,8 @@ Charges: {
                                               metadata => $metadata,
                                               capture => $capture,
                                               statement_description => $statement_description,
-                                              application_fee => $application_fee
+                                              application_fee => $application_fee,
+                                              receipt_email => $receipt_email
                                           );
         return $self->_post('charges', $charge);
     }
