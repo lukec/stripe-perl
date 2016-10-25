@@ -537,7 +537,7 @@ Cards: {
         return $self->_get("customers/$customer/cards/$card_id");
     }
 
-    method get_cards(Net::Stripe::Customer|Str $customer,
+    method get_cards(Net::Stripe::Customer|Str :$customer,
                      HashRef :$created?,
                      Str :$ending_before?,
                      Int :$limit?,
@@ -546,8 +546,8 @@ Cards: {
             $customer = $customer->id;
         }
 
-        $self->_get_collections('cards',
-                                id => $customer,
+        $self->_get_collections("customers/$customer/sources",
+                                object => 'card',
                                 created => $created,
                                 ending_before => $ending_before,
                                 limit => $limit,
@@ -1455,6 +1455,9 @@ sub _get_collections {
     }
     if (my $c = $args{customer}) {
         push @path_args, "customer=$c";
+    }
+    if (my $obj = $args{object}) {
+        push @path_args, "object=$obj";
     }
 
     # example: $Stripe->get_charges( 'count' => 100, 'created' => { 'gte' => 1397663381 } );
