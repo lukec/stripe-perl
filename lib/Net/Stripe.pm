@@ -1,6 +1,7 @@
 package Net::Stripe;
 
 use Moose;
+use Class::Load;
 use Kavorka;
 use LWP::UserAgent;
 use HTTP::Request::Common qw/GET POST DELETE/;
@@ -1565,7 +1566,9 @@ sub _hash_to_object {
         my @words  = map { ucfirst($_) } split('_', $hash->{object});
         my $object = join('', @words);
         my $class  = 'Net::Stripe::' . $object;
-        return $class->new($hash);
+        if (Class::Load::is_class_loaded($class)) {
+          return $class->new($hash);
+        }
     }
     return $hash;
 }
