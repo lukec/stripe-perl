@@ -133,7 +133,7 @@ Returns L<Net::Stripe::Charge>.
 
 Refunds a charge.
 
-L<https://stripe.com/docs/api#refund_charge>
+L<https://stripe.com/docs/api#create_refund>
 
 =over
 
