@@ -218,6 +218,12 @@ Charges: {
         );
         isa_ok $charge, 'Net::Stripe::Charge';
         ok $charge->paid, 'charge was paid';
+
+        my $cards = $stripe->get_cards(customer => $customer, limit => 1);
+        isa_ok $cards, "Net::Stripe::List";
+        my $card = @{$cards->data}[0];
+        isa_ok $card, "Net::Stripe::Card";
+        is $card->name, $fake_card->{name}, 'retrieve the card name';
     }
 
     Post_charge_using_token: {
