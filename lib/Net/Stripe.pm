@@ -23,6 +23,7 @@ use Net::Stripe::BalanceTransaction;
 use Net::Stripe::List;
 use Net::Stripe::LineItem;
 use Net::Stripe::Refund;
+use Net::Stripe::Capture;
 
 # ABSTRACT: API client for Stripe.com
 
@@ -75,11 +76,12 @@ You can set this to true to see the actual network requests.
 
 =cut
 
-has 'debug'         => (is => 'rw', isa => 'Bool',   default    => 0, documentation => "The debug flag");
-has 'debug_network' => (is => 'rw', isa => 'Bool',   default    => 0, documentation => "The debug network request flag");
-has 'api_key'       => (is => 'ro', isa => 'Str',    required   => 1, documentation => "You get this from your Stripe Account settings");
-has 'api_base'      => (is => 'ro', isa => 'Str',    lazy_build => 1, documentation => "This is the base part of the URL for every request made");
-has 'ua'            => (is => 'ro', isa => 'Object', lazy_build => 1, documentation => "The LWP::UserAgent that is used for requests");
+has 'debug'         => (is => 'rw', isa => 'Bool',   default    => 0,  documentation => "The debug flag");
+has 'debug_network' => (is => 'rw', isa => 'Bool',   default    => 0,  documentation => "The debug network request flag");
+has 'api_key'       => (is => 'ro', isa => 'Str',    required   => 1,  documentation => "You get this from your Stripe Account settings");
+has 'api_base'      => (is => 'ro', isa => 'Str',    lazy_build => 1,  documentation => "This is the base part of the URL for every request made");
+has 'ua'            => (is => 'ro', isa => 'Object', lazy_build => 1,  documentation => "The LWP::UserAgent that is used for requests");
+has 'api_version'   => (is => 'ro', isa => 'Str',    default    => '', documentation => "Set a specific API version to use");
 
 =charge_method post_charge
 
@@ -210,6 +212,17 @@ Charges: {
                                               amount => $amount
                                           );
         return $self->_post("charges/$charge/refunds", $refund);
+    }
+
+    method capture_charge(Net::Stripe::Charge|Str :$charge, Int :$amount?) {
+        if (ref($charge)) {
+            $charge = $charge->id;
+        }
+
+        my $capture = Net::Stripe::Capture->new(id => $charge,
+                                                amount => $amount
+                                            );
+        return $self->_post("charges/$charge/capture", $capture);
     }
 
     method get_charges(HashRef :$created?,
@@ -1510,6 +1523,10 @@ method _make_request($req) {
         print STDERR "Sending to Stripe:\n------\n" . $req->as_string() . "------\n";
 
     }
+    if ($self->api_version) {
+        $req->header( 'Stripe-Version' => $self->api_version );
+    }
+
     my $resp = $self->ua->request($req);
 
     if ($self->debug_network) {

@@ -15,7 +15,7 @@ unless ($API_KEY) {
 
 my $future = DateTime->now + DateTime::Duration->new(years => 1);
 my $future_ymdhms = $future->ymd('-') . '-' . $future->hms('-');
-my $stripe = Net::Stripe->new(api_key => $API_KEY, debug => 1);
+my $stripe = Net::Stripe->new(api_key => $API_KEY, debug => 1, api_version => '2015-02-16');
 isa_ok $stripe, 'Net::Stripe', 'API object created today';
 
 my $fake_card = {
@@ -141,6 +141,7 @@ Charges: {
                 description => 'Wikileaks donation',
             );
         } 'Created a charge object';
+    
         isa_ok $charge, 'Net::Stripe::Charge';
         for my $field (qw/id amount created currency description
                           livemode paid refunded/) {
@@ -187,6 +188,29 @@ Charges: {
         my $charges = $stripe->get_charges( limit => 1 );
         is scalar(@{$charges->data}), 1, 'one charge returned';
         is $charges->get(0)->id, $charge->id, 'charge ids match';
+
+        # capture a charge
+        my $charge3;
+        lives_ok {
+            $charge3 = $stripe->post_charge(
+                amount => 3300,
+                currency => 'usd',
+                card => $fake_card,
+                description => 'Wikileaks donation',
+                capture => 0
+            );
+        } 'Created a non captured-charge object';
+        ok $charge3->paid, 'charge was paid';
+        ok !$charge3->captured, 'charge was not captured';
+        my $charge4;
+        lives_ok {
+            $charge4 = $stripe->capture_charge(
+                amount => 3300,
+                charge => $charge3
+            )
+        } 'Create a capture';
+        isa_ok $charge4, 'Net::Stripe::Charge';
+        ok $charge4->captured, 'charge was captured';
     }
 
     Charge_with_metadata: {
@@ -241,6 +265,16 @@ Charges: {
         # swallow the expected warning rather than have it print out durring tests.
         close STDERR;
         open(STDERR, ">", "/dev/null");
+
+        my $latestStripe = Net::Stripe->new(api_key => $API_KEY, debug => 1, api_version => '2015-10-16');
+        my $charge = $latestStripe->post_charge(
+            amount => 3300,
+            currency => 'usd',
+            card => $fake_card,
+            description => 'Wikileaks donation',
+        );
+        isa_ok $charge, 'Net::Stripe::Charge';
+        is $charge->card, undef, 'latest API doesn\'t know card';
 
         throws_ok {
             $stripe->post_charge(

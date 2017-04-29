@@ -15,7 +15,7 @@ has 'charge'              => (is => 'ro', isa => 'Maybe[Str]');
 has 'metadata'            => (is => 'ro', isa => 'Maybe[HashRef]');
 has 'reason'              => (is => 'ro', isa => 'Maybe[Str]');
 has 'receipt_number'      => (is => 'ro', isa => 'Maybe[Str]');
-has 'description'         => (is => 'ro', isa => 'Maybe[Str]');
+has 'status'              => (is => 'ro', isa => 'Maybe[Str]');
 
 # Create only
 has 'refund_application_fee' => (is => 'ro', isa => 'Maybe[Bool|Object]');
