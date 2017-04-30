@@ -474,6 +474,20 @@ Customers: {
                 );
             };
             ok $@, "subscription should be of type Net::Stripe::Subscription";
+
+            my $subs_obj_test = $stripe->post_subscription(
+                customer     => $customer->id,
+                subscription => $priceysubs,
+            );
+            isa_ok $subs_obj_test, 'Net::Stripe::Subscription',
+                'test subscription object';
+
+            my $subs_str_test = $stripe->post_subscription(
+                customer     => $customer->id,
+                subscription => 'Test Subscription',
+            );
+            isa_ok $subs_str_test, 'Net::Stripe::Subscription',
+                'test subscription string';
         }
     }
 }
