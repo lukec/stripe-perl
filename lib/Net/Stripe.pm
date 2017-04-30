@@ -1,6 +1,7 @@
 package Net::Stripe;
 
 use Moose;
+use Class::Load;
 use Kavorka;
 use LWP::UserAgent;
 use HTTP::Request::Common qw/GET POST DELETE/;
@@ -41,7 +42,7 @@ use Net::Stripe::Refund;
  # look up a charge by id
  my $same_charge = $stripe->get_charge(charge_id => $charge->id);
 
- # ... and the api mirrors https://stripe.com/docs/api
+ # ... and the API mirrors https://stripe.com/docs/api
  # Charges: post_charge() get_charge() refund_charge() get_charges()
  # Customer: post_customer()
 
@@ -54,7 +55,7 @@ This method returns Moose objects for responses from the API.
 
 =method new PARAMHASH
 
-This creates a new stripe api object.  The following parameters are accepted:
+This creates a new stripe API object.  The following parameters are accepted:
 
 =over
 
@@ -82,7 +83,7 @@ has 'ua'            => (is => 'ro', isa => 'Object', lazy_build => 1, documentat
 
 =charge_method post_charge
 
-Create a new charge
+Create a new charge.
 
 L<https://stripe.com/docs/api#create_charge>
 
@@ -108,7 +109,7 @@ L<https://stripe.com/docs/api#create_charge>
 
 =back
 
-Returns L<Net::Stripe::Charge>
+Returns L<Net::Stripe::Charge>.
 
   $stripe->post_charge(currency => 'USD', amount => 500, customer => 'testcustomer');
 
@@ -124,15 +125,15 @@ L<https://stripe.com/docs/api#retrieve_charge>
 
 =back
 
-Returns L<Net::Stripe::Charge>
+Returns L<Net::Stripe::Charge>.
 
   $stripe->get_charge(charge_id => 'chargeid');
 
 =charge_method refund_charge
 
-Refunds a charge
+Refunds a charge.
 
-L<https://stripe.com/docs/api#refund_charge>
+L<https://stripe.com/docs/api#create_refund>
 
 =over
 
@@ -232,7 +233,7 @@ Charges: {
 
 =balance_transaction_method get_balance_transaction
 
-Retrieve a balance transaction
+Retrieve a balance transaction.
 
 L<https://stripe.com/docs/api#retrieve_balance_transaction>
 
@@ -242,7 +243,7 @@ L<https://stripe.com/docs/api#retrieve_balance_transaction>
 
 =back
 
-Returns a L<Net::Stripe::BalanceTransaction>
+Returns a L<Net::Stripe::BalanceTransaction>.
 
   $stripe->get_balance_transaction(id => 'id');
 
@@ -286,7 +287,7 @@ L<https://stripe.com/docs/api#create_customer>
 
 =back
 
-Returns a L<Net::Stripe::Customer> object
+Returns a L<Net::Stripe::Customer> object.
 
   my $customer = $stripe->post_customer(
     card => $fake_card,
@@ -296,7 +297,7 @@ Returns a L<Net::Stripe::Customer> object
 
 =customer_method list_subscriptions
 
-Returns the subscriptions for a customer
+Returns the subscriptions for a customer.
 
 L<https://stripe.com/docs/api#list_subscriptions>
 
@@ -312,11 +313,11 @@ L<https://stripe.com/docs/api#list_subscriptions>
 
 =back
 
-Returns a list of L<Net::Stripe::Subscription> objects
+Returns a list of L<Net::Stripe::Subscription> objects.
 
 =customer_method get_customer
 
-Retrieve a customer
+Retrieve a customer.
 
 L<https://stripe.com/docs/api#retrieve_customer>
 
@@ -332,7 +333,7 @@ Returns a L<Net::Stripe::List> object containing L<Net::Stripe::Customer> object
 
 =customer_method delete_customer
 
-Delete a customer
+Delete a customer.
 
 L<https://stripe.com/docs/api#delete_customer>
 
@@ -342,7 +343,7 @@ L<https://stripe.com/docs/api#delete_customer>
 
 =back
 
-Returns a L<Net::Stripe::Customer> object
+Returns a L<Net::Stripe::Customer> object.
 
   $stripe->delete_customer(customer => $customer);
 
@@ -464,13 +465,13 @@ L<https://stripe.com/docs/api#retrieve_card>
 
 =back
 
-Returns a L<Net::Stripe::Card>
+Returns a L<Net::Stripe::Card>.
 
   $stripe->get_card(customer => 'customer_id', card_id => 'abcdef');
 
 =card_method post_card
 
-Create or update a card
+Create or update a card.
 
 L<https://stripe.com/docs/api#create_card>
 
@@ -482,13 +483,13 @@ L<https://stripe.com/docs/api#create_card>
 
 =back
 
-Returns a L<Net::Stripe::Card>
+Returns a L<Net::Stripe::Card>.
 
   $stripe->create_card(customer => $customer, card => $card);
 
 =card_method get_cards
 
-Returns a list of cards
+Returns a list of cards.
 
 L<https://stripe.com/docs/api#list_cards>
 
@@ -537,7 +538,7 @@ Cards: {
         return $self->_get("customers/$customer/cards/$card_id");
     }
 
-    method get_cards(Net::Stripe::Customer|Str $customer,
+    method get_cards(Net::Stripe::Customer|Str :$customer,
                      HashRef :$created?,
                      Str :$ending_before?,
                      Int :$limit?,
@@ -546,8 +547,8 @@ Cards: {
             $customer = $customer->id;
         }
 
-        $self->_get_collections('cards',
-                                id => $customer,
+        $self->_get_collections("customers/$customer/sources",
+                                object => "card",
                                 created => $created,
                                 ending_before => $ending_before,
                                 limit => $limit,
@@ -615,13 +616,13 @@ L<https://stripe.com/docs/api#create_subscription>
 
 =back
 
-Returns a L<Net::Stripe::Customer> object
+Returns a L<Net::Stripe::Customer> object.
 
   $stripe->post_subscription(customer => $customer, plan => 'testplan');
 
 =subscription_method get_subscription
 
-Returns a customers subscription
+Returns a customer's subscription.
 
 =over
 
@@ -629,13 +630,13 @@ Returns a customers subscription
 
 =back
 
-Returns a L<Net::Stripe::Subscription>
+Returns a L<Net::Stripe::Subscription>.
 
   $stripe->get_subscription(customer => 'test123');
 
 =subscription_method delete_subscription
 
-Cancel a customer's subscription
+Cancel a customer's subscription.
 
 L<https://stripe.com/docs/api#cancel_subscription>
 
@@ -718,7 +719,7 @@ Subscriptions: {
 
 =token_method post_token
 
-Create a new token
+Create a new token.
 
 L<https://stripe.com/docs/api#create_card_token>
 
@@ -728,13 +729,13 @@ L<https://stripe.com/docs/api#create_card_token>
 
 =back
 
-Returns a L<Net::Stripe::Token>
+Returns a L<Net::Stripe::Token>.
 
   $stripe->post_token(card => $test_card);
 
 =token_method get_token
 
-Retreives an existing token.
+Retrieves an existing token.
 
 L<https://stripe.com/docs/api#retrieve_token>
 
@@ -744,7 +745,7 @@ L<https://stripe.com/docs/api#retrieve_token>
 
 =back
 
-Returns a L<Net::Stripe::Token>
+Returns a L<Net::Stripe::Token>.
 
   $stripe->get_token(token_id => 'testtokenid');
 
@@ -763,7 +764,7 @@ Tokens: {
 
 =plan_method post_plan
 
-Create a new plan
+Create a new plan.
 
 L<https://stripe.com/docs/api#create_plan>
 
@@ -787,7 +788,7 @@ L<https://stripe.com/docs/api#create_plan>
 
 =back
 
-Returns a L<Net::Stripe::Plan> object
+Returns a L<Net::Stripe::Plan> object.
 
   $stripe->post_plan(
      id => "free-$future_ymdhms",
@@ -807,7 +808,7 @@ Retrieves a plan.
 
 =back
 
-Returns a L<Net::Stripe::Plan>
+Returns a L<Net::Stripe::Plan>.
 
   $stripe->get_plan(plan_id => 'plan123');
 
@@ -823,13 +824,13 @@ L<https://stripe.com/docs/api#delete_plan>
 
 =back
 
-Returns a L<Net::Stripe::Plan> object
+Returns a L<Net::Stripe::Plan> object.
 
   $stripe->delete_plan(plan_id => $plan);
 
 =plan_method get_plans
 
-Return a list of Plans
+Return a list of plans.
 
 L<https://stripe.com/docs/api#list_plans>
 
@@ -893,7 +894,7 @@ Plans: {
 
 =coupon_method post_coupon
 
-Create or update a coupon
+Create or update a coupon.
 
 L<https://stripe.com/docs/api#create_coupon>
 
@@ -931,7 +932,7 @@ Returns a L<Net::Stripe::Coupon> object.
 
 =coupon_method get_coupon
 
-Retreive a coupon
+Retrieve a coupon.
 
 L<https://stripe.com/docs/api#retrieve_coupon>
 
@@ -947,7 +948,7 @@ Returns a L<Net::Stripe::Coupon> object.
 
 =coupon_method delete_coupon
 
-Delete a coupon
+Delete a coupon.
 
 L<https://stripe.com/docs/api#delete_coupon>
 
@@ -957,7 +958,7 @@ L<https://stripe.com/docs/api#delete_coupon>
 
 =back
 
-Returns a L<Net::Stripe::Coupon>
+Returns a L<Net::Stripe::Coupon>.
 
   $stripe->delete_coupon(coupon_id => 'coupon123');
 
@@ -1021,7 +1022,7 @@ Coupons: {
 
 =discount_method delete_customer_discount
 
-Deleting a Customer-wide Discount
+Deletes a customer-wide discount.
 
 L<https://stripe.com/docs/api/curl#delete_discount>
 
@@ -1033,12 +1034,11 @@ L<https://stripe.com/docs/api/curl#delete_discount>
 
   $stripe->delete_customer_discount(customer => $customer);
 
-returns hashref of the form
+Returns hashref of the form
 
   {
     deleted => <bool>
   }
-
 
 =cut
 
@@ -1054,7 +1054,7 @@ Discounts: {
 
 =invoice_method post_invoice
 
-Update an invoice
+Update an invoice.
 
 =over
 
@@ -1070,7 +1070,7 @@ Update an invoice
 
 =back
 
-Returns a L<Net::Stripe::Invoice>
+Returns a L<Net::Stripe::Invoice>.
 
   $stripe->post_invoice(invoice => $invoice, closed => 'true')
 
@@ -1082,7 +1082,7 @@ Returns a L<Net::Stripe::Invoice>
 
 =back
 
-Returns a L<Net::Stripe::Invoice>
+Returns a L<Net::Stripe::Invoice>.
 
   $stripe->get_invoice(invoice_id => 'testinvoice');
 
@@ -1094,13 +1094,13 @@ Returns a L<Net::Stripe::Invoice>
 
 =back
 
-Returns a L<Net::Stripe::Invoice>
+Returns a L<Net::Stripe::Invoice>.
 
   $stripe->pay_invoice(invoice_id => 'testinvoice');
 
 =invoice_method get_invoices
 
-Returns a list of invoices
+Returns a list of invoices.
 
 L<https://stripe.com/docs/api#list_customer_invoices>
 
@@ -1124,7 +1124,7 @@ Returns a L<Net::Stripe::List> object containing L<Net::Stripe::Invoice> objects
 
 =invoice_method create_invoice
 
-Create a new invoice
+Create a new invoice.
 
 L<https://stripe.com/docs/api#create_invoice>
 
@@ -1142,7 +1142,7 @@ L<https://stripe.com/docs/api#create_invoice>
 
 =back
 
-Returns a L<Net::Stripe::Invoice>
+Returns a L<Net::Stripe::Invoice>.
 
   $stripe->create_invoice(customer => 'custid', description => 'test');
 
@@ -1154,7 +1154,7 @@ Returns a L<Net::Stripe::Invoice>
 
 =back
 
-Returns a L<Net::Stripe::Invoice>
+Returns a L<Net::Stripe::Invoice>.
 
   $stripe->get_invoice(invoice_id => 'test');
 
@@ -1166,7 +1166,7 @@ Returns a L<Net::Stripe::Invoice>
 
 =back
 
-Returns a L<Net::Stripe::Invoice>
+Returns a L<Net::Stripe::Invoice>.
 
   $stripe->get_upcominginvoice(customer => $customer);
 
@@ -1272,7 +1272,7 @@ L<https://stripe.com/docs/api#create_invoiceitem>
 
 =back
 
-Returns a L<Net::Stripe::Invoiceitem> object
+Returns a L<Net::Stripe::Invoiceitem> object.
 
   $stripe->create_invoiceitem(customer => 'test', amount => 500, currency => 'USD');
 
@@ -1294,7 +1294,7 @@ L<https://stripe.com/docs/api#create_invoiceitem>
 
 =back
 
-Returns a L<Net::Stripe::Invoiceitem>
+Returns a L<Net::Stripe::Invoiceitem>.
 
   $stripe->post_invoiceitem(invoice_item => 'itemid', amount => 750);
 
@@ -1308,13 +1308,13 @@ Retrieve an invoice item.
 
 =back
 
-Returns a L<Net::Stripe::Invoiceitem>
+Returns a L<Net::Stripe::Invoiceitem>.
 
   $stripe->get_invoiceitem(invoice_item => 'testitemid');
 
 =invoiceitem_method delete_invoiceitem
 
-Delete an invoice item
+Delete an invoice item.
 
 =over
 
@@ -1322,7 +1322,7 @@ Delete an invoice item
 
 =back
 
-Returns a L<Net::Stripe::Invoiceitem>
+Returns a L<Net::Stripe::Invoiceitem>.
 
   $stripe->delete_invoiceitem(invoice_item => $invoice_item);
 
@@ -1456,6 +1456,9 @@ sub _get_collections {
     if (my $c = $args{customer}) {
         push @path_args, "customer=$c";
     }
+    if (my $c = $args{object}) {
+        push @path_args, "object=$c";
+    }
 
     # example: $Stripe->get_charges( 'count' => 100, 'created' => { 'gte' => 1397663381 } );
     if (defined($args{created})) {
@@ -1565,7 +1568,9 @@ sub _hash_to_object {
         my @words  = map { ucfirst($_) } split('_', $hash->{object});
         my $object = join('', @words);
         my $class  = 'Net::Stripe::' . $object;
-        return $class->new($hash);
+        if (Class::Load::is_class_loaded($class)) {
+          return $class->new($hash);
+        }
     }
     return $hash;
 }
