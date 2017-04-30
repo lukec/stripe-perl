@@ -201,7 +201,7 @@ Charges: {
             );
         } 'Created a charge object with metadata';
         isa_ok $charge, 'Net::Stripe::Charge';
-        ok defined($charge->metadata), "charge has metadata";        
+        ok defined($charge->metadata), "charge has metadata";
         is $charge->metadata->{'hasmetadata'}, 'hello world', 'charge metadata';
         my $charge2 = $stripe->get_charge(charge_id => $charge->id);
         is $charge2->metadata->{'hasmetadata'}, 'hello world', 'charge metadata in retrieved object';
@@ -466,6 +466,28 @@ Customers: {
             );
             $subs_list = $stripe->list_subscriptions(customer => $customer);
             is scalar @{$subs_list->data}, 2, 'Customer now has two subscriptions';
+
+            eval {
+                $stripe->post_subscription(
+                    customer     => $customer->id,
+                    subscription => $subs_list
+                );
+            };
+            ok $@, "subscription should be of type Net::Stripe::Subscription";
+
+            my $subs_obj_test = $stripe->post_subscription(
+                customer     => $customer->id,
+                subscription => $priceysubs,
+            );
+            isa_ok $subs_obj_test, 'Net::Stripe::Subscription',
+                'test subscription object';
+
+            my $subs_str_test = $stripe->post_subscription(
+                customer     => $customer->id,
+                subscription => 'Test Subscription',
+            );
+            isa_ok $subs_str_test, 'Net::Stripe::Subscription',
+                'test subscription string';
         }
     }
 }
@@ -491,7 +513,7 @@ Invoices_and_items: {
         my $path = 'customers/'.$customer->id.'/cards/'.$customer->default_card;
         my $card = $stripe->_get( $path );
         is $card->last4, $token->card->last4, 'customer has a card';
-        
+
         my $ChargesList = $stripe->get_charges(limit => 1);
         my $charge = @{$ChargesList->data}[0];
         ok $charge->invoice, "Charge created by Subscription sign-up has an Invoice ID";

@@ -691,10 +691,18 @@ Subscriptions: {
                     quantity => $quantity,
                     application_fee_percent => $application_fee_percent);
 
-        if (ref($subscription) && $subscription eq 'Net::Stripe::Subscription') {
-            return $self->_post("customers/$customer/subscriptions/" . $subscription->id, $subscription);
-        } elsif (defined($subscription) && !ref($subscription)) {
-            return $self->_post("customers/$customer/subscriptions/" . $subscription, _defined_arguments(\%args));
+        if (defined($subscription)) {
+            if (ref($subscription)) {
+                if (ref($subscription) eq 'Net::Stripe::Subscription') {
+                    return $self->_post("customers/$customer/subscriptions/" . $subscription->id, $subscription);
+                }
+                else {
+                    die 'subscription should be of type Net::Stripe::Subscription';
+                }
+            }
+            else {
+                return $self->_post("customers/$customer/subscriptions/" . $subscription, _defined_arguments(\%args));
+            }
         }
 
         return $self->_post("customers/$customer/subscriptions", _defined_arguments(\%args));
