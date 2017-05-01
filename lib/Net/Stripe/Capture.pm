@@ -4,7 +4,7 @@ use Moose;
 use Kavorka;
 extends 'Net::Stripe::Resource';
 
-# ABSTRACT: represent an Charge object from Stripe
+# ABSTRACT: represent a Capture object from Stripe
 
 has 'id'       => ( is => 'ro', isa => 'Maybe[Str]' );
 has 'created'  => ( is => 'ro', isa => 'Maybe[Int]' );
