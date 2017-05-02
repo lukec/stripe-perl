@@ -16,6 +16,16 @@ has 'metadata'            => (is => 'ro', isa => 'Maybe[HashRef]');
 has 'reason'              => (is => 'ro', isa => 'Maybe[Str]');
 has 'receipt_number'      => (is => 'ro', isa => 'Maybe[Str]');
 has 'status'              => (is => 'ro', isa => 'Maybe[Str]');
+has 'description'         => (
+    is      => 'ro',
+    isa     => 'Maybe[Str]',
+    lazy    => 1,
+    default => sub {
+        warn
+            "Use of Net::Stripe::Refund->description is deprecated and will be removed in the next Net::Stripe release";
+        return;
+    }
+);
 
 # Create only
 has 'refund_application_fee' => (is => 'ro', isa => 'Maybe[Bool|Object]');
