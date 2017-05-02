@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use Test::More;
 use Test::Exception;
+use Test::Warn;
 use Net::Stripe;
 use DateTime;
 use DateTime::Duration;
@@ -170,8 +171,11 @@ Charges: {
         # partial refund
         lives_ok { $refund = $stripe->refund_charge(charge => $charge->id, amount => 1000) }
             'refunding a charge works';
+        isa_ok $refund, 'Net::Stripe::Refund';
         is $refund->charge, $charge->id, 'returned charge object matches id';
+        is $refund->status, 'succeeded', 'status is "succeeded"';
         is $refund->amount, 1000, 'partial refund $10';
+        warning_like { $refund->description() } qr{deprecated}, 'warning for deprecated attribute';        
         lives_ok { $charge = $stripe->get_charge(charge_id => $charge->id) }
             'Fetching updated charge works';
         ok !$charge->refunded, 'charge not yet fully refunded';
