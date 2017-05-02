@@ -170,7 +170,9 @@ Charges: {
         # partial refund
         lives_ok { $refund = $stripe->refund_charge(charge => $charge->id, amount => 1000) }
             'refunding a charge works';
+        isa_ok $refund, 'Net::Stripe::Refund';
         is $refund->charge, $charge->id, 'returned charge object matches id';
+        is $refund->status, 'succeeded', 'status is "succeeded"';
         is $refund->amount, 1000, 'partial refund $10';
         lives_ok { $charge = $stripe->get_charge(charge_id => $charge->id) }
             'Fetching updated charge works';
