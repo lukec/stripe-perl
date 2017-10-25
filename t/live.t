@@ -19,6 +19,19 @@ unless ($API_KEY =~ m/^sk_test_/) {
     exit;
 }
 
+{
+    # is there a reliable method to determine that a given object is
+    # passing the correct API version to stripe, and that the value is
+    # being respected by the API?
+    my $api_version = '2017-08-15';
+    my $stripe = Net::Stripe->new(
+        api_key     => $API_KEY,
+        api_version => $api_version,
+        debug       => 1,
+    );
+    isa_ok $stripe, 'Net::Stripe', qq[API object created with explicit API version: "$api_version"];
+    is $stripe->api_version(), $api_version, 'stripe object api_version';
+}
 
 my $future = DateTime->now + DateTime::Duration->new(years => 1);
 my $future_ymdhms = $future->ymd('-') . '-' . $future->hms('-');

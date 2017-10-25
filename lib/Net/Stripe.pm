@@ -91,6 +91,7 @@ has 'debug_network' => (is => 'rw', isa => 'Bool',   default    => 0, documentat
 has 'api_key'       => (is => 'ro', isa => 'Str',    required   => 1, documentation => "You get this from your Stripe Account settings");
 has 'api_base'      => (is => 'ro', isa => 'Str',    lazy_build => 1, documentation => "This is the base part of the URL for every request made");
 has 'ua'            => (is => 'ro', isa => 'Object', lazy_build => 1, documentation => "The LWP::UserAgent that is used for requests");
+has 'api_version'   => (is => 'ro', isa => 'Str',    default    => '', documentation => "This is the value of the Stripe-Version header you wish to use for API calls");
 
 =charge_method post_charge
 
@@ -1548,6 +1549,10 @@ method _post(Str $path, $obj?) {
 method _make_request($req) {
     $req->header( Authorization =>
         "Basic " . encode_base64($self->api_key . ':'));
+
+    if ($self->api_version) {
+         $req->header( 'Stripe-Version' => $self->api_version );
+    }
 
     if ($self->debug_network) {
         print STDERR "Sending to Stripe:\n------\n" . $req->as_string() . "------\n";
