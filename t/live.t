@@ -39,8 +39,25 @@ unless ($API_KEY =~ m/^sk_test_/) {
                 api_version => $api_version,
                 debug       => 1,
             );
-        } qr/api_version expects yyyy-mm-dd/, 'invalid api_version format';
+        } qr/of the form yyyy-mm-dd/, 'invalid api_version format';
     }
+
+    throws_ok {
+        $stripe = Net::Stripe->new(
+            api_key     => $API_KEY,
+            api_version => '2012-09-24',
+            debug       => 1,
+        );
+    } qr/must be .+ or after/, 'min api_version';
+
+    throws_ok {
+        my $tomorrow = (DateTime->now + DateTime::Duration->new(days => 1))->ymd('-');
+        $stripe = Net::Stripe->new(
+            api_key     => $API_KEY,
+            api_version => $tomorrow,
+            debug       => 1,
+        );
+    } qr/must be .+ or before/, 'max api_version';
 }
 
 my $future = DateTime->now + DateTime::Duration->new(years => 1);
