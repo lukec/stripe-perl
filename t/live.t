@@ -5,6 +5,7 @@ use Test::More;
 use Test::Exception;
 use Test::Warn;
 use Net::Stripe;
+use Net::Stripe::Constants;
 use DateTime;
 use DateTime::Duration;
 
@@ -19,6 +20,56 @@ unless ($API_KEY =~ m/^sk_test_/) {
     exit;
 }
 
+# configure a valid date within the supported range, but which is not a valid
+# API version
+my $INVALID_API_VERSION = '2012-10-27';
+eval {
+    Net::Stripe->new(
+        api_key     => $API_KEY,
+        api_version => $INVALID_API_VERSION,
+        debug       => 1,
+    );
+};
+if ( my $e = $@ ) {
+    isa_ok $e, 'Net::Stripe::Error', 'error raised is an object';
+    is $e->type, 'invalid_request_error', 'error type';
+    is $e->message, sprintf( "Invalid Stripe API version: %s", $INVALID_API_VERSION ), 'error message';
+} else {
+    fail 'report invalid api_version';
+}
+
+# configure valid API versions, one less than min supported and one greater
+# than max supported. either value may be undef, depending on whether the
+# current SDK supports API versions from the start or through the current max.
+my $UNSUPPORTED_API_VERSION_PRE = undef;
+my $UNSUPPORTED_API_VERSION_POST = undef;
+foreach my $api_version ( $UNSUPPORTED_API_VERSION_PRE, $UNSUPPORTED_API_VERSION_POST ) {
+    next unless defined( $api_version );
+    throws_ok {
+        Net::Stripe->new(
+            api_key     => $API_KEY,
+            api_version => $api_version,
+            debug       => 1,
+        );
+    } qr/is not supported by this version of Net::Stripe/, "unsupported api_version $api_version";
+
+    lives_ok {
+        Net::Stripe->new(
+            api_key           => $API_KEY,
+            api_version       => $api_version,
+            force_api_version => 1,
+            debug             => 1,
+        );
+    } "force unsupported api_version $api_version";
+}
+
+my $version_specific_stripe = Net::Stripe->new(
+    api_key     => $API_KEY,
+    api_version => Net::Stripe::Constants::MAX_API_VERSION,
+    debug       => 1,
+);
+isa_ok $version_specific_stripe, 'Net::Stripe', sprintf( "API object created with explicit API version: %s", Net::Stripe::Constants::MAX_API_VERSION );
+is $version_specific_stripe->api_version, Net::Stripe::Constants::MAX_API_VERSION, 'stripe object api_version matches';
 
 # set future date to one year plus one month, since adding only one year
 # currently matches default token expiration date, preventing us from

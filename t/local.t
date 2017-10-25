@@ -12,6 +12,38 @@ BEGIN {
     use_ok 'Net::Stripe';
 }
 
+my $API_KEY = 'sk_test_123';
+
+foreach my $api_version ( qw/notanapiversionstring 20150216 2015-2-16/ ) {
+    throws_ok {
+        Net::Stripe->new(
+            api_key     => $API_KEY,
+            api_version => $api_version,
+            debug       => 1,
+        );
+    } qr/of the form yyyy-mm-dd/, 'invalid api_version format';
+}
+
+eval {
+    Net::Stripe->new(
+        api_key     => $API_KEY,
+        api_version => '2017-08-35',
+        debug       => 1,
+    );
+};
+if ( my $e = $@ ) {
+    if ( Scalar::Util::blessed( $e ) && $e->isa( 'Net::Stripe::Error' ) ) {
+        is $e->type, 'API version validation error', 'error type';
+        like $e->message, qr/^Invalid date string/, 'error message';
+    } else {
+        fail sprintf( "error raised is a Net::Stripe::Error object: %s",
+            Scalar::Util::blessed( $e ) || ref( $e ) || $e,
+        );
+    }
+} else {
+    fail 'report invalid api_version';
+}
+
 Backward_compatible_change: {
 
 my $false =  bless( do{\(my $o = 0)}, 'JSON::PP::Boolean' );

@@ -79,4 +79,15 @@ subtype 'StripeProductId',
 
 enum 'StripeProductType' => [qw/ good service /];
 
+subtype 'StripeAPIVersion',
+    as 'Str',
+    where {
+        /^\d{4}-\d{2}-\d{2}$/
+    },
+    message {
+        sprintf( "Value '%s' must be a Stripe API version string of the form yyyy-mm-dd",
+            $_,
+        );
+    };
+
 1;
