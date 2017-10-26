@@ -7,6 +7,77 @@ use Test::Warn;
 use Net::Stripe;
 use DateTime;
 use DateTime::Duration;
+use Getopt::Long;
+
+my ( $test_all, $test_major, $test_broken, $test_working, @versions );
+my %options = (
+  'all'         => \$test_all,
+  'major'       => \$test_major,
+  'working'     => \$test_working,
+  'broken'      => \$test_broken,
+  'versions=s'  => \@versions,
+);
+Getopt::Long::GetOptions( %options );
+
+# allow for: --versions=2017-08-15,2015-02-16 and/or --versions=2017-08-15 --versions=2015-02-16
+@versions = split( ',', join( ',', @versions ) );
+
+=cut
+rm /tmp/api-upgrades.txt /tmp/{all,major,broken}-versions.txt 2>/dev/null
+lynx -dump -nolist -width=1000 https://stripe.com/docs/upgrades > /tmp/api-upgrades.txt
+grep -E -e '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' /tmp/api-upgrades.txt > /tmp/all-versions.txt
+grep -E -e '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' -e '^     \* Major' /tmp/api-upgrades.txt | grep -E -B1 '^     \* Major' | grep -E -e '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' > /tmp/major-versions.txt
+tail -n+$( grep -Fnx 2012-09-24 /tmp/all-versions.txt | cut -d : -f1 ) /tmp/all-versions.txt >> /tmp/broken-versions.txt
+head -n$( grep -Fnx 2015-02-18 /tmp/all-versions.txt | cut -d : -f1 ) /tmp/all-versions.txt >> /tmp/broken-versions.txt;
+for i in all major broken; do echo "my @${i}_versions = qw("; sort -u /tmp/${i}-versions.txt | xargs -r -n6 echo | sed -re 's#^#    #;'; echo ");"; echo; done
+=cut
+
+my @all_versions = qw(
+    2011-06-21 2011-06-28 2011-08-01 2011-09-15 2011-11-17 2012-02-23
+    2012-03-25 2012-06-18 2012-06-28 2012-07-09 2012-09-24 2012-10-26
+    2012-11-07 2013-02-11 2013-02-13 2013-07-05 2013-08-12 2013-08-13
+    2013-10-29 2013-12-03 2014-01-31 2014-03-13 2014-03-28 2014-05-19
+    2014-06-13 2014-06-17 2014-07-22 2014-07-26 2014-08-04 2014-08-20
+    2014-09-08 2014-10-07 2014-11-05 2014-11-20 2014-12-08 2014-12-17
+    2014-12-22 2015-01-11 2015-01-26 2015-02-10 2015-02-16 2015-02-18
+    2015-03-24 2015-04-07 2015-06-15 2015-07-07 2015-07-13 2015-07-28
+    2015-08-07 2015-08-19 2015-09-03 2015-09-08 2015-09-23 2015-10-01
+    2015-10-12 2015-10-16 2016-02-03 2016-02-19 2016-02-22 2016-02-23
+    2016-02-29 2016-03-07 2016-06-15 2016-07-06 2016-10-19 2017-01-27
+    2017-02-14 2017-04-06 2017-05-25 2017-06-05 2017-08-15
+);
+my %all_versions = map { $_ => 1 } @all_versions;
+
+my @major_versions = qw(
+    2013-02-11 2013-07-05 2013-10-29 2014-01-31 2014-03-28 2015-02-18
+    2015-09-23 2015-10-12 2017-04-06
+);
+
+my @broken_versions = qw(
+    2011-06-21 2011-06-28 2011-08-01 2011-09-15 2011-11-17 2012-02-23
+    2012-03-25 2012-06-18 2012-06-28 2012-07-09 2012-09-24 2015-02-18
+    2015-03-24 2015-04-07 2015-06-15 2015-07-07 2015-07-13 2015-07-28
+    2015-08-07 2015-08-19 2015-09-03 2015-09-08 2015-09-23 2015-10-01
+    2015-10-12 2015-10-16 2016-02-03 2016-02-19 2016-02-22 2016-02-23
+    2016-02-29 2016-03-07 2016-06-15 2016-07-06 2016-10-19 2017-01-27
+    2017-02-14 2017-04-06 2017-05-25 2017-06-05 2017-08-15
+);
+my %broken_versions = map { $_ => 1 } @broken_versions;
+
+my @working_versions = grep { ! exists( $broken_versions{$_} ) } @all_versions;
+
+my @test_versions;
+if ( $test_all ) {
+    push @test_versions, @all_versions;
+} else {
+    push @test_versions, @versions;
+    push @test_versions, @broken_versions if $test_broken;
+    push @test_versions, @working_versions if $test_working;
+    push @test_versions, @major_versions if $test_major;
+    # default to earliest and latest working versions
+    # https://github.com/lukec/stripe-perl/pull/84#discussion_r147006486
+    push @test_versions, ( $working_versions[0], $working_versions[-1] ) unless @test_versions;
+}
 
 my $API_KEY = $ENV{STRIPE_API_KEY};
 unless ($API_KEY) {
@@ -33,10 +104,22 @@ unless ($API_KEY =~ m/^sk_test_/) {
     is $stripe->api_version(), $api_version, 'stripe object api_version';
 }
 
+note( "testing api_versions: " . join( ', ', @test_versions ) );
+
+foreach my $api_version ( @test_versions ) {
+
+ok exists( $all_versions{$api_version} ), 'valid api_version' or BAIL_OUT( qq[unrecognized api_version "$api_version"] );
+
+note( "start Net::Stripe tests for api_version '$api_version'" );
 my $future = DateTime->now + DateTime::Duration->new(years => 1);
 my $future_ymdhms = $future->ymd('-') . '-' . $future->hms('-');
-my $stripe = Net::Stripe->new(api_key => $API_KEY, debug => 1);
+my $stripe = Net::Stripe->new(
+    api_key     => $API_KEY,
+    debug       => 1,
+    api_version => $api_version,
+);
 isa_ok $stripe, 'Net::Stripe', 'API object created today';
+is $stripe->api_version(), $api_version, 'stripe object api_version';
 
 my $fake_card = {
     number    => '4242-4242-4242-4242',
@@ -604,6 +687,9 @@ Invoices_and_items: {
         close STDERR;
         open(STDERR, ">&", STDOUT);
     }
+}
+
+note( "end Net::Stripe tests for api_version '$api_version'" );
 }
 
 done_testing();
