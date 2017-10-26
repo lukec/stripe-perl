@@ -382,7 +382,7 @@ Customers: {
             );
             isa_ok $subs, 'Net::Stripe::Subscription',
                 'got a subscription back';
-            is $subs->plan->id, $freeplan->id;
+            is $subs->plan->id, $freeplan->id, 'plan id matches';
 
             my $subs_again = $stripe->get_subscription(
                 customer => $other->id
@@ -454,7 +454,7 @@ Customers: {
             );
             isa_ok $priceysubs, 'Net::Stripe::Subscription',
                 'got a subscription back';
-            is $priceysubs->plan->id, $priceyplan->id;
+            is $priceysubs->plan->id, $priceyplan->id, 'plan id matches';
             $customer = $stripe->get_customer(customer_id => $customer->id);
             is $customer->subscriptions->get(0)->plan->id,
               $priceyplan->id, 'subscribed without a creditcard';
