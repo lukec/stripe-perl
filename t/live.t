@@ -197,6 +197,28 @@ Charges: {
         my $charges = $stripe->get_charges( limit => 1 );
         is scalar(@{$charges->data}), 1, 'one charge returned';
         is $charges->get(0)->id, $charge->id, 'charge ids match';
+
+        # simulate address_line1_check failure
+        lives_ok {
+            $charge = $stripe->post_charge(
+                amount => 3300,
+                currency => 'usd',
+                card => {
+                    number => '4000-0000-0000-0028',
+                    exp_month => $future->month,
+                    exp_year  => $future->year,
+                    cvc => 123,
+                    address_line1 => '123 Main Street',
+                },
+                description => 'Wikileaks donation',
+            );
+        } 'Created a charge object';
+        isa_ok $charge, 'Net::Stripe::Charge';
+
+        # Check out the returned card object
+        $card = $charge->card;
+        isa_ok $card, 'Net::Stripe::Card';
+        is $card->address_line1_check, 'fail', 'card address_line1_check';
     }
 
     Charge_with_metadata: {
