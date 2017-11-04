@@ -14,6 +14,12 @@ unless ($API_KEY) {
     exit;
 }
 
+unless ($API_KEY =~ m/^sk_test_/) {
+    plan skip_all => "STRIPE_API_KEY env var MUST BE A TEST KEY to prevent modification of live data.";
+    exit;
+}
+
+
 my $future = DateTime->now + DateTime::Duration->new(years => 1);
 my $future_ymdhms = $future->ymd('-') . '-' . $future->hms('-');
 my $stripe = Net::Stripe->new(api_key => $API_KEY, debug => 1);
