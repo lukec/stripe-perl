@@ -342,8 +342,10 @@ Customers: {
                 description => 'Test for Net::Stripe',
                 metadata => {'somemetadata' => 'hello world'},
             );
-            my $path = 'customers/'.$customer->id.'/cards/'.$customer->default_card;
-            my $card = $stripe->_get( $path );
+            my $card = $stripe->get_card(
+                customer=> $customer,
+                card_id=> $customer->default_card,
+            );
             isa_ok $card, 'Net::Stripe::Card';
             is $card->country, 'US', 'card country';
             is $card->exp_month, $future->month, 'card exp_month';
@@ -360,8 +362,10 @@ Customers: {
             );
             isa_ok $customer, 'Net::Stripe::Customer', 'got back a customer';
             ok $customer->id, 'customer has an id';
-            my $path = 'customers/'.$customer->id.'/cards/'.$customer->default_card;
-            my $card = $stripe->_get( $path );
+            my $card = $stripe->get_card(
+                customer=> $customer,
+                card_id=> $customer->default_card,
+            );
             is $card->last4, '4242', 'card token ok';
         }
 
@@ -498,8 +502,10 @@ Invoices_and_items: {
         );
         ok $customer->id, 'customer has an id';
         is $customer->subscription->plan->id, $plan->id, 'customer has a plan';
-        my $path = 'customers/'.$customer->id.'/cards/'.$customer->default_card;
-        my $card = $stripe->_get( $path );
+            my $card = $stripe->get_card(
+                customer=> $customer,
+                card_id=> $customer->default_card,
+            );
         is $card->last4, $token->card->last4, 'customer has a card';
         
         my $ChargesList = $stripe->get_charges(limit => 1);
