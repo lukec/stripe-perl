@@ -210,7 +210,7 @@ Charges: {
         isa_ok $charge, 'Net::Stripe::Charge';
 
         # Check out the returned card object
-        my $card = $charge->card;
+        $card = $charge->card;
         isa_ok $card, 'Net::Stripe::Card';
         is $card->address_line1_check, 'fail', 'card address_line1_check';
     }
