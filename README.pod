@@ -6,7 +6,7 @@ Net::Stripe - API client for Stripe.com
 
 =head1 VERSION
 
-version 0.33
+version 0.34
 
 =head1 SYNOPSIS
 
@@ -947,7 +947,7 @@ Rusty Conover
 
 =head1 CONTRIBUTORS
 
-=for stopwords Andrew Solomon Brian Collins Devin M. Certas Dimitar Petrov Dylan Reinhold E. Choroba Florian Heyer Hermann Calabria Jonathan "Duke" Leto Luke Closs Mohammad S Anwar Olaf Alders Paul Cochrane Rusty Conover Sachin Sebastian Tom Eliaz
+=for stopwords Andrew Solomon Brian Collins Devin M. Certas Dimitar Petrov Dylan Reinhold E. Choroba Florian Heyer Hermann Calabria Jonathan "Duke" Leto Luke Closs Mohammad S Anwar Olaf Alders Paul Cochrane Rusty Conover Sachin Sebastian Sherrard Burton Slobodan Mišković Tom Eliaz
 
 =over 4
 
@@ -1014,6 +1014,14 @@ Rusty Conover <rusty@luckydinosaur.com>
 =item *
 
 Sachin Sebastian <sachinjsk@users.noreply.github.com>
+
+=item *
+
+Sherrard Burton <32931314+sherrardb@users.noreply.github.com>
+
+=item *
+
+Slobodan Mišković <slobodan@miskovic.ca>
 
 =item *
 
