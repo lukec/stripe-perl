@@ -31,6 +31,16 @@ unless ($API_KEY =~ m/^sk_test_/) {
     );
     isa_ok $stripe, 'Net::Stripe', qq[API object created with explicit API version: "$api_version"];
     is $stripe->api_version(), $api_version, 'stripe object api_version';
+
+    foreach my $api_version (qw/notanapiversionstring 20150216 2015-2-16/) {
+        throws_ok {
+            $stripe = Net::Stripe->new(
+                api_key     => $API_KEY,
+                api_version => $api_version,
+                debug       => 1,
+            );
+        } qr/api_version expects yyyy-mm-dd/, 'invalid api_version format';
+    }
 }
 
 my $future = DateTime->now + DateTime::Duration->new(years => 1);
