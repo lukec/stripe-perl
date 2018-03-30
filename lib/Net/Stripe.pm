@@ -8,6 +8,7 @@ use HTTP::Request::Common qw/GET POST DELETE/;
 use MIME::Base64 qw/encode_base64/;
 use URI::Escape qw/uri_escape/;
 use JSON qw/decode_json/;
+use Net::Stripe::TypeConstraints;
 use Net::Stripe::Token;
 use Net::Stripe::Invoiceitem;
 use Net::Stripe::Invoice;
@@ -80,7 +81,7 @@ has 'debug_network' => (is => 'rw', isa => 'Bool',   default    => 0, documentat
 has 'api_key'       => (is => 'ro', isa => 'Str',    required   => 1, documentation => "You get this from your Stripe Account settings");
 has 'api_base'      => (is => 'ro', isa => 'Str',    lazy_build => 1, documentation => "This is the base part of the URL for every request made");
 has 'ua'            => (is => 'ro', isa => 'Object', lazy_build => 1, documentation => "The LWP::UserAgent that is used for requests");
-has 'api_version'   => (is => 'ro', isa => 'Str',    default    => '', documentation => "This is the value of the Stripe-Version header you wish to use for API calls");
+has 'api_version'   => (is => 'ro', isa => 'Net::Stripe::Types::api_version', documentation => "This is the value of the Stripe-Version header you wish to use for API calls");
 
 =charge_method post_charge
 
