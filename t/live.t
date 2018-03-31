@@ -283,6 +283,24 @@ Charges: {
         close STDERR;
         open(STDERR, ">&", STDOUT);
     }
+
+    Charge_with_receipt_email: {
+        my $charge;
+        lives_ok {
+            $charge = $stripe->post_charge(
+                amount => 2500,
+                currency => 'usd',
+                card => $fake_card,
+                description => 'Testing Receipt Email',
+                receipt_email => 'stripe@example.com',
+            );
+        } 'Created a charge object with receipt_email';
+        isa_ok $charge, 'Net::Stripe::Charge';
+        ok defined($charge->receipt_email), "charge has receipt_email";
+        is $charge->receipt_email, 'stripe@example.com', 'charge receipt_email';
+        my $charge2 = $stripe->get_charge(charge_id => $charge->id);
+        is $charge2->receipt_email, 'stripe@example.com', 'charge receipt_email in retrieved object';
+    }
 }
 
 Customers: {
