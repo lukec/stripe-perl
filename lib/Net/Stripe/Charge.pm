@@ -32,7 +32,7 @@ method form_fields {
         $self->form_fields_for_metadata(),
         map { $_ => $self->$_ }
             grep { defined $self->$_ }
-                qw/amount currency customer description application_fee/
+                qw/amount currency customer description application_fee receipt_email/
     );
 }
 
