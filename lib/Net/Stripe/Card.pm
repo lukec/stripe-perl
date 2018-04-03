@@ -1,7 +1,6 @@
 package Net::Stripe::Card;
 
 use Moose;
-use Moose::Util::TypeConstraints qw(union);
 use Kavorka;
 use Net::Stripe::Token;
 
