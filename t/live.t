@@ -599,6 +599,64 @@ Customers: {
 
         }
 
+        Update_existing_card: {
+            my $token = $stripe->post_token(card => $fake_card);
+            my $customer = $stripe->post_customer(
+                card => $token->id,
+            );
+            isa_ok $customer, 'Net::Stripe::Customer', 'got back a customer';
+            my $cards = $stripe->get_cards(
+                customer=> $customer->id,
+            );
+            isa_ok $cards, 'Net::Stripe::List', 'Card List object returned';
+            is scalar @{$cards->data}, 1, 'Customer only has one card';
+
+            my $card = @{$cards->data}[0];
+            isa_ok $card, 'Net::Stripe::Card';
+
+            is $card->fingerprint, $token->card->fingerprint, "fingerprints match";
+
+            for my $f (sort grep { $_ ne 'cvc' && $_ ne 'number' && $_ ne 'metadata' } keys %{$fake_card}) {
+                is $card->$f, $fake_card->{$f}, "card $f matches";
+            }
+            my $original_card_id = $card->id;
+
+            my $future_future = $future + DateTime::Duration->new(years => 1);
+            my $updated_fake_card = {
+                name            => 'Dr. Anonymous',
+                address_line1   => '321 Easy Street',
+                address_city    => 'Beverly Hills',
+                address_state   => 'California',
+                address_zip     => '90210',
+                address_country => 'United States',
+                exp_month       => $future_future->month,
+                exp_year        => $future_future->year,
+                metadata  => {
+                    'somenewcardmetadata' => 'can you hear me now?',
+                },
+            };
+
+            $card = $stripe->update_card(
+                customer => $customer->id,
+                card_id => $card->id,
+                card => $updated_fake_card,
+            );
+
+            $cards = $stripe->get_cards(
+                customer=> $customer->id,
+            );
+            isa_ok $cards, 'Net::Stripe::List', 'Card List object returned';
+            is scalar @{$cards->data}, 1, 'Customer still only has one card';
+
+            $card = @{$cards->data}[0];
+            is $card->id, $original_card_id, "card id matches";
+
+            is $card->metadata->{somenewcardmetadata}, $updated_fake_card->{metadata}->{somenewcardmetadata}, 'updated card metadata';
+            for my $f (sort grep { $_ ne 'metadata' } keys %{$updated_fake_card}) {
+                is $card->$f, $updated_fake_card->{$f}, "card $f matches";
+            }
+        }
+
         Customers_with_plans: {
             my $freeplan = $stripe->post_plan(
                 id => "free-$future_ymdhms",

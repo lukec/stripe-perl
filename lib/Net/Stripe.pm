@@ -630,6 +630,13 @@ Cards: {
         return $self->_post("customers/$customer/cards", $card);
     }
 
+    method update_card(Net::Stripe::Customer|Str :$customer!,
+                     Str :$card_id!,
+                     HashRef :$card!) {
+        my $customer_id = ref( $customer ) ? $customer->id : $customer;
+        return $self->_post("customers/$customer_id/cards/$card_id", $card);
+    }
+
     method delete_card(Net::Stripe::Customer|Str :$customer, Net::Stripe::Card|Str :$card) {
       if (ref($customer)) {
           $customer = $customer->id;
@@ -1556,6 +1563,10 @@ sub convert_to_form_fields {
                 my %fields = $hash->{$key}->form_fields();
                 foreach my $fn (keys %fields) {
                     $r->{$fn} = $fields{$fn};
+                }
+            } elsif ($key eq 'metadata' && ref($hash->{$key}) eq 'HASH') {
+                foreach my $fn (keys %{$hash->{$key}}) {
+                    $r->{$key . '[' . $fn . ']'} = $hash->{$key}->{$fn};
                 }
             } else {
                 $r->{$key} = $hash->{$key};
