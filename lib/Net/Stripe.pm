@@ -102,6 +102,18 @@ a card object. We have also added TypeConstraints for the string arguments
 passed and added in-method validation to ensure that the passed argument
 values make sense in the context of one another.
 
+=item add update_card()
+This method allows updates to card address, expiration, metadata, etc for
+existing customer cards.
+
+=item encode card metdata in convert_to_form_fields()
+
+When passing a hashref with a nested metadata hashref to _post(), that
+metadata must be encoded properly before being passed to the Stripe API.
+There is now a dedicated block in convert_to_form_fields for this operation.
+This update was necessary because of the addition of update_card(), which
+accepts a card hashref, which may include metadata.
+
 =back
 
 =method new PARAMHASH
@@ -576,6 +588,35 @@ Returns a L<Net::Stripe::Card>.
 
   $stripe->create_card(customer => $customer, card => $card);
 
+=card_method update_card
+
+Update a card.
+
+L<https://stripe.com/docs/api/cards/update#update_card>
+
+=over
+
+=item * customer_id - L<StripeCustomerId>
+
+=item * card_id - L<StripeCardId>
+
+=item * card - HashRef
+
+=back
+
+Returns a L<Net::Stripe::Card>.
+
+  $stripe->update_card(
+      customer_id => $customer_id,
+      card_id => $card_id,
+      card => {
+          name => $new_name,
+          metadata => {
+              'account-number' => $new_account_nunmber,
+          },
+      },
+  );
+
 =card_method get_cards
 
 Returns a list of cards.
@@ -666,6 +707,12 @@ Cards: {
             return $self->_post("customers/$customer/cards/" . $card->id, $card);
         }
         return $self->_post("customers/$customer/cards", $card);
+    }
+
+    method update_card(StripeCustomerId :$customer_id!,
+                     StripeCardId :$card_id!,
+                     HashRef :$card!) {
+        return $self->_post("customers/$customer_id/cards/$card_id", $card);
     }
 
     method delete_card(Net::Stripe::Customer|Str :$customer, Net::Stripe::Card|Str :$card) {
@@ -1594,6 +1641,10 @@ sub convert_to_form_fields {
                 my %fields = $hash->{$key}->form_fields();
                 foreach my $fn (keys %fields) {
                     $r->{$fn} = $fields{$fn};
+                }
+            } elsif ($key eq 'metadata' && ref($hash->{$key}) eq 'HASH') {
+                foreach my $fn (keys %{$hash->{$key}}) {
+                    $r->{$key . '[' . $fn . ']'} = $hash->{$key}->{$fn};
                 }
             } else {
                 $r->{$key} = $hash->{$key};
