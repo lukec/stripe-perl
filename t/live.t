@@ -31,6 +31,9 @@ my $fake_card = {
     exp_year  => $future->year,
     cvc       => 123,
     name      => 'Anonymous',
+    metadata  => {
+        'somecardmetadata' => 'testing, testing, 1-2-3',
+    },
 };
 
 Card_Tokens: {
@@ -374,6 +377,7 @@ Customers: {
             is $card->exp_year,  $future->year, 'card exp_year';
             is $card->last4, '4242', 'card last4';
             is $card->brand, 'Visa', 'card brand';
+            is $card->metadata->{somecardmetadata}, $fake_card->{metadata}->{somecardmetadata}, 'card metadata';
             is $customer->metadata->{'somemetadata'}, 'hello world', 'customer metadata';
         }
 
