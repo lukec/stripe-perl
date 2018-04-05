@@ -31,8 +31,14 @@ my $fake_card = {
     exp_year  => $future->year,
     cvc       => 123,
     name      => 'Anonymous',
+    address_line1   => '123 Main Street',
+    address_city    => 'Anytown',
+    address_state   => 'Anystate',
+    address_zip     => '55555',
+    address_country => 'United States',
 };
 
+=cut
 Card_Tokens: {
     Basic_successful_use: {
 
@@ -375,6 +381,9 @@ Customers: {
             is $card->last4, '4242', 'card last4';
             is $card->brand, 'Visa', 'card brand';
             is $customer->metadata->{'somemetadata'}, 'hello world', 'customer metadata';
+            for my $f (sort grep { /^address_/ } keys %{$fake_card}) {
+                is $card->$f, $fake_card->{$f}, "card $f matches";
+            }
         }
 
         Create_with_a_token: {

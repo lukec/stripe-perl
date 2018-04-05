@@ -14,6 +14,7 @@ has 'name'            => (is => 'ro', isa => 'Maybe[Str]');
 has 'address_line1'   => (is => 'ro', isa => 'Maybe[Str]');
 has 'address_line2'   => (is => 'ro', isa => 'Maybe[Str]');
 has 'address_zip'     => (is => 'ro', isa => 'Maybe[Str]');
+has 'address_city'    => (is => 'ro', isa => 'Maybe[Str]');
 has 'address_state'   => (is => 'ro', isa => 'Maybe[Str]');
 has 'address_country' => (is => 'ro', isa => 'Maybe[Str]');
 
@@ -36,7 +37,7 @@ method form_fields {
         map { ("card[$_]" => $self->$_) }
             grep { defined $self->$_ }
                 qw/number cvc name address_line1 address_line2 address_zip
-                   address_state address_country exp_month exp_year/
+                   address_city address_state address_country exp_month exp_year/
     );
 }
 
