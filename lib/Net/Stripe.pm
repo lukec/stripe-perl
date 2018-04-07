@@ -1459,6 +1459,9 @@ sub _get_collections {
     if (my $c = $args{object}) {
         push @path_args, "object=$c";
     }
+    if (my $c = $args{ending_before}) {
+        push @path_args, "ending_before=$c";
+    }
     if (my $c = $args{starting_after}) {
         push @path_args, "starting_after=$c";
     }

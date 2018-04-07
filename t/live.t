@@ -355,6 +355,41 @@ Customers: {
             $stripe->delete_customer(customer => $customer);
             $customer = $stripe->get_customer(customer_id => $id);
             ok $customer->{deleted}, 'customer is now deleted';
+
+            # Test pagination through customer lists
+
+            # Make sure that we have at least 15 customers
+            my @new_customer_ids;
+            for (1..15) {
+                my $customer = $stripe->post_customer();
+                push @new_customer_ids, $customer->id;
+            }
+
+            my $first_five = $stripe->get_customers(limit=> 5);
+            is scalar(@{$first_five->data}), 5, 'five customers returned';
+            my $second_five = $stripe->get_customers(
+                limit=> 5,
+                starting_after=> $first_five->last->id,
+            );
+            is scalar(@{$second_five->data}), 5, 'five customers returned';
+            my $third_five = $stripe->get_customers(
+                limit=> 5,
+                starting_after=> $second_five->last->id,
+            );
+            is scalar(@{$third_five->data}), 5, 'five customers returned';
+
+            my $previous_five = $stripe->get_customers(
+                limit=> 5,
+                ending_before=> $third_five->get(0)->id,
+            );
+            is scalar(@{$previous_five->data}), 5, 'five customers returned';
+
+            my @second_five_ids = sort map { $_->id } @{$second_five->data};
+            my @previous_five_ids = sort map { $_->id } @{$previous_five->data};
+            is_deeply(\@second_five_ids, \@previous_five_ids, 'ids match');
+
+            # Delete the customers that we created
+            $stripe->delete_customer(customer=> $_) for @new_customer_ids;
         }
 
         Create_with_all_the_works: {
