@@ -391,6 +391,43 @@ Customers: {
             is $card->last4, '4242', 'card token ok';
         }
 
+        Add_card_via_token: {
+            my $token = $stripe->post_token(card => $fake_card);
+            my $customer = $stripe->post_customer(
+                card => $token->id,
+            );
+            isa_ok $customer, 'Net::Stripe::Customer', 'got back a customer';
+            ok $customer->id, 'customer has an id';
+
+            my $cards = $stripe->get_cards(customer => $customer);
+            isa_ok $cards, "Net::Stripe::List";
+            is scalar @{$cards->data}, 1, 'customer has one card';
+            my $card = @{$cards->data}[0];
+            isa_ok $card, "Net::Stripe::Card";
+            is $card->last4, '4242', 'card token ok';
+
+            # add card by passing token object
+            $token = $stripe->post_token(card => $fake_card);
+            $card = $stripe->post_card(
+                customer => $customer,
+                card => $token,
+            );
+            $cards = $stripe->get_cards(customer => $customer);
+            isa_ok $cards, "Net::Stripe::List";
+            is scalar @{$cards->data}, 2, 'customer has two cards';
+
+            # add card by passing token id
+            $token = $stripe->post_token(card => $fake_card);
+            $card = $stripe->post_card(
+                customer => $customer,
+                card => $token->id(),
+            );
+            $cards = $stripe->get_cards(customer => $customer);
+            isa_ok $cards, "Net::Stripe::List";
+            is scalar @{$cards->data}, 3, 'customer has three cards';
+
+        }
+
         Customers_with_plans: {
             my $freeplan = $stripe->post_plan(
                 id => "free-$future_ymdhms",
