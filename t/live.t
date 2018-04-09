@@ -377,6 +377,22 @@ Customers: {
             is $customer->metadata->{'somemetadata'}, 'hello world', 'customer metadata';
         }
 
+        Retrieve_via_email: {
+            my $email_address = 'stripe' . time() . '@example.com';
+            my $customer = $stripe->post_customer(
+                email => $email_address,
+            );
+            my $customers = $stripe->get_customers(
+              email => $email_address,
+            );
+            is scalar(@{$customers->data}), 1, 'only one customer returned';
+            is $customers->get(0)->id, $customer->id, 'correct customer returned';
+
+            $stripe->delete_customer(customer => $customer->id);
+            $customer = $stripe->get_customer(customer_id => $customer->id);
+            ok $customer->{deleted}, 'customer is now deleted';
+        }
+
         Create_with_a_token: {
             my $token = $stripe->post_token(card => $fake_card);
             my $customer = $stripe->post_customer(
