@@ -38,7 +38,6 @@ my $fake_card = {
     address_country => 'United States',
 };
 
-=cut
 Card_Tokens: {
     Basic_successful_use: {
 
