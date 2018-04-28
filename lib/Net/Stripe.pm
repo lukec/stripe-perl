@@ -233,6 +233,14 @@ Charges: {
                             );
     }
 
+    method capture_charge(Net::Stripe::Charge|Str :$charge) {
+        if (ref($charge)) {
+            $charge = $charge->id;
+        }
+
+        return $self->_post("charges/$charge/capture");
+    }
+
 }
 
 =balance_transaction_method get_balance_transaction

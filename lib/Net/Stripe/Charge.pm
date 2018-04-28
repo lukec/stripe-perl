@@ -25,11 +25,14 @@ has 'application_fee'     => (is => 'ro', isa => 'Maybe[Int]');
 has 'metadata'            => (is => 'rw', isa => 'Maybe[HashRef]');
 has 'invoice'             => (is => 'ro', isa => 'Maybe[Str]');
 has 'receipt_email'       => (is => 'ro', isa => 'Maybe[Str]');
+has 'capture'             => (is => 'ro', isa => 'Maybe[Bool]');
 
 method form_fields {
+    my $capture = ( !defined( $self->capture ) || $self->capture ) ? 'true' : 'false';
     return (
         $self->fields_for('card'),
         $self->form_fields_for_metadata(),
+        capture => $capture,
         map { $_ => $self->$_ }
             grep { defined $self->$_ }
                 qw/amount currency customer description application_fee receipt_email/
