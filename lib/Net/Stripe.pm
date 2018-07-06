@@ -445,12 +445,13 @@ Customers: {
         $self->_delete("customers/$customer");
     }
 
-    method get_customers(HashRef :$created?, Str :$ending_before?, Int :$limit?, Str :$starting_after?) {
+    method get_customers(HashRef :$created?, Str :$ending_before?, Int :$limit?, Str :$starting_after?, Str :$email?) {
         $self->_get_collections('customers',
                                 created => $created,
                                 ending_before => $ending_before,
                                 limit => $limit,
-                                starting_after => $starting_after
+                                starting_after => $starting_after,
+                                email => $email,
                             );
     }
 }
@@ -1474,6 +1475,9 @@ sub _get_collections {
     }
     if (my $c = $args{starting_after}) {
         push @path_args, "starting_after=$c";
+    }
+    if (my $e = $args{email}) {
+        push @path_args, "email=$e";
     }
 
     # example: $Stripe->get_charges( 'count' => 100, 'created' => { 'gte' => 1397663381 } );
