@@ -34,6 +34,11 @@ my $fake_card = {
     metadata  => {
         'somecardmetadata' => 'testing, testing, 1-2-3',
     },
+    address_line1   => '123 Main Street',
+    address_city    => 'Anytown',
+    address_state   => 'Anystate',
+    address_zip     => '55555',
+    address_country => 'United States',
 };
 
 Card_Tokens: {
@@ -397,6 +402,9 @@ Customers: {
             is $card->brand, 'Visa', 'card brand';
             is $card->metadata->{somecardmetadata}, $fake_card->{metadata}->{somecardmetadata}, 'card metadata';
             is $customer->metadata->{'somemetadata'}, 'hello world', 'customer metadata';
+            for my $f (sort grep { /^address_/ } keys %{$fake_card}) {
+                is $card->$f, $fake_card->{$f}, "card $f matches";
+            }
         }
 
         Create_with_a_token: {
