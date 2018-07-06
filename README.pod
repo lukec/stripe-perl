@@ -151,6 +151,8 @@ L<https://stripe.com/docs/api#create_charge>
 
 =item * application_fee - Int - optional
 
+=item * receipt_email - Str - The email address to send this charge's receipt to - optional
+
 =back
 
 Returns L<Net::Stripe::Charge>.
@@ -1018,6 +1020,10 @@ Sachin Sebastian <sachinjsk@users.noreply.github.com>
 =item *
 
 Sherrard Burton <32931314+sherrardb@users.noreply.github.com>
+
+=item *
+
+Sherrard Burton <sburton@allafrica.com>
 
 =item *
 
