@@ -25,6 +25,7 @@ use Net::Stripe::LineItem;
 use Net::Stripe::Refund;
 use Net::Stripe::EphemeralKey;
 
+
 # ABSTRACT: API client for Stripe.com
 
 =head1 SYNOPSIS
@@ -108,6 +109,8 @@ L<https://stripe.com/docs/api#create_charge>
 
 =item * application_fee - Int - optional
 
+=item * receipt_email - Str - The email address to send this charge's receipt to - optional
+
 =back
 
 Returns L<Net::Stripe::Charge>.
@@ -183,7 +186,8 @@ Charges: {
                        HashRef :$metadata?,
                        Bool :$capture?,
                        Str :$statement_description?,
-                       Int :$application_fee?
+                       Int :$application_fee?,
+                       Str :$receipt_email?
                      ) {
         my $charge = Net::Stripe::Charge->new(amount => $amount,
                                               currency => $currency,
@@ -193,7 +197,8 @@ Charges: {
                                               metadata => $metadata,
                                               capture => $capture,
                                               statement_description => $statement_description,
-                                              application_fee => $application_fee
+                                              application_fee => $application_fee,
+                                              receipt_email => $receipt_email
                                           );
         return $self->_post('charges', $charge);
     }
@@ -442,12 +447,13 @@ Customers: {
         $self->_delete("customers/$customer");
     }
 
-    method get_customers(HashRef :$created?, Str :$ending_before?, Int :$limit?, Str :$starting_after?) {
+    method get_customers(HashRef :$created?, Str :$ending_before?, Int :$limit?, Str :$starting_after?, Str :$email?) {
         $self->_get_collections('customers',
                                 created => $created,
                                 ending_before => $ending_before,
                                 limit => $limit,
-                                starting_after => $starting_after
+                                starting_after => $starting_after,
+                                email => $email,
                             );
     }
 }
@@ -557,9 +563,15 @@ Cards: {
     }
 
     method post_card(Net::Stripe::Customer|Str :$customer,
-                     HashRef|Net::Stripe::Card :$card) {
+                     HashRef|Net::Stripe::Card|Net::Stripe::Token|Str :$card) {
         if (ref($customer)) {
             $customer = $customer->id;
+        }
+        if (! ref($card) && $card =~ /^tok_.+/) {
+            return $self->_post("customers/$customer/cards", {card=> $card});
+        }
+        if (ref($card) eq 'Net::Stripe::Token' && $card->id) {
+            return $self->_post("customers/$customer/cards", {card=> $card->id});
         }
         # Update the card.
         if (ref($card) eq 'Net::Stripe::Card' && $card->id) {
@@ -1429,8 +1441,23 @@ InvoiceItems: {
     }
 }
 
+=ephemeralkey_method post_ephemeral_key
 
-## Stuff Aaron Added
+Create an Ephemeral Key, currently undocumented.
+
+L<https://stripe.com/docs/api>
+
+=over
+
+=item * customer - L<Net::Stripe::Customer> or Str
+
+=back
+
+Returns a L<Net::Stripe::EphemeralKey> object.
+
+  $stripe->post_ephemeral_key(customer => 'test');
+=cut
+
 EphemeralKeys: {
   method post_ephemeral_key(Net::Stripe::Customer|Str :$customer) {
       if (ref($customer)) {
@@ -1442,6 +1469,7 @@ EphemeralKeys: {
         '2018-02-28');
   }
 }
+
 
 # Helper methods
 
@@ -1474,8 +1502,14 @@ sub _get_collections {
     if (my $c = $args{object}) {
         push @path_args, "object=$c";
     }
+    if (my $c = $args{ending_before}) {
+        push @path_args, "ending_before=$c";
+    }
     if (my $c = $args{starting_after}) {
         push @path_args, "starting_after=$c";
+    }
+    if (my $e = $args{email}) {
+        push @path_args, "email=$e";
     }
 
     # example: $Stripe->get_charges( 'count' => 100, 'created' => { 'gte' => 1397663381 } );
