@@ -23,6 +23,7 @@ use Net::Stripe::BalanceTransaction;
 use Net::Stripe::List;
 use Net::Stripe::LineItem;
 use Net::Stripe::Refund;
+use Net::Stripe::EphemeralKey;
 
 # ABSTRACT: API client for Stripe.com
 
@@ -107,8 +108,6 @@ L<https://stripe.com/docs/api#create_charge>
 
 =item * application_fee - Int - optional
 
-=item * receipt_email - Str - The email address to send this charge's receipt to - optional
-
 =back
 
 Returns L<Net::Stripe::Charge>.
@@ -184,8 +183,7 @@ Charges: {
                        HashRef :$metadata?,
                        Bool :$capture?,
                        Str :$statement_description?,
-                       Int :$application_fee?,
-                       Str :$receipt_email?
+                       Int :$application_fee?
                      ) {
         my $charge = Net::Stripe::Charge->new(amount => $amount,
                                               currency => $currency,
@@ -195,8 +193,7 @@ Charges: {
                                               metadata => $metadata,
                                               capture => $capture,
                                               statement_description => $statement_description,
-                                              application_fee => $application_fee,
-                                              receipt_email => $receipt_email
+                                              application_fee => $application_fee
                                           );
         return $self->_post('charges', $charge);
     }
@@ -445,13 +442,12 @@ Customers: {
         $self->_delete("customers/$customer");
     }
 
-    method get_customers(HashRef :$created?, Str :$ending_before?, Int :$limit?, Str :$starting_after?, Str :$email?) {
+    method get_customers(HashRef :$created?, Str :$ending_before?, Int :$limit?, Str :$starting_after?) {
         $self->_get_collections('customers',
                                 created => $created,
                                 ending_before => $ending_before,
                                 limit => $limit,
-                                starting_after => $starting_after,
-                                email => $email,
+                                starting_after => $starting_after
                             );
     }
 }
@@ -561,15 +557,9 @@ Cards: {
     }
 
     method post_card(Net::Stripe::Customer|Str :$customer,
-                     HashRef|Net::Stripe::Card|Net::Stripe::Token|Str :$card) {
+                     HashRef|Net::Stripe::Card :$card) {
         if (ref($customer)) {
             $customer = $customer->id;
-        }
-        if (! ref($card) && $card =~ /^tok_.+/) {
-            return $self->_post("customers/$customer/cards", {card=> $card});
-        }
-        if (ref($card) eq 'Net::Stripe::Token' && $card->id) {
-            return $self->_post("customers/$customer/cards", {card=> $card->id});
         }
         # Update the card.
         if (ref($card) eq 'Net::Stripe::Card' && $card->id) {
@@ -1439,6 +1429,20 @@ InvoiceItems: {
     }
 }
 
+
+## Stuff Aaron Added
+EphemeralKeys: {
+  method post_ephemeral_key(Net::Stripe::Customer|Str :$customer) {
+      if (ref($customer)) {
+          $customer = $customer->id;
+      }
+      warn "Posting Ephemeral Key for $customer";
+      return $self->_post("ephemeral_keys",
+        { customer => $customer },
+        '2018-02-28');
+  }
+}
+
 # Helper methods
 
 method _get(Str $path) {
@@ -1470,14 +1474,8 @@ sub _get_collections {
     if (my $c = $args{object}) {
         push @path_args, "object=$c";
     }
-    if (my $c = $args{ending_before}) {
-        push @path_args, "ending_before=$c";
-    }
     if (my $c = $args{starting_after}) {
         push @path_args, "starting_after=$c";
-    }
-    if (my $e = $args{email}) {
-        push @path_args, "email=$e";
     }
 
     # example: $Stripe->get_charges( 'count' => 100, 'created' => { 'gte' => 1397663381 } );
@@ -1516,9 +1514,10 @@ sub convert_to_form_fields {
     return $hash;
 }
 
-method _post(Str $path, $obj?) {
+method _post(Str $path, $obj?, $version?) {
     my $req = POST $self->api_base . '/' . $path,
         ($obj ? (Content => [ref($obj) eq 'HASH' ? %{convert_to_form_fields($obj)} : $obj->form_fields]) : ());
+    defined($version) ? $req->header('Stripe-Version' => $version) : undef;
     return $self->_make_request($req);
 }
 
