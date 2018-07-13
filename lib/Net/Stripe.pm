@@ -1571,6 +1571,10 @@ sub _defined_arguments {
 sub _hash_to_object {
     my $hash   = shift;
 
+    if ( exists( $hash->{deleted} ) && exists( $hash->{object} ) && $hash->{object} ne 'customer' ) {
+      delete( $hash->{object} );
+    }
+
     foreach my $k (grep { ref($hash->{$_}) } keys %$hash) {
         my $v = $hash->{$k};
         if (ref($v) eq 'HASH' && defined($v->{object})) {
