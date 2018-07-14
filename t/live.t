@@ -158,11 +158,12 @@ Charges: {
         } 'Created a charge object';
         isa_ok $charge, 'Net::Stripe::Charge';
         for my $field (qw/id amount created currency description
-                          livemode paid refunded/) {
+                          livemode paid refunded status/) {
             ok defined($charge->$field), "charge has $field";
         }
         ok !$charge->refunded, 'charge is not refunded';
         ok $charge->paid, 'charge was paid';
+        is $charge->status, 'paid', 'charge status is paid';
 
         # Check out the returned card object
         my $card = $charge->card;
@@ -258,6 +259,7 @@ Charges: {
         );
         isa_ok $charge, 'Net::Stripe::Charge';
         ok $charge->paid, 'charge was paid';
+        is $charge->status, 'paid', 'charge status is paid';
 
         my $cards = $stripe->get_cards(customer => $customer, limit => 1);
         isa_ok $cards, "Net::Stripe::List";
@@ -275,6 +277,7 @@ Charges: {
         );
         isa_ok $charge, 'Net::Stripe::Charge';
         ok $charge->paid, 'charge was paid';
+        is $charge->status, 'paid', 'charge status is paid';
     }
 
     Rainy_day: {
