@@ -753,13 +753,12 @@ Invoices_and_items: {
         is $resp->{deleted}, '1', 'invoiceitem deleted';
         is $resp->{id}, $item->id, 'deleted id is correct';
 
-        # swallow the expected warning rather than have it print out durring tests.
-        close STDERR;
-        open(STDERR, ">", "/dev/null");
-        eval { $stripe->get_invoiceitem(invoice_item => $item->id) };
-        like $@, qr/No such invoiceitem/, 'correct error message';
-        close STDERR;
-        open(STDERR, ">&", STDOUT);
+        eval {
+            # swallow the expected warning rather than have it print out during tests.
+            local $SIG{__WARN__} = sub {};
+            $stripe->get_invoiceitem(invoice_item => $item->id);
+        };
+        like $@, qr/invalid_request_error.*resource_missing/s, 'correct error message';
     }
 }
 

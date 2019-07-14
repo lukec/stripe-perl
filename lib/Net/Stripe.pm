@@ -53,6 +53,17 @@ generally named after the HTTP method and the object name.
 
 This method returns Moose objects for responses from the API.
 
+=head1 WARNING
+
+This SDK is "version agnostic" of the Stripe API
+L<https://github.com/lukec/stripe-perl/issues/80>
+and at the time of this release Stripe has some major changes afoot
+L<https://github.com/lukec/stripe-perl/issues/115>
+
+If you're considering using this please click "Watch" on this github project
+L<https://github.com/lukec/stripe-perl/>
+where discussion on these topics takes place.
+
 =method new PARAMHASH
 
 This creates a new stripe API object.  The following parameters are accepted:
