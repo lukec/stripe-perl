@@ -35,7 +35,7 @@ generally named after the HTTP method and the object name.
 
 This method returns Moose objects for responses from the API.
 
-=head1 WARNING
+=head2 WARNING
 
 This SDK is "version agnostic" of the Stripe API
 L<https://github.com/lukec/stripe-perl/issues/80>
