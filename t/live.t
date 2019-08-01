@@ -281,6 +281,21 @@ Charges: {
         is $charge->status, 'paid', 'charge status is paid';
     }
 
+    Post_charge_using_bitcoin_receiver: {
+        my $receiver = $stripe->create_bitcoin_receiver(
+            amount   => 1000,
+            currency => 'usd',
+            email    => 'payinguser+fill_now@example.com'
+        );
+        my $charge = $stripe->post_charge(
+            amount   => $receiver->amount,
+            currency => $receiver->currency,
+            card     => $receiver->id,
+        );
+        isa_ok $charge, 'Net::Stripe::Charge';
+        ok $charge->paid, 'charge was paid';
+    }
+
     Rainy_day: {
         # swallow the expected warning rather than have it print out durring tests.
         close STDERR;
@@ -759,6 +774,37 @@ Invoices_and_items: {
             $stripe->get_invoiceitem(invoice_item => $item->id);
         };
         like $@, qr/invalid_request_error.*resource_missing/s, 'correct error message';
+    }
+}
+
+Bitcoin_Receivers: {
+    Basic_successful_use: {
+        {
+            my $receiver = Net::Stripe::BitcoinReceiver->new(
+                amount   => 1000,
+                currency => 'usd',
+                email    => 'stripe@example.com'
+            );
+            isa_ok $receiver, 'Net::Stripe::BitcoinReceiver',
+                'got a receiver back';
+        }
+
+        my $receiver = $stripe->create_bitcoin_receiver(
+            amount   => 1000,
+            currency => 'usd',
+            email    => 'stripe@example.com'
+        );
+        isa_ok $receiver, 'Net::Stripe::BitcoinReceiver',
+            'got a receiver back from create';
+
+        my $same = $stripe->get_bitcoin_receiver(
+            receiver_id => $receiver->id );
+        is $same->id, $receiver->id, 'receiver id matches';
+
+        # Test ability to add, retrieve lists of receivers
+        my $btc_list = $stripe->list_bitcoin_receivers();
+        isa_ok $btc_list, 'Net::Stripe::List',
+            'Bitcoin receivers List object returned';
     }
 }
 
