@@ -36,7 +36,7 @@ method form_fields {
     return (
         $self->fields_for('card'),
         $self->fields_for('plan'),
-        map { ($_ => $self->$_) }
+        map { $_ => $self->get_form_field_value( $_ ) }
             grep { defined $self->$_ } qw/coupon prorate trial_end quantity/
     );
 }
