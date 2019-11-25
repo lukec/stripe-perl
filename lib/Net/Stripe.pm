@@ -713,21 +713,25 @@ Subscriptions: {
             $plan = $plan->id;
         }
 
-        my %args = (plan => $plan,
-                    coupon => $coupon,
-                    trial_end => $trial_end,
-                    card => $card,
-                    prorate => $prorate ? 'true' : 'false',
-                    quantity => $quantity,
-                    application_fee_percent => $application_fee_percent);
-
-        if (ref($subscription) && $subscription eq 'Net::Stripe::Subscription') {
-            return $self->_post("customers/$customer/subscriptions/" . $subscription->id, $subscription);
-        } elsif (defined($subscription) && !ref($subscription)) {
-            return $self->_post("customers/$customer/subscriptions/" . $subscription, _defined_arguments(\%args));
+        if (ref($subscription) ne 'Net::Stripe::Subscription') {
+            my %args = (plan => $plan,
+                        coupon => $coupon,
+                        trial_end => $trial_end,
+                        card => $card,
+                        prorate => $prorate,
+                        quantity => $quantity,
+                        application_fee_percent => $application_fee_percent);
+            if (defined($subscription)) {
+                $args{id} = $subscription;
+            }
+            $subscription = Net::Stripe::Subscription->new( %args );
         }
 
-        return $self->_post("customers/$customer/subscriptions", _defined_arguments(\%args));
+        if (defined($subscription->id)) {
+            return $self->_post("customers/$customer/subscriptions/" . $subscription->id, $subscription);
+        } else {
+            return $self->_post("customers/$customer/subscriptions", $subscription);
+        }
     }
 
     method delete_subscription(Net::Stripe::Customer|Str :$customer,
