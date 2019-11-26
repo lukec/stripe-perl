@@ -763,4 +763,39 @@ Invoices_and_items: {
     }
 }
 
+Boolean_Query_Args: {
+    my $subscription = Net::Stripe::Subscription->new(
+        prorate => 0,
+        plan => "freeplan",
+    );
+    isa_ok $subscription, 'Net::Stripe::Subscription',
+        'got a subscription back';
+    throws_ok {
+        $subscription->is_a_boolean();
+    } qr/Expected 1 parameter/, 'no parameters to is_a_boolean()';
+    throws_ok {
+        $subscription->is_a_boolean({});
+    } qr/Reference {} did not pass type constraint "Str"/, 'non-string parameter to is_a_boolean()';
+    throws_ok {
+        $subscription->get_form_field_value();
+    } qr/Expected 1 parameter/, 'no parameters to get_form_field_value()';
+    throws_ok {
+        $subscription->get_form_field_value({});
+    } qr/Reference {} did not pass type constraint "Str"/, 'non-string parameter to get_form_field_value()';
+    throws_ok {
+        $subscription->get_form_field_value( 'invalid_field' );
+    } qr/Can't locate object method "invalid_field"/, 'invalid form field';
+    ok !$subscription->is_a_boolean( 'plan' ), 'plan is not a boolean';
+    is $subscription->get_form_field_value( 'plan' ), 'freeplan',
+        "plan form value is 'freeplan'";
+    ok $subscription->is_a_boolean( 'prorate' ), 'prorate is a boolean';
+    is $subscription->prorate, 0, 'prorate matches zero';
+    is $subscription->get_form_field_value( 'prorate' ), 'false',
+        "prorate form value is 'false'";
+    $subscription->prorate(1);
+    is $subscription->prorate, 1, 'prorate matches one';
+    is $subscription->get_form_field_value( 'prorate' ), 'true',
+        "prorate form value is 'true'";
+}
+
 done_testing();

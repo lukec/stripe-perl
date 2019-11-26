@@ -5,6 +5,8 @@ package Net::Stripe::Resource;
 use Moose;
 use Kavorka;
 
+has 'boolean_attributes' => (is => 'ro', isa => 'ArrayRef[Str]');
+
 around BUILDARGS => sub {
     my $orig = shift;
     my $class = shift;
@@ -44,6 +46,15 @@ around BUILDARGS => sub {
         }
     }
 
+    for my $attr ($class->meta()->get_all_attributes()) {
+      next if !($attr->type_constraint && (
+          $attr->type_constraint eq 'Bool' ||
+          $attr->type_constraint eq 'Maybe[Bool]' ||
+          $attr->type_constraint eq 'Maybe[Bool|Object]'
+      ));
+      push @{$args{boolean_attributes}}, $attr->name;
+    }
+
     $class->$orig(%args);
 };
 
@@ -63,6 +74,17 @@ method fields_for($for) {
     return unless $thingy;
     return $thingy->form_fields if ref($thingy) =~ m/^Net::Stripe::/;
     return ($for => $thingy);
+}
+
+method is_a_boolean(Str $attr!) {
+  my %boolean_attributes = map { $_ => 1 } @{$self->boolean_attributes()};
+  return exists( $boolean_attributes{$attr} );
+}
+
+method get_form_field_value(Str $attr!) {
+  my $value = $self->$attr;
+  return $value if ! $self->is_a_boolean( $attr );
+  return ( defined( $value ) && $value ) ? 'true' : 'false';
 }
 
 1;
