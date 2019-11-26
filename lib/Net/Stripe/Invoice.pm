@@ -42,9 +42,8 @@ sub _closed_change_detector {
 method form_fields {
     return (
         $self->form_fields_for_metadata(),
-        (($self->{closed_value_changed}) ? (closed => (($self->closed) ? 'true' : 'false')) : ()),
-        map { ($_ => $self->$_) }
-            grep { defined $self->$_ } qw/description/
+        map { $_ => $self->get_form_field_value( $_ ) }
+            grep { defined $self->$_ } qw/description/, ($self->{closed_value_changed} ? qw/closed/ : ())
     );
 }
 

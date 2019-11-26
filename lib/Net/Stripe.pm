@@ -1102,7 +1102,7 @@ Update an invoice.
 
 Returns a L<Net::Stripe::Invoice>.
 
-  $stripe->post_invoice(invoice => $invoice, closed => 'true')
+  $stripe->post_invoice(invoice => $invoice, closed => 1)
 
 =invoice_method get_invoice
 
