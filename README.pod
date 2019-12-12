@@ -6,7 +6,7 @@ Net::Stripe - API client for Stripe.com
 
 =head1 VERSION
 
-version 0.39
+version 0.40
 
 =head1 SYNOPSIS
 
@@ -674,7 +674,7 @@ Update an invoice.
 
 Returns a L<Net::Stripe::Invoice>.
 
-  $stripe->post_invoice(invoice => $invoice, closed => 'true')
+  $stripe->post_invoice(invoice => $invoice, closed => 1)
 
 =head2 get_invoice
 
