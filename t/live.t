@@ -41,6 +41,13 @@ my $fake_card = {
     address_country => 'United States',
 };
 
+Balance: {
+    Basic_successful_use: {
+        my $balance = $stripe->get_balance();
+        isa_ok $balance, 'Net::Stripe::Balance', 'got a balance back';
+    }
+}
+
 Card_Tokens: {
     Basic_successful_use: {
 

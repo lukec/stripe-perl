@@ -23,6 +23,7 @@ use Net::Stripe::BalanceTransaction;
 use Net::Stripe::List;
 use Net::Stripe::LineItem;
 use Net::Stripe::Refund;
+use Net::Stripe::Balance;
 
 # ABSTRACT: API client for Stripe.com
 
@@ -253,6 +254,26 @@ Charges: {
     }
 
 }
+
+=balance_method get_balance
+
+Retrieve the account balance.
+
+Lhttps://stripe.com/docs/api/balance/balance_retrieve#retrieve_balance>
+
+Returns a L<Net::Stripe::Balance>.
+
+  $stripe->get_balance();
+
+=cut
+
+
+Balance: {
+    method get_balance() {
+        return $self->_get("balance");
+    }
+}
+
 
 =balance_transaction_method get_balance_transaction
 
