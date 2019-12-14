@@ -34,7 +34,7 @@ unless ($API_KEY =~ m/^sk_test_/) {
 
     foreach my $api_version (qw/notanapiversionstring 20150216 2015-2-16/) {
         throws_ok {
-            $stripe = Net::Stripe->new(
+            Net::Stripe->new(
                 api_key     => $API_KEY,
                 api_version => $api_version,
                 debug       => 1,
@@ -43,7 +43,7 @@ unless ($API_KEY =~ m/^sk_test_/) {
     }
 
     throws_ok {
-        $stripe = Net::Stripe->new(
+        Net::Stripe->new(
             api_key     => $API_KEY,
             api_version => '2012-09-24',
             debug       => 1,
@@ -52,7 +52,7 @@ unless ($API_KEY =~ m/^sk_test_/) {
 
     throws_ok {
         my $tomorrow = (DateTime->now + DateTime::Duration->new(days => 1))->ymd('-');
-        $stripe = Net::Stripe->new(
+        Net::Stripe->new(
             api_key     => $API_KEY,
             api_version => $tomorrow,
             debug       => 1,
