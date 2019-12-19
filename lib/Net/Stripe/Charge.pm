@@ -27,6 +27,7 @@ has 'invoice'             => (is => 'ro', isa => 'Maybe[Str]');
 has 'receipt_email'       => (is => 'ro', isa => 'Maybe[Str]');
 has 'status'              => (is => 'ro', isa => 'Maybe[Str]');
 has 'capture'             => (is => 'ro', isa => 'Bool', default=> 1);
+has 'statement_descriptor' => (is => 'ro', isa => 'Maybe[Str]');
 
 method form_fields {
     return (
@@ -34,7 +35,8 @@ method form_fields {
         $self->form_fields_for_metadata(),
         map { $_ => $self->get_form_field_value( $_ ) }
             grep { defined $self->$_ }
-                qw/amount currency customer description application_fee receipt_email capture/
+                qw/amount currency customer description application_fee receipt_email capture
+                   statement_descriptor/
     );
 }
 

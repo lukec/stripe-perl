@@ -78,9 +78,11 @@ Plans: {
             interval => 'month',
             name => "Test Plan - $future",
             trial_period_days => 10,
+            statement_descriptor => 'Statement Descr',
         );
         isa_ok $plan, 'Net::Stripe::Plan',
             'I love it when a plan comes together';
+        is $plan->statement_descriptor, 'Statement Descr', 'plan statement_descriptor matches';
 
         my $newplan = $stripe->get_plan(plan_id => $id);
         isa_ok $newplan, 'Net::Stripe::Plan',
@@ -154,17 +156,19 @@ Charges: {
                 currency => 'usd',
                 card => $fake_card,
                 description => 'Wikileaks donation',
+                statement_descriptor => 'Statement Descr',
             );
         } 'Created a charge object';
         isa_ok $charge, 'Net::Stripe::Charge';
         for my $field (qw/id amount created currency description
-                          livemode paid refunded status/) {
+                          livemode paid refunded status statement_descriptor/) {
             ok defined($charge->$field), "charge has $field";
         }
         ok !$charge->refunded, 'charge is not refunded';
         ok $charge->paid, 'charge was paid';
         is $charge->status, 'paid', 'charge status is paid';
         ok $charge->captured, 'charge was captured';
+        is $charge->statement_descriptor, 'Statement Descr', 'charge statement_descriptor matches';
 
         # Check out the returned card object
         my $card = $charge->card;
