@@ -58,12 +58,6 @@ Card_Tokens: {
         my $same = $stripe->get_token(token_id => $token->id);
         isa_ok $token, 'Net::Stripe::Token', 'got a token back';
         is $same->id, $token->id, 'token id matches';
-
-
-        my $no_amount = $stripe->post_token( card => $fake_card );
-        isa_ok $no_amount, 'Net::Stripe::Token', 'got a token back';
-        is $no_amount->card->last4, '4242', 'token card';
-        ok !$no_amount->used, 'token is not used';
     }
 }
 
