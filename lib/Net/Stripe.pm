@@ -198,9 +198,22 @@ Charges: {
                        Int :$application_fee?,
                        Str :$receipt_email?
                      ) {
+
+        my $customer_id;
+        if ( defined( $customer ) ) {
+            if ( ref( $customer ) eq 'Net::Stripe::Customer' ) {
+                $customer_id = $customer->id;
+            } elsif ( ref( $customer ) eq 'HASH' ) {
+                $customer = $self->post_customer( %$customer );
+                $customer_id = $customer->id;
+            } else {
+                $customer_id = $customer;
+            }
+        }
+
         my $charge = Net::Stripe::Charge->new(amount => $amount,
                                               currency => $currency,
-                                              customer => $customer,
+                                              customer => $customer_id,
                                               card => $card,
                                               description => $description,
                                               metadata => $metadata,

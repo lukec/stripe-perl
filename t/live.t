@@ -249,12 +249,52 @@ Charges: {
         is $charge2->metadata->{'hasmetadata'}, 'hello world', 'charge metadata in retrieved object';
     }
 
-
-    Post_charge_using_customer: {
+    Post_charge_using_customer_id: {
         my $token = $stripe->post_token( card => $fake_card );
         my $customer = $stripe->post_customer( card => $token->id );
         my $charge = $stripe->post_charge(
             customer => $customer->id,
+            amount => 250,
+            currency => 'usd',
+        );
+        isa_ok $charge, 'Net::Stripe::Charge';
+        ok $charge->paid, 'charge was paid';
+        is $charge->status, 'paid', 'charge status is paid';
+
+        my $cards = $stripe->get_cards(customer => $customer, limit => 1);
+        isa_ok $cards, "Net::Stripe::List";
+        my $card = @{$cards->data}[0];
+        isa_ok $card, "Net::Stripe::Card";
+        is $card->name, $fake_card->{name}, 'retrieve the card name';
+    }
+
+    Post_charge_using_customer_hash: {
+        my $token = $stripe->post_token( card => $fake_card );
+        my $charge = $stripe->post_charge(
+            customer => {
+                  card => $token->id,
+            },
+            amount => 250,
+            currency => 'usd',
+        );
+        isa_ok $charge, 'Net::Stripe::Charge';
+        ok $charge->paid, 'charge was paid';
+        is $charge->status, 'paid', 'charge status is paid';
+
+        ok defined($charge->customer), 'charge has a customer';
+        my $customer_id = $charge->customer;
+        my $cards = $stripe->get_cards(customer => $customer_id, limit => 1);
+        isa_ok $cards, "Net::Stripe::List";
+        my $card = @{$cards->data}[0];
+        isa_ok $card, "Net::Stripe::Card";
+        is $card->name, $fake_card->{name}, 'retrieve the card name';
+    }
+
+    Post_charge_using_customer_object: {
+        my $token = $stripe->post_token( card => $fake_card );
+        my $customer = $stripe->post_customer( card => $token->id );
+        my $charge = $stripe->post_charge(
+            customer => $customer,
             amount => 250,
             currency => 'usd',
         );
