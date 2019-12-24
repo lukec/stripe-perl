@@ -204,8 +204,8 @@ Charges: {
             if ( ref( $customer ) eq 'Net::Stripe::Customer' ) {
                 $customer_id = $customer->id;
             } elsif ( ref( $customer ) eq 'HASH' ) {
-                $customer = $self->post_customer( %$customer );
-                $customer_id = $customer->id;
+                my $customer_obj = $self->post_customer( %$customer );
+                $customer_id = $customer_obj->id;
             } else {
                 $customer_id = $customer;
             }
