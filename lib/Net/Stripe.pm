@@ -54,6 +54,17 @@ generally named after the HTTP method and the object name.
 
 This method returns Moose objects for responses from the API.
 
+=head2 WARNING
+
+This SDK is "version agnostic" of the Stripe API
+L<https://github.com/lukec/stripe-perl/issues/80>
+and at the time of this release Stripe has some major changes afoot
+L<https://github.com/lukec/stripe-perl/issues/115>
+
+If you're considering using this please click "Watch" on this github project
+L<https://github.com/lukec/stripe-perl/>
+where discussion on these topics takes place.
+
 =method new PARAMHASH
 
 This creates a new stripe API object.  The following parameters are accepted:
@@ -108,6 +119,8 @@ L<https://stripe.com/docs/api#create_charge>
 =item * statement_description - Str - description for statement - optional
 
 =item * application_fee - Int - optional
+
+=item * receipt_email - Str - The email address to send this charge's receipt to - optional
 
 =back
 
@@ -184,7 +197,8 @@ Charges: {
                        HashRef :$metadata?,
                        Bool :$capture?,
                        Str :$statement_description?,
-                       Int :$application_fee?
+                       Int :$application_fee?,
+                       Str :$receipt_email?
                      ) {
         my $charge = Net::Stripe::Charge->new(amount => $amount,
                                               currency => $currency,
@@ -194,7 +208,8 @@ Charges: {
                                               metadata => $metadata,
                                               capture => $capture,
                                               statement_description => $statement_description,
-                                              application_fee => $application_fee
+                                              application_fee => $application_fee,
+                                              receipt_email => $receipt_email
                                           );
         return $self->_post('charges', $charge);
     }
@@ -229,6 +244,14 @@ Charges: {
                                 limit => $limit,
                                 starting_after => $starting_after
                             );
+    }
+
+    method capture_charge(Net::Stripe::Charge|Str :$charge) {
+        if (ref($charge)) {
+            $charge = $charge->id;
+        }
+
+        return $self->_post("charges/$charge/capture");
     }
 
 }
@@ -443,12 +466,13 @@ Customers: {
         $self->_delete("customers/$customer");
     }
 
-    method get_customers(HashRef :$created?, Str :$ending_before?, Int :$limit?, Str :$starting_after?) {
+    method get_customers(HashRef :$created?, Str :$ending_before?, Int :$limit?, Str :$starting_after?, Str :$email?) {
         $self->_get_collections('customers',
                                 created => $created,
                                 ending_before => $ending_before,
                                 limit => $limit,
-                                starting_after => $starting_after
+                                starting_after => $starting_after,
+                                email => $email,
                             );
     }
 }
@@ -558,9 +582,15 @@ Cards: {
     }
 
     method post_card(Net::Stripe::Customer|Str :$customer,
-                     HashRef|Net::Stripe::Card :$card) {
+                     HashRef|Net::Stripe::Card|Net::Stripe::Token|Str :$card) {
         if (ref($customer)) {
             $customer = $customer->id;
+        }
+        if (! ref($card) && $card =~ /^tok_.+/) {
+            return $self->_post("customers/$customer/cards", {card=> $card});
+        }
+        if (ref($card) eq 'Net::Stripe::Token' && $card->id) {
+            return $self->_post("customers/$customer/cards", {card=> $card->id});
         }
         # Update the card.
         if (ref($card) eq 'Net::Stripe::Card' && $card->id) {
@@ -685,21 +715,25 @@ Subscriptions: {
             $plan = $plan->id;
         }
 
-        my %args = (plan => $plan,
-                    coupon => $coupon,
-                    trial_end => $trial_end,
-                    card => $card,
-                    prorate => $prorate ? 'true' : 'false',
-                    quantity => $quantity,
-                    application_fee_percent => $application_fee_percent);
-
-        if (ref($subscription) && $subscription eq 'Net::Stripe::Subscription') {
-            return $self->_post("customers/$customer/subscriptions/" . $subscription->id, $subscription);
-        } elsif (defined($subscription) && !ref($subscription)) {
-            return $self->_post("customers/$customer/subscriptions/" . $subscription, _defined_arguments(\%args));
+        if (ref($subscription) ne 'Net::Stripe::Subscription') {
+            my %args = (plan => $plan,
+                        coupon => $coupon,
+                        trial_end => $trial_end,
+                        card => $card,
+                        prorate => $prorate,
+                        quantity => $quantity,
+                        application_fee_percent => $application_fee_percent);
+            if (defined($subscription)) {
+                $args{id} = $subscription;
+            }
+            $subscription = Net::Stripe::Subscription->new( %args );
         }
 
-        return $self->_post("customers/$customer/subscriptions", _defined_arguments(\%args));
+        if (defined($subscription->id)) {
+            return $self->_post("customers/$customer/subscriptions/" . $subscription->id, $subscription);
+        } else {
+            return $self->_post("customers/$customer/subscriptions", $subscription);
+        }
     }
 
     method delete_subscription(Net::Stripe::Customer|Str :$customer,
@@ -1074,7 +1108,7 @@ Update an invoice.
 
 Returns a L<Net::Stripe::Invoice>.
 
-  $stripe->post_invoice(invoice => $invoice, closed => 'true')
+  $stripe->post_invoice(invoice => $invoice, closed => 1)
 
 =invoice_method get_invoice
 
@@ -1461,6 +1495,15 @@ sub _get_collections {
     if (my $c = $args{object}) {
         push @path_args, "object=$c";
     }
+    if (my $c = $args{ending_before}) {
+        push @path_args, "ending_before=$c";
+    }
+    if (my $c = $args{starting_after}) {
+        push @path_args, "starting_after=$c";
+    }
+    if (my $e = $args{email}) {
+        push @path_args, "email=$e";
+    }
 
     # example: $Stripe->get_charges( 'count' => 100, 'created' => { 'gte' => 1397663381 } );
     if (defined($args{created})) {
@@ -1556,6 +1599,10 @@ sub _defined_arguments {
 
 sub _hash_to_object {
     my $hash   = shift;
+
+    if ( exists( $hash->{deleted} ) && exists( $hash->{object} ) && $hash->{object} ne 'customer' ) {
+      delete( $hash->{object} );
+    }
 
     foreach my $k (grep { ref($hash->{$_}) } keys %$hash) {
         my $v = $hash->{$k};

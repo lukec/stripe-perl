@@ -24,14 +24,17 @@ has 'failure_code'        => (is => 'ro', isa => 'Maybe[Str]');
 has 'application_fee'     => (is => 'ro', isa => 'Maybe[Int]');
 has 'metadata'            => (is => 'rw', isa => 'Maybe[HashRef]');
 has 'invoice'             => (is => 'ro', isa => 'Maybe[Str]');
+has 'receipt_email'       => (is => 'ro', isa => 'Maybe[Str]');
+has 'status'              => (is => 'ro', isa => 'Maybe[Str]');
+has 'capture'             => (is => 'ro', isa => 'Bool', default=> 1);
 
 method form_fields {
     return (
         $self->fields_for('card'),
         $self->form_fields_for_metadata(),
-        map { $_ => $self->$_ }
+        map { $_ => $self->get_form_field_value( $_ ) }
             grep { defined $self->$_ }
-                qw/amount currency customer description application_fee/
+                qw/amount currency customer description application_fee receipt_email capture/
     );
 }
 

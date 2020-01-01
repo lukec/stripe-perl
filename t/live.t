@@ -137,6 +137,14 @@ my $fake_card = {
     exp_year  => $future->year,
     cvc       => 123,
     name      => 'Anonymous',
+    metadata  => {
+        'somecardmetadata' => 'testing, testing, 1-2-3',
+    },
+    address_line1   => '123 Main Street',
+    address_city    => 'Anytown',
+    address_state   => 'Anystate',
+    address_zip     => '55555',
+    address_country => 'United States',
 };
 
 Card_Tokens: {
@@ -256,11 +264,13 @@ Charges: {
         } 'Created a charge object';
         isa_ok $charge, 'Net::Stripe::Charge';
         for my $field (qw/id amount created currency description
-                          livemode paid refunded/) {
+                          livemode paid refunded status/) {
             ok defined($charge->$field), "charge has $field";
         }
         ok !$charge->refunded, 'charge is not refunded';
         ok $charge->paid, 'charge was paid';
+        is $charge->status, 'paid', 'charge status is paid';
+        ok $charge->captured, 'charge was captured';
 
         # Check out the returned card object
         my $card = $charge->card;
@@ -356,6 +366,7 @@ Charges: {
         );
         isa_ok $charge, 'Net::Stripe::Charge';
         ok $charge->paid, 'charge was paid';
+        is $charge->status, 'paid', 'charge status is paid';
 
         my $cards = $stripe->get_cards(customer => $customer, limit => 1);
         isa_ok $cards, "Net::Stripe::List";
@@ -373,6 +384,7 @@ Charges: {
         );
         isa_ok $charge, 'Net::Stripe::Charge';
         ok $charge->paid, 'charge was paid';
+        is $charge->status, 'paid', 'charge status is paid';
     }
 
     Rainy_day: {
@@ -429,6 +441,72 @@ Charges: {
         close STDERR;
         open(STDERR, ">&", STDOUT);
     }
+
+    Charge_with_receipt_email: {
+        my $charge;
+        lives_ok {
+            $charge = $stripe->post_charge(
+                amount => 2500,
+                currency => 'usd',
+                card => $fake_card,
+                description => 'Testing Receipt Email',
+                receipt_email => 'stripe@example.com',
+            );
+        } 'Created a charge object with receipt_email';
+        isa_ok $charge, 'Net::Stripe::Charge';
+        ok defined($charge->receipt_email), "charge has receipt_email";
+        is $charge->receipt_email, 'stripe@example.com', 'charge receipt_email';
+        my $charge2 = $stripe->get_charge(charge_id => $charge->id);
+        is $charge2->receipt_email, 'stripe@example.com', 'charge receipt_email in retrieved object';
+    }
+
+    Auth_then_capture: {
+        my $charge;
+        lives_ok {
+            $charge = Net::Stripe::Charge->new(
+                amount => 3300,
+                currency => 'usd',
+                card => $fake_card,
+                description => 'Wikileaks donation',
+                capture => 0,
+            );
+        } 'Created a charge object';
+        isa_ok $charge, 'Net::Stripe::Charge';
+        is $charge->capture, 0, 'capture is zero';
+
+        my $amount = 1234;
+        lives_ok {
+            $charge = $stripe->post_charge(
+                amount => $amount,
+                currency => 'usd',
+                card => $fake_card,
+                description => 'Wikileaks donation',
+                capture => 0,
+            );
+        } 'Created a charge object';
+
+        isa_ok $charge, 'Net::Stripe::Charge';
+        for my $field (qw/id amount created currency description
+                          livemode paid refunded/) {
+            ok defined($charge->$field), "charge has $field";
+        }
+        ok !$charge->refunded, 'charge is not refunded';
+        ok $charge->paid, 'charge was paid';
+        ok !$charge->captured, 'charge was not captured';
+        is $charge->balance_transaction, undef, 'balance_transaction is undef';
+        is $charge->amount, $amount, "amount is $amount";
+
+        my $auth_charge_id = $charge->id;
+        my $captured_charge = $stripe->capture_charge(
+            charge => $auth_charge_id,
+        );
+        ok !$captured_charge->refunded, 'charge is not refunded';
+        ok $captured_charge->paid, 'charge was paid';
+        ok $captured_charge->captured, 'charge was captured';
+        ok defined($captured_charge->balance_transaction), 'balance_transaction is defined';
+        is $captured_charge->amount, $amount, "amount is $amount";
+        is $captured_charge->id, $charge->id, 'Charge ids match';
+    }
 }
 
 Customers: {
@@ -461,6 +539,41 @@ Customers: {
             $stripe->delete_customer(customer => $customer);
             $customer = $stripe->get_customer(customer_id => $id);
             ok $customer->{deleted}, 'customer is now deleted';
+
+            # Test pagination through customer lists
+
+            # Make sure that we have at least 15 customers
+            my @new_customer_ids;
+            for (1..15) {
+                my $customer = $stripe->post_customer();
+                push @new_customer_ids, $customer->id;
+            }
+
+            my $first_five = $stripe->get_customers(limit=> 5);
+            is scalar(@{$first_five->data}), 5, 'five customers returned';
+            my $second_five = $stripe->get_customers(
+                limit=> 5,
+                starting_after=> $first_five->last->id,
+            );
+            is scalar(@{$second_five->data}), 5, 'five customers returned';
+            my $third_five = $stripe->get_customers(
+                limit=> 5,
+                starting_after=> $second_five->last->id,
+            );
+            is scalar(@{$third_five->data}), 5, 'five customers returned';
+
+            my $previous_five = $stripe->get_customers(
+                limit=> 5,
+                ending_before=> $third_five->get(0)->id,
+            );
+            is scalar(@{$previous_five->data}), 5, 'five customers returned';
+
+            my @second_five_ids = sort map { $_->id } @{$second_five->data};
+            my @previous_five_ids = sort map { $_->id } @{$previous_five->data};
+            is_deeply(\@second_five_ids, \@previous_five_ids, 'ids match');
+
+            # Delete the customers that we created
+            $stripe->delete_customer(customer=> $_) for @new_customer_ids;
         }
 
         Create_with_all_the_works: {
@@ -480,7 +593,27 @@ Customers: {
             is $card->exp_year,  $future->year, 'card exp_year';
             is $card->last4, '4242', 'card last4';
             is $card->brand, 'Visa', 'card brand';
+            is $card->metadata->{somecardmetadata}, $fake_card->{metadata}->{somecardmetadata}, 'card metadata';
             is $customer->metadata->{'somemetadata'}, 'hello world', 'customer metadata';
+            for my $f (sort grep { /^address_/ } keys %{$fake_card}) {
+                is $card->$f, $fake_card->{$f}, "card $f matches";
+            }
+        }
+
+        Retrieve_via_email: {
+            my $email_address = 'stripe' . time() . '@example.com';
+            my $customer = $stripe->post_customer(
+                email => $email_address,
+            );
+            my $customers = $stripe->get_customers(
+              email => $email_address,
+            );
+            is scalar(@{$customers->data}), 1, 'only one customer returned';
+            is $customers->get(0)->id, $customer->id, 'correct customer returned';
+
+            $stripe->delete_customer(customer => $customer->id);
+            $customer = $stripe->get_customer(customer_id => $customer->id);
+            ok $customer->{deleted}, 'customer is now deleted';
         }
 
         Create_with_a_token: {
@@ -495,6 +628,43 @@ Customers: {
                 card_id=> $customer->default_card,
             );
             is $card->last4, '4242', 'card token ok';
+        }
+
+        Add_card_via_token: {
+            my $token = $stripe->post_token(card => $fake_card);
+            my $customer = $stripe->post_customer(
+                card => $token->id,
+            );
+            isa_ok $customer, 'Net::Stripe::Customer', 'got back a customer';
+            ok $customer->id, 'customer has an id';
+
+            my $cards = $stripe->get_cards(customer => $customer);
+            isa_ok $cards, "Net::Stripe::List";
+            is scalar @{$cards->data}, 1, 'customer has one card';
+            my $card = @{$cards->data}[0];
+            isa_ok $card, "Net::Stripe::Card";
+            is $card->last4, '4242', 'card token ok';
+
+            # add card by passing token object
+            $token = $stripe->post_token(card => $fake_card);
+            $card = $stripe->post_card(
+                customer => $customer,
+                card => $token,
+            );
+            $cards = $stripe->get_cards(customer => $customer);
+            isa_ok $cards, "Net::Stripe::List";
+            is scalar @{$cards->data}, 2, 'customer has two cards';
+
+            # add card by passing token id
+            $token = $stripe->post_token(card => $fake_card);
+            $card = $stripe->post_card(
+                customer => $customer,
+                card => $token->id(),
+            );
+            $cards = $stripe->get_cards(customer => $customer);
+            isa_ok $cards, "Net::Stripe::List";
+            is scalar @{$cards->data}, 3, 'customer has three cards';
+
         }
 
         Customers_with_plans: {
@@ -689,17 +859,51 @@ Invoices_and_items: {
         is $resp->{deleted}, '1', 'invoiceitem deleted';
         is $resp->{id}, $item->id, 'deleted id is correct';
 
-        # swallow the expected warning rather than have it print out durring tests.
-        close STDERR;
-        open(STDERR, ">", "/dev/null");
-        eval { $stripe->get_invoiceitem(invoice_item => $item->id) };
-        like $@, qr/No such invoiceitem/, 'correct error message';
-        close STDERR;
-        open(STDERR, ">&", STDOUT);
+        eval {
+            # swallow the expected warning rather than have it print out during tests.
+            local $SIG{__WARN__} = sub {};
+            $stripe->get_invoiceitem(invoice_item => $item->id);
+        };
+        like $@, qr/invalid_request_error.*resource_missing/s, 'correct error message';
     }
 }
 
-note( "end Net::Stripe tests for api_version '$api_version'" );
+Boolean_Query_Args: {
+    my $subscription = Net::Stripe::Subscription->new(
+        prorate => 0,
+        plan => "freeplan",
+    );
+    isa_ok $subscription, 'Net::Stripe::Subscription',
+        'got a subscription back';
+    throws_ok {
+        $subscription->is_a_boolean();
+    } qr/Expected 1 parameter/, 'no parameters to is_a_boolean()';
+    throws_ok {
+        $subscription->is_a_boolean({});
+    } qr/Reference \{\} did not pass type constraint "Str"/, 'non-string parameter to is_a_boolean()';
+    throws_ok {
+        $subscription->get_form_field_value();
+    } qr/Expected 1 parameter/, 'no parameters to get_form_field_value()';
+    throws_ok {
+        $subscription->get_form_field_value({});
+    } qr/Reference \{\} did not pass type constraint "Str"/, 'non-string parameter to get_form_field_value()';
+    throws_ok {
+        $subscription->get_form_field_value( 'invalid_field' );
+    } qr/Can't locate object method "invalid_field"/, 'invalid form field';
+    ok !$subscription->is_a_boolean( 'plan' ), 'plan is not a boolean';
+    is $subscription->get_form_field_value( 'plan' ), 'freeplan',
+        "plan form value is 'freeplan'";
+    ok $subscription->is_a_boolean( 'prorate' ), 'prorate is a boolean';
+    is $subscription->prorate, 0, 'prorate matches zero';
+    is $subscription->get_form_field_value( 'prorate' ), 'false',
+        "prorate form value is 'false'";
+    $subscription->prorate(1);
+    is $subscription->prorate, 1, 'prorate matches one';
+    is $subscription->get_form_field_value( 'prorate' ), 'true',
+        "prorate form value is 'true'";
 }
+
+}
+note( "end Net::Stripe tests for api_version '$api_version'" );
 
 done_testing();

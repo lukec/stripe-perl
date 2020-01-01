@@ -6,7 +6,7 @@ Net::Stripe - API client for Stripe.com
 
 =head1 VERSION
 
-version 0.33
+version 0.40
 
 =head1 SYNOPSIS
 
@@ -35,6 +35,17 @@ generally named after the HTTP method and the object name.
 
 This method returns Moose objects for responses from the API.
 
+=head2 WARNING
+
+This SDK is "version agnostic" of the Stripe API
+L<https://github.com/lukec/stripe-perl/issues/80>
+and at the time of this release Stripe has some major changes afoot
+L<https://github.com/lukec/stripe-perl/issues/115>
+
+If you're considering using this please click "Watch" on this github project
+L<https://github.com/lukec/stripe-perl/>
+where discussion on these topics takes place.
+
 =head1 METHODS
 
 =head2 new PARAMHASH
@@ -56,54 +67,6 @@ You can set this to true to see extra debug info.
 You can set this to true to see the actual network requests.
 
 =back
-
-=head1 ATTRIBUTES
-
-=head2 api_base
-
-Reader: api_base
-
-Type: Str
-
-Additional documentation: This is the base part of the URL for every request made
-
-=head2 api_key
-
-Reader: api_key
-
-Type: Str
-
-This attribute is required.
-
-Additional documentation: You get this from your Stripe Account settings
-
-=head2 debug
-
-Reader: debug
-
-Writer: debug
-
-Type: Bool
-
-Additional documentation: The debug flag
-
-=head2 debug_network
-
-Reader: debug_network
-
-Writer: debug_network
-
-Type: Bool
-
-Additional documentation: The debug network request flag
-
-=head2 ua
-
-Reader: ua
-
-Type: Object
-
-Additional documentation: The LWP::UserAgent that is used for requests
 
 =head1 Balance Transaction Methods
 
@@ -150,6 +113,8 @@ L<https://stripe.com/docs/api#create_charge>
 =item * statement_description - Str - description for statement - optional
 
 =item * application_fee - Int - optional
+
+=item * receipt_email - Str - The email address to send this charge's receipt to - optional
 
 =back
 
@@ -709,7 +674,7 @@ Update an invoice.
 
 Returns a L<Net::Stripe::Invoice>.
 
-  $stripe->post_invoice(invoice => $invoice, closed => 'true')
+  $stripe->post_invoice(invoice => $invoice, closed => 1)
 
 =head2 get_invoice
 
@@ -947,7 +912,7 @@ Rusty Conover
 
 =head1 CONTRIBUTORS
 
-=for stopwords Andrew Solomon Brian Collins Devin M. Certas Dimitar Petrov Dylan Reinhold E. Choroba Florian Heyer Hermann Calabria Jonathan "Duke" Leto Luke Closs Mohammad S Anwar Olaf Alders Paul Cochrane Rusty Conover Sachin Sebastian Tom Eliaz
+=for stopwords Andrew Solomon Brian Collins Devin M. Certas Dimitar Petrov Dylan Reinhold E. Choroba Florian Heyer Hermann Calabria Jonathan "Duke" Leto Luke Closs Mohammad S Anwar Olaf Alders Paul Cochrane Peter Scott Rusty Conover Sachin Sebastian Sherrard Burton Slobodan Mišković Tom Eliaz
 
 =over 4
 
@@ -1009,11 +974,27 @@ Paul Cochrane <paul@liekut.de>
 
 =item *
 
+Peter Scott <peter@shotgundriver.com>
+
+=item *
+
 Rusty Conover <rusty@luckydinosaur.com>
 
 =item *
 
 Sachin Sebastian <sachinjsk@users.noreply.github.com>
+
+=item *
+
+Sherrard Burton <32931314+sherrardb@users.noreply.github.com>
+
+=item *
+
+Sherrard Burton <sburton@allafrica.com>
+
+=item *
+
+Slobodan Mišković <slobodan@miskovic.ca>
 
 =item *
 

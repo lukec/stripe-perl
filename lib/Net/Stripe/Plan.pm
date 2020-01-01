@@ -1,7 +1,7 @@
 package Net::Stripe::Plan;
 
 use Moose;
-use Moose::Util::TypeConstraints;
+use Moose::Util::TypeConstraints qw(subtype as where message);
 use Kavorka;
 extends 'Net::Stripe::Resource';
 
