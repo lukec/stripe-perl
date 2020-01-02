@@ -522,21 +522,41 @@ Returns a L<Net::Stripe::Card>.
 
 =card_method post_card
 
-Create or update a card.
+Create a card.
 
-L<https://stripe.com/docs/api#create_card>
+L<https://stripe.com/docs/api/cards/create#create_card>
 
 =over
 
 =item * customer - L<Net::Stripe::Customer> or Str
 
-=item * card - L<Net::Stripe::Card> or HashRef
+=item * card - L<Net::Stripe::Card>, L<Net::Stripe::Token>, Str or HashRef
 
 =back
 
 Returns a L<Net::Stripe::Card>.
 
-  $stripe->create_card(customer => $customer, card => $card);
+  $stripe->post_card(customer => $customer, card => $card);
+
+=card_method update_card
+
+Update a card.
+
+L<https://stripe.com/docs/api/cards/update#update_card>
+
+=over
+
+=item * customer - L<Net::Stripe::Customer> or Str
+
+=item * card_id - Str
+
+=item * card - HashRef
+
+=back
+
+Returns a L<Net::Stripe::Card>.
+
+  $stripe->post_card(customer => $customer, card => $card);
 
 =card_method get_cards
 
