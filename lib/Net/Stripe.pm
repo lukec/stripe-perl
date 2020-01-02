@@ -626,28 +626,40 @@ Cards: {
                                 starting_after => $starting_after);
     }
 
-    method post_card(Net::Stripe::Customer|Str :$customer,
-                     HashRef|Net::Stripe::Card|Net::Stripe::Token|Str :$card) {
-        if (ref($customer)) {
-            $customer = $customer->id;
+    method post_card(Net::Stripe::Customer|Str :$customer!,
+                     HashRef|Net::Stripe::Card|Net::Stripe::Token|Str :$card!) {
+        my $customer_id = ref( $customer ) ? $customer->id : $customer;
+        if ( ! ref( $card ) ) {
+            # have we been passed a string containing a token_id?
+            if ( $card =~ /^tok_.+/ ) {
+                my $token_id = $card;
+                return $self->_post("customers/$customer_id/cards", {card=> $token_id});
+            } else {
+                die Net::Stripe::Error->new(
+                    type => "post_card error",
+                    message => sprintf(
+                        "Invalid string '%s' passed for parameter 'card'. Expects a token id.",
+                        $card,
+                    ),
+                );
+            }
+        } elsif ( ref( $card ) eq 'Net::Stripe::Token' ) {
+            # have we been passed a posted token object with an id?
+            if ( defined( $card->id ) && $card->id =~ /^tok_.+/ ) {
+                my $token_id = $card->id;
+                return $self->_post("customers/$customer_id/cards", {card=> $token_id});
+            } else {
+                die Net::Stripe::Error->new(
+                    type => "post_card error",
+                    message => "Invalid Token object passed for parameter 'card'. Object must have a token id.",
+                );
+            }
+        } elsif ( ref( $card ) eq 'Net::Stripe::Card' ) {
+            return $self->_post("customers/$customer_id/cards", $card);
+        } elsif ( ref( $card ) eq 'HASH' ) {
+            my $card_obj = Net::Stripe::Card->new( $card );
+            return $self->_post("customers/$customer_id/cards", $card_obj);
         }
-        if (! ref($card) && $card =~ /^tok_.+/) {
-            return $self->_post("customers/$customer/cards", {card=> $card});
-        }
-        if (ref($card) eq 'Net::Stripe::Token' && $card->id) {
-            return $self->_post("customers/$customer/cards", {card=> $card->id});
-        }
-        # Update the card.
-        if (ref($card) eq 'Net::Stripe::Card' && $card->id) {
-            return $self->_post("customers/$customer/cards", $card);
-        }
-        if (ref($card) eq 'HASH') {
-            $card = Net::Stripe::Card->new($card);
-        }
-        if (defined($card->id)) {
-            return $self->_post("customers/$customer/cards/" . $card->id, $card);
-        }
-        return $self->_post("customers/$customer/cards", $card);
     }
 
     method update_card(Net::Stripe::Customer|Str :$customer!,

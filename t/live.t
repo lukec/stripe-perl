@@ -7,6 +7,7 @@ use Test::Warn;
 use Net::Stripe;
 use DateTime;
 use DateTime::Duration;
+use Scalar::Util qw//;
 
 my $API_KEY = $ENV{STRIPE_API_KEY};
 unless ($API_KEY) {
@@ -597,6 +598,90 @@ Customers: {
             isa_ok $cards, "Net::Stripe::List";
             is scalar @{$cards->data}, 3, 'customer has three cards';
 
+        }
+
+        Add_card_via_hashref: {
+            my $customer = $stripe->post_customer();
+            isa_ok $customer, 'Net::Stripe::Customer', 'got back a customer';
+            ok $customer->id, 'customer has an id';
+
+            $stripe->post_card(
+                customer => $customer,
+                card => $fake_card,
+            );
+
+            my $cards = $stripe->get_cards(customer => $customer);
+            isa_ok $cards, "Net::Stripe::List";
+            is scalar @{$cards->data}, 1, 'customer has one card';
+            my $card = @{$cards->data}[0];
+            isa_ok $card, "Net::Stripe::Card";
+            is $card->last4, '4242', 'card token ok';
+        }
+
+        Add_card_via_object: {
+            my $customer = $stripe->post_customer();
+            isa_ok $customer, 'Net::Stripe::Customer', 'got back a customer';
+            ok $customer->id, 'customer has an id';
+
+            my $card_object = Net::Stripe::Card->new( %$fake_card );
+            $stripe->post_card(
+                customer => $customer,
+                card => $card_object,
+            );
+
+            my $cards = $stripe->get_cards(customer => $customer);
+            isa_ok $cards, "Net::Stripe::List";
+            is scalar @{$cards->data}, 1, 'customer has one card';
+            my $card = @{$cards->data}[0];
+            isa_ok $card, "Net::Stripe::Card";
+            is $card->last4, '4242', 'card token ok';
+        }
+
+        Failing_tests: {
+            my $customer = $stripe->post_customer();
+            isa_ok $customer, 'Net::Stripe::Customer', 'got back a customer';
+            ok $customer->id, 'customer has an id';
+
+            eval {
+                $stripe->post_card(
+                    customer => $customer,
+                    card => 'not a token id string',
+                );
+            };
+            if ( my $error = $@ ) {
+                if ( Scalar::Util::blessed( $error ) && $error->isa( 'Net::Stripe::Error' ) ) {
+                    is $error->type, 'post_card error', 'error type';
+                    like $error->message, qr/^Invalid string 'not a token id string' passed for parameter 'card'\./, 'error message';
+                } else {
+                    fail sprintf( "error raised is a Net::Stripe::Error object: %s",
+                        Scalar::Util::blessed( $error ) || ref( $error ) || $error,
+                    );
+                }
+            } else {
+                fail 'invalid token_id string';
+            }
+
+            eval {
+                my $token_obj = Net::Stripe::Token->new(
+                    card => $fake_card,
+                );
+                $stripe->post_card(
+                    customer => $customer,
+                    card => $token_obj,
+                );
+            };
+            if ( my $error = $@ ) {
+                if ( Scalar::Util::blessed( $error ) && $error->isa( 'Net::Stripe::Error' ) ) {
+                    is $error->type, 'post_card error', 'error type';
+                    like $error->message, qr/^Invalid Token object passed for parameter 'card'\. Object must have a token id\./, 'error message';
+                } else {
+                    fail sprintf( "error raised is a Net::Stripe::Error object: %s",
+                        Scalar::Util::blessed( $error ) || ref( $error ) || $error,
+                    );
+                }
+            } else {
+                fail 'invalid token object';
+            }
         }
 
         Update_existing_card: {
