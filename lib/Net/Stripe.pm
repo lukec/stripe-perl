@@ -78,6 +78,14 @@ which is the format that C<Net::Stripe::List> expects. This makes the SDK
 compatible with the Stripe API back to the earliest documented API version
 <https://stripe.com/docs/upgrades#2011-06-21>.
 
+=item encode card metdata in convert_to_form_fields()
+
+When passing a hashref with a nested metadata hashref to _post(), that
+metadata must be encoded properly before being passed to the Stripe API.
+There is now a dedicated block in convert_to_form_fields for this operation.
+This update was necessary because of the addition of update_card(), which
+accepts a card hashref, which may include metadata.
+
 =method new PARAMHASH
 
 This creates a new stripe API object.  The following parameters are accepted:
