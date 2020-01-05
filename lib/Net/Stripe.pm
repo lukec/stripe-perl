@@ -68,6 +68,8 @@ where discussion on these topics takes place.
 
 =head2 Version 0.40
 
+=over
+
 =item coerce old lists
 
 In older Stipe API versions, some list-type data structures were returned
@@ -85,6 +87,8 @@ metadata must be encoded properly before being passed to the Stripe API.
 There is now a dedicated block in convert_to_form_fields for this operation.
 This update was necessary because of the addition of update_card(), which
 accepts a card hashref, which may include metadata.
+
+=back
 
 =method new PARAMHASH
 
@@ -1845,6 +1849,8 @@ method _build_ua {
 =head1 SEE ALSO
 
 L<https://stripe.com>, L<https://stripe.com/docs/api>
+
+=encoding UTF-8
 
 =cut
 
