@@ -72,6 +72,7 @@ method fields_for($for) {
     return unless $self->can($for);
     my $thingy = $self->$for;
     return unless $thingy;
+    return ($for => $thingy->id) if $for eq 'card' && ref($thingy) eq 'Net::Stripe::Token';
     return $thingy->form_fields if ref($thingy) =~ m/^Net::Stripe::/;
     return ($for => $thingy);
 }

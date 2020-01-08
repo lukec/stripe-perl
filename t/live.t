@@ -629,7 +629,7 @@ Customers: {
             ok $customer->{deleted}, 'customer is now deleted';
         }
 
-        Create_with_a_token: {
+        Create_with_a_token_id: {
             my $token = $stripe->post_token(card => $fake_card);
             my $customer = $stripe->post_customer(
                 card => $token->id,
@@ -637,10 +637,172 @@ Customers: {
             isa_ok $customer, 'Net::Stripe::Customer', 'got back a customer';
             ok $customer->id, 'customer has an id';
             my $card = $stripe->get_card(
-                customer=> $customer,
-                card_id=> $customer->default_card,
+                customer => $customer,
+                card_id => $customer->default_card,
             );
-            is $card->last4, '4242', 'card token ok';
+            is $card->id, $token->card->id, 'token card id matches';
+        }
+
+        Create_with_a_token_object: {
+            my $token = $stripe->post_token(card => $fake_card);
+            my $customer = $stripe->post_customer(
+                card => $token,
+            );
+            isa_ok $customer, 'Net::Stripe::Customer', 'got back a customer';
+            ok $customer->id, 'customer has an id';
+            my $card = $stripe->get_card(
+                customer => $customer,
+                card_id => $customer->default_card,
+            );
+            is $card->id, $token->card->id, 'token card id matches';
+        }
+
+        Create_with_a_card_hashref: {
+            my $customer = $stripe->post_customer(
+                card => $fake_card,
+            );
+            isa_ok $customer, 'Net::Stripe::Customer', 'got back a customer';
+            ok $customer->id, 'customer has an id';
+            my $card = $stripe->get_card(
+                customer => $customer,
+                card_id => $customer->default_card,
+            );
+            is $card->last4, substr( $fake_card->{number}, -4 ), 'card last4 matches';
+        }
+
+        Update_card_for_customer_id_via_token_id: {
+            my $token = $stripe->post_token(card => $fake_card);
+            my $customer = $stripe->post_customer(
+                card => $token->id,
+            );
+            isa_ok $customer, 'Net::Stripe::Customer', 'got back a customer';
+            ok $customer->id, 'customer has an id';
+
+            my $cards = $stripe->get_cards(customer => $customer);
+            isa_ok $cards, "Net::Stripe::List";
+            is scalar @{$cards->data}, 1, 'customer has one card';
+            my $card = @{$cards->data}[0];
+            isa_ok $card, "Net::Stripe::Card";
+            is $card->id, $token->card->id, 'token card id matches';
+
+            my $new_token = $stripe->post_token(card => $fake_card);
+            $stripe->post_customer(
+                customer => $customer->id,
+                card => $new_token->id,
+            );
+            $cards = $stripe->get_cards(customer => $customer);
+            isa_ok $cards, "Net::Stripe::List";
+            is scalar @{$cards->data}, 1, 'customer still has one card';
+            my $new_card = @{$cards->data}[0];
+            is $new_card->id, $new_token->card->id, 'new token card id matches';
+            isnt $new_card->id, $card->id, 'new card has different card id';
+        }
+
+        Update_card_for_customer_object_via_token_id: {
+            my $token = $stripe->post_token(card => $fake_card);
+            my $customer = $stripe->post_customer(
+                card => $token->id,
+            );
+            isa_ok $customer, 'Net::Stripe::Customer', 'got back a customer';
+            ok $customer->id, 'customer has an id';
+
+            my $cards = $stripe->get_cards(customer => $customer);
+            isa_ok $cards, "Net::Stripe::List";
+            is scalar @{$cards->data}, 1, 'customer has one card';
+            my $card = @{$cards->data}[0];
+            isa_ok $card, "Net::Stripe::Card";
+            is $card->id, $token->card->id, 'token card id matches';
+
+            my $new_token = $stripe->post_token(card => $fake_card);
+            $customer->card($new_token->id);
+            $stripe->post_customer(customer => $customer);
+            $cards = $stripe->get_cards(customer => $customer);
+            isa_ok $cards, "Net::Stripe::List";
+            is scalar @{$cards->data}, 1, 'customer still has one card';
+            my $new_card = @{$cards->data}[0];
+            is $new_card->id, $new_token->card->id, 'new token card id matches';
+            isnt $new_card->id, $card->id, 'new card has different card id';
+        }
+
+        Update_card_for_customer_id_via_card_hashref: {
+            my $token = $stripe->post_token(card => $fake_card);
+            my $customer = $stripe->post_customer(
+                card => $token->id,
+            );
+            isa_ok $customer, 'Net::Stripe::Customer', 'got back a customer';
+            ok $customer->id, 'customer has an id';
+
+            my $cards = $stripe->get_cards(customer => $customer);
+            isa_ok $cards, "Net::Stripe::List";
+            is scalar @{$cards->data}, 1, 'customer has one card';
+            my $card = @{$cards->data}[0];
+            isa_ok $card, "Net::Stripe::Card";
+            is $card->id, $token->card->id, 'token card id matches';
+
+            $stripe->post_customer(
+                customer => $customer->id,
+                card => $fake_card,
+            );
+            $cards = $stripe->get_cards(customer => $customer);
+            isa_ok $cards, "Net::Stripe::List";
+            is scalar @{$cards->data}, 1, 'customer still has one card';
+            my $new_card = @{$cards->data}[0];
+            is $new_card->last4, substr( $fake_card->{number}, -4 ), 'new card last4 matches';
+            isnt $new_card->id, $card->id, 'new card has different card id';
+        }
+
+        Update_card_for_customer_id_via_token_object: {
+            my $token = $stripe->post_token(card => $fake_card);
+            my $customer = $stripe->post_customer(
+                card => $token->id,
+            );
+            isa_ok $customer, 'Net::Stripe::Customer', 'got back a customer';
+            ok $customer->id, 'customer has an id';
+
+            my $cards = $stripe->get_cards(customer => $customer);
+            isa_ok $cards, "Net::Stripe::List";
+            is scalar @{$cards->data}, 1, 'customer has one card';
+            my $card = @{$cards->data}[0];
+            isa_ok $card, "Net::Stripe::Card";
+            is $card->id, $token->card->id, 'token card id matches';
+
+            my $new_token = $stripe->post_token(card => $fake_card);
+            $stripe->post_customer(
+                customer => $customer->id,
+                card => $new_token,
+            );
+            $cards = $stripe->get_cards(customer => $customer);
+            isa_ok $cards, "Net::Stripe::List";
+            is scalar @{$cards->data}, 1, 'customer still has one card';
+            my $new_card = @{$cards->data}[0];
+            is $new_card->id, $new_token->card->id, 'new token card id matches';
+            isnt $new_card->id, $card->id, 'new card has different card id';
+        }
+
+        Update_card_for_customer_object_via_token_object: {
+            my $token = $stripe->post_token(card => $fake_card);
+            my $customer = $stripe->post_customer(
+                card => $token->id,
+            );
+            isa_ok $customer, 'Net::Stripe::Customer', 'got back a customer';
+            ok $customer->id, 'customer has an id';
+
+            my $cards = $stripe->get_cards(customer => $customer);
+            isa_ok $cards, "Net::Stripe::List";
+            is scalar @{$cards->data}, 1, 'customer has one card';
+            my $card = @{$cards->data}[0];
+            isa_ok $card, "Net::Stripe::Card";
+            is $card->id, $token->card->id, 'token card id matches';
+
+            my $new_token = $stripe->post_token(card => $fake_card);
+            $customer->card($new_token);
+            $stripe->post_customer(customer => $customer);
+            $cards = $stripe->get_cards(customer => $customer);
+            isa_ok $cards, "Net::Stripe::List";
+            is scalar @{$cards->data}, 1, 'customer still has one card';
+            my $new_card = @{$cards->data}[0];
+            is $new_card->id, $new_token->card->id, 'new token card id matches';
+            isnt $new_card->id, $card->id, 'new card has different card id';
         }
 
         Add_card_for_customer_object_via_token_id: {
