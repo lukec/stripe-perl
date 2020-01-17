@@ -68,6 +68,54 @@ You can set this to true to see the actual network requests.
 
 =back
 
+=head1 ATTRIBUTES
+
+=head2 api_base
+
+Reader: api_base
+
+Type: Str
+
+Additional documentation: This is the base part of the URL for every request made
+
+=head2 api_key
+
+Reader: api_key
+
+Type: Str
+
+This attribute is required.
+
+Additional documentation: You get this from your Stripe Account settings
+
+=head2 debug
+
+Reader: debug
+
+Writer: debug
+
+Type: Bool
+
+Additional documentation: The debug flag
+
+=head2 debug_network
+
+Reader: debug_network
+
+Writer: debug_network
+
+Type: Bool
+
+Additional documentation: The debug network request flag
+
+=head2 ua
+
+Reader: ua
+
+Type: Object
+
+Additional documentation: The LWP::UserAgent that is used for requests
+
 =head1 Balance Transaction Methods
 
 =head2 get_balance_transaction
@@ -452,7 +500,7 @@ L<https://stripe.com/docs/api#create_card_token>
 
 =over
 
-=item card - L<Net::Stripe::Card> or HashRef
+=item * card - L<Net::Stripe::Card> or HashRef
 
 =back
 
@@ -872,7 +920,9 @@ Returns a L<Net::Stripe::List> object containing L<Net::Stripe::Invoiceitem> obj
 
   $stripe->get_invoiceitems(customer => 'test', limit => 30);
 
-=discount_method delete_customer_discount
+=head1 Discount Methods
+
+=head2 delete_customer_discount
 
 Deletes a customer-wide discount.
 
@@ -895,6 +945,8 @@ Returns hashref of the form
 =head1 SEE ALSO
 
 L<https://stripe.com>, L<https://stripe.com/docs/api>
+
+=encoding UTF-8
 
 =head1 AUTHORS
 
@@ -955,6 +1007,10 @@ Hermann Calabria <hermann@ivouch.com>
 =item *
 
 Jonathan "Duke" Leto <jonathan@leto.net>
+
+=item *
+
+Luke Closs <lukec@users.noreply.github.com>
 
 =item *
 
