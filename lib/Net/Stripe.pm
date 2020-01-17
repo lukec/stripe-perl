@@ -759,7 +759,7 @@ L<https://stripe.com/docs/api#create_card_token>
 
 =over
 
-=item card - L<Net::Stripe::Card> or HashRef
+=item * card - L<Net::Stripe::Card> or HashRef
 
 =back
 
@@ -1633,6 +1633,8 @@ method _build_ua {
 =head1 SEE ALSO
 
 L<https://stripe.com>, L<https://stripe.com/docs/api>
+
+=encoding UTF-8
 
 =cut
 
