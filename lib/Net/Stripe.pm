@@ -64,6 +64,10 @@ If you're considering using this please click "Watch" on this github project
 L<https://github.com/lukec/stripe-perl/>
 where discussion on these topics takes place.
 
+=head1 RELEASE NOTES
+
+=head2 Version 0.40
+
 =method new PARAMHASH
 
 This creates a new stripe API object.  The following parameters are accepted:
