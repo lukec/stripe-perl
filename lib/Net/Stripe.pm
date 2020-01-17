@@ -449,7 +449,7 @@ Customers: {
                 metadata => $metadata,
             );
 
-            return $self->_post("customers/" . $customer, _defined_arguments(\%args));
+            return $self->_post("customers/" . $customer, \%args);
         }
 
 
@@ -1626,13 +1626,6 @@ method _make_request($req) {
 
     warn "$e\n" if $self->debug;
     die $e;
-}
-
-sub _defined_arguments {
-    my $args = shift;
-
-    map { delete $args->{$_} } grep {  !defined($args->{$_}) } keys %$args;
-    return $args;
 }
 
 sub _hash_to_object {
