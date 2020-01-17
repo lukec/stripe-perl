@@ -78,6 +78,16 @@ L<https://stripe.com/docs/upgrades#2014-12-17> indicate that this change
 is backwards-compatible. You must update your code to reflect this change
 for parameters passed to these objects and methods called on these objects.
 
+=item coerce old lists
+
+In older Stripe API versions, some list-type data structures were returned
+as arrayrefs. We now coerce those old-style lists and collections into the
+hashref format that newer versions of the API return, with metadata stored
+top-level keys and the list elements in an arrayref with the key 'data',
+which is the format that C<Net::Stripe::List> expects. This makes the SDK
+compatible with the Stripe API back to the earliest documented API version
+<https://stripe.com/docs/upgrades#2011-06-21>.
+
 =back
 
 =method new PARAMHASH
@@ -1576,7 +1586,25 @@ method _make_request($req) {
     }
 
     if ($resp->code == 200) {
-        return _hash_to_object(decode_json($resp->content));
+        my $ref = decode_json( $resp->content );
+        if ( ref( $ref ) eq 'ARRAY' ) {
+            # some list-type data structures are arrayrefs in API versions 2012-09-24 and earlier.
+            # if those data structures are at the top level, such as when
+            # we request 'GET /charges/cus_.../', we need to coerce that
+            # arrayref into the form that Net::Stripe::List expects.
+            return _array_to_object( $ref, $req->uri );
+        } elsif ( ref( $ref ) eq 'HASH' ) {
+            # all top-level data structures are hashes in API versions 2012-10-26 and later
+            return _hash_to_object( $ref );
+        } else {
+            die Net::Stripe::Error->new(
+                type => "HTTP request error",
+                message => sprintf(
+                    "Invalid object type returned: '%s'",
+                    ref( $ref ) || 'NONREF',
+                ),
+            );
+        }
     } elsif ($resp->code == 500) {
         die Net::Stripe::Error->new(
             type => "HTTP request error",
@@ -1614,6 +1642,14 @@ sub _hash_to_object {
       delete( $hash->{object} );
     }
 
+    # coerce pre-2011-08-01 API arrayref list format into a hashref
+    # compatible with Net::Stripe::List
+    $hash = _pre_2011_08_01_processing( $hash );
+
+    # coerce pre-2012-10-26 API invoice lines format into a hashref
+    # compatible with Net::Stripe::List
+    $hash = _pre_2012_10_26_processing( $hash );
+
     foreach my $k (grep { ref($hash->{$_}) } keys %$hash) {
         my $v = $hash->{$k};
         if (ref($v) eq 'HASH' && defined($v->{object})) {
@@ -1634,6 +1670,105 @@ sub _hash_to_object {
         if (Class::Load::is_class_loaded($class)) {
           return $class->new($hash);
         }
+    }
+    return $hash;
+}
+
+sub _array_to_object {
+    my ( $array, $uri ) = @_;
+    my $list = _array_to_list( $array );
+    # strip the protocol, domain and query args in order to mimic the
+    # url returned with Stripe lists in API versions 2012-10-26 and later
+    $uri =~ s#\?.*$##;
+    $uri =~ s#^https://[^/]+##;
+    $list->{url} = $uri;
+    return _hash_to_object( $list );
+}
+
+sub _array_to_list {
+    my $array = shift;
+    my $count = scalar( @$array );
+    my $list = {
+        object => 'list',
+        count => $count,
+        has_more => 0,
+        data => $array,
+        total_count => $count,
+    };
+    return $list;
+}
+
+# coerce pre-2011-08-01 API arrayref list format into a hashref
+# compatible with Net::Stripe::List
+sub _pre_2011_08_01_processing {
+    my $hash = shift;
+    foreach my $type ( qw/ cards subscriptions / ) {
+        if ( exists( $hash->{$type} ) && ref( $hash->{$type} ) eq 'ARRAY' ) {
+            $hash->{$type} = _array_to_list( delete( $hash->{$type} ) );
+            my $customer_id;
+            if ( exists( $hash->{object} ) && $hash->{object} eq 'customer' && exists( $hash->{id} ) ) {
+                $customer_id = $hash->{id};
+            } elsif ( exists( $hash->{customer} ) ) {
+                $customer_id = $hash->{customer};
+            }
+            # Net::Stripe::List->new() will fail without url, but we
+            # can make debugging easier by providing a message here
+            die Net::Stripe::Error->new(
+                type => "object coercion error",
+                message => sprintf(
+                    "Could not determine customer id while coercing %s list into Net::Stripe::List.",
+                    $type,
+                ),
+            ) unless $customer_id;
+
+            # mimic the url sent with standard Stripe lists
+            $hash->{$type}->{url} = "/v1/customers/$customer_id/$type";
+        }
+    }
+    return $hash;
+}
+
+# coerce pre-2012-10-26 API invoice lines format into a hashref
+# compatible with Net::Stripe::List
+sub _pre_2012_10_26_processing {
+    my $hash = shift;
+    if (
+        exists( $hash->{object} ) && $hash->{object} eq 'invoice' &&
+        exists( $hash->{lines} ) && ref( $hash->{lines} ) eq 'HASH' &&
+        ! exists( $hash->{lines}->{object} )
+    ) {
+        my $data = [];
+        my $lines = delete( $hash->{lines} );
+        foreach my $key ( sort( keys( %$lines ) ) ) {
+            my $ref = $lines->{$key};
+            unless ( ref( $ref ) eq 'ARRAY' ) {
+                die Net::Stripe::Error->new(
+                    type => "object coercion error",
+                    message => sprintf(
+                        "Found invalid subkey type '%s' while coercing invoice lines into a Net::Stripe::List.",
+                        ref( $ref ),
+                    ),
+                );
+            }
+            foreach my $item ( @$ref ) {
+                push @$data, $item;
+            }
+        }
+        $hash->{lines} = _array_to_list( $data );
+
+        my $customer_id;
+        if ( exists( $hash->{customer} ) ) {
+            $customer_id = $hash->{customer};
+        }
+        # Net::Stripe::List->new() will fail without url, but we
+        # can make debugging easier by providing a message here
+        die Net::Stripe::Error->new(
+            type => "object coercion error",
+            message => "Could not determine customer id while coercing invoice lines into Net::Stripe::List.",
+        ) unless $customer_id;
+
+        # mimic the url sent with standard Stripe lists
+        $hash->{lines}->{url} = "/v1/invoices/upcoming/lines?customer=$customer_id";
     }
     return $hash;
 }
