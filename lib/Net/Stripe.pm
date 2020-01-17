@@ -68,6 +68,18 @@ where discussion on these topics takes place.
 
 =head2 Version 0.40
 
+=over
+
+=item update statement_description to statement_descriptor
+
+The statement_description attribute is now statement_descriptor for
+L<Net::Stripe::Charge> and L<Net::Stripe::Plan>. The API docs
+L<https://stripe.com/docs/upgrades#2014-12-17> indicate that this change
+is backwards-compatible. You must update your code to reflect this change
+for parameters passed to these objects and methods called on these objects.
+
+=back
+
 =method new PARAMHASH
 
 This creates a new stripe API object.  The following parameters are accepted:
@@ -118,7 +130,7 @@ L<https://stripe.com/docs/api#create_charge>
 
 =item * capture - Bool - optional
 
-=item * statement_description - Str - description for statement - optional
+=item * statement_descriptor - Str - descriptor for statement - optional
 
 =item * application_fee - Int - optional
 
@@ -198,7 +210,7 @@ Charges: {
                        Str :$description?,
                        HashRef :$metadata?,
                        Bool :$capture?,
-                       Str :$statement_description?,
+                       Str :$statement_descriptor?,
                        Int :$application_fee?,
                        Str :$receipt_email?
                      ) {
@@ -209,7 +221,7 @@ Charges: {
                                               description => $description,
                                               metadata => $metadata,
                                               capture => $capture,
-                                              statement_description => $statement_description,
+                                              statement_descriptor => $statement_descriptor,
                                               application_fee => $application_fee,
                                               receipt_email => $receipt_email
                                           );
@@ -822,7 +834,7 @@ L<https://stripe.com/docs/api#create_plan>
 
 =item * trial_period_days - Int - optional
 
-=item * statement_description - Str - optional
+=item * statement_descriptor - Str - optional
 
 =back
 
@@ -897,7 +909,7 @@ Plans: {
                      Str :$name,
                      Int :$trial_period_days?,
                      HashRef :$metadata?,
-                     Str :$statement_description?) {
+                     Str :$statement_descriptor?) {
         my $plan = Net::Stripe::Plan->new(id => $id,
                                           amount => $amount,
                                           currency => $currency,
@@ -906,7 +918,7 @@ Plans: {
                                           name => $name,
                                           trial_period_days => $trial_period_days,
                                           metadata => $metadata,
-                                          statement_description => $statement_description);
+                                          statement_descriptor => $statement_descriptor);
         return $self->_post('plans', $plan);
     }
 
