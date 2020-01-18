@@ -270,12 +270,19 @@ Charges: {
                             );
     }
 
-    method capture_charge(Net::Stripe::Charge|Str :$charge) {
+    method capture_charge(Net::Stripe::Charge|Str :$charge,
+                          Int :$amount?
+                        ) {
         if (ref($charge)) {
             $charge = $charge->id;
         }
 
-        return $self->_post("charges/$charge/capture");
+        if ($amount) {
+          return $self->_post("charges/$charge/capture", { amount => $amount });
+        }
+        else {
+          return $self->_post("charges/$charge/capture");
+        }
     }
 
 }
