@@ -267,7 +267,7 @@ Charges: {
         is $card->name, $fake_card->{name}, 'retrieve the card name';
     }
 
-    Post_charge_using_token: {
+    Post_charge_using_token_id: {
         my $token = $stripe->post_token( card => $fake_card );
         my $charge = $stripe->post_charge(
             amount => 100,
@@ -277,48 +277,171 @@ Charges: {
         isa_ok $charge, 'Net::Stripe::Charge';
         ok $charge->paid, 'charge was paid';
         is $charge->status, 'paid', 'charge status is paid';
+        is $charge->card->id, $token->card->id, 'charge card id matches';
+    }
+
+    Post_charge_using_card_id: {
+        my $token = $stripe->post_token( card => $fake_card );
+        eval {
+             $stripe->post_charge(
+                amount => 100,
+                currency => 'usd',
+                card => $token->card->id,
+            );
+        };
+        if ($@) {
+            my $e = $@;
+            isa_ok $e, 'Net::Stripe::Error', 'error raised is an object';
+            is $e->type, 'post_charge error', 'error type';
+            like $e->message, qr/^Invalid value 'card_.+' passed for parameter 'card'\. Charges without an existing customer can only accept a token id or card hashref\.$/, 'error message';
+        } else {
+            fail 'post charge with card id';
+        }
+    }
+
+    Post_charge_using_card_hash: {
+        my $charge = $stripe->post_charge(
+            amount => 100,
+            currency => 'usd',
+            card => $fake_card,
+        );
+        isa_ok $charge, 'Net::Stripe::Charge';
+        ok $charge->paid, 'charge was paid';
+        is $charge->status, 'paid', 'charge status is paid';
+        is $charge->card->last4, substr( $fake_card->{number}, -4 ), 'charge card last4 matches';
+    }
+
+    Post_charge_for_customer_id_with_attached_card: {
+        my $customer = $stripe->post_customer(
+            card => $fake_card,
+        );
+        my $charge = $stripe->post_charge(
+            amount => 100,
+            currency => 'usd',
+            customer => $customer->id,
+        );
+        isa_ok $charge, 'Net::Stripe::Charge';
+        ok $charge->paid, 'charge was paid';
+        is $charge->status, 'paid', 'charge status is paid';
+        is $charge->card->id, $customer->default_card, 'charged default card';
+    }
+
+    Post_charge_for_customer_id_without_attached_card: {
+        my $customer = $stripe->post_customer();
+        eval {
+            # swallow the expected warning rather than have it print out during tests.
+            local $SIG{__WARN__} = sub {};
+            $stripe->post_charge(
+                amount => 100,
+                currency => 'usd',
+                customer => $customer->id,
+            );
+        };
+        if ($@) {
+            my $e = $@;
+            isa_ok $e, 'Net::Stripe::Error', 'error raised is an object';
+            is $e->type, 'card_error', 'error type';
+            is $e->message, 'Cannot charge a customer that has no active card', 'error message';
+        } else {
+            fail 'post charge for customer with token id';
+        }
+    }
+
+    Post_charge_for_customer_id_using_token_id: {
+        my $token = $stripe->post_token( card => $fake_card );
+        my $customer = $stripe->post_customer();
+        eval {
+            $stripe->post_charge(
+                amount => 100,
+                currency => 'usd',
+                customer => $customer->id,
+                card => $token->id,
+            );
+        };
+        if ($@) {
+            my $e = $@;
+            isa_ok $e, 'Net::Stripe::Error', 'error raised is an object';
+            is $e->type, 'post_charge error', 'error type';
+            like $e->message, qr/^Invalid value 'tok_.+' passed for parameter 'card'\. Charges for an existing customer can only accept a card id\.$/, 'error message';
+        } else {
+            fail 'post charge for customer with token id';
+        }
+    }
+
+    Post_charge_for_customer_id_using_card_id: {
+        # customer may have multiple cards. allow ability to select a specific
+        # card for a given charge.
+        my $customer = $stripe->post_customer();
+        my $card = $stripe->post_card(
+            customer => $customer,
+            card => $fake_card,
+        );
+        for ( 1..3 ) {
+            my $other_card = $stripe->post_card(
+                customer => $customer,
+                card => $fake_card,
+            );
+            isnt $card->id, $other_card->id, 'different card id';
+        }
+        my $charge = $stripe->post_charge(
+            amount => 100,
+            currency => 'usd',
+            customer => $customer->id,
+            card => $card->id,
+        );
+        isa_ok $charge, 'Net::Stripe::Charge';
+        ok $charge->paid, 'charge was paid';
+        is $charge->status, 'paid', 'charge status is paid';
+        is $charge->card->id, $card->id, 'charge card id matches';
+    }
+
+    Post_charge_for_customer_id_using_card_hash: {
+        my $customer = $stripe->post_customer();
+        eval {
+            $stripe->post_charge(
+                amount => 100,
+                currency => 'usd',
+                customer => $customer->id,
+                card => $fake_card,
+            );
+        };
+        if ($@) {
+            my $e = $@;
+            isa_ok $e, 'Net::Stripe::Error', 'error raised is an object';
+            is $e->type, 'post_charge error', 'error type';
+            like $e->message, qr/^Invalid value 'HASH\(0x[0-9a-f]+\)' passed for parameter 'card'. Charges for an existing customer can only accept a card id\.$/, 'error message';
+        } else {
+            fail 'post charge for customer with card hashref';
+        }
     }
 
     Rainy_day: {
-        # swallow the expected warning rather than have it print out durring tests.
-        close STDERR;
-        open(STDERR, ">", "/dev/null");
-
-        throws_ok {
+        # swallow the expected warning rather than have it print out during tests.
+        local $SIG{__WARN__} = sub {};
+        # Test a charge with no source or customer
+        eval {
             $stripe->post_charge(
                 amount => 3300,
                 currency => 'usd',
                 description => 'Wikileaks donation',
             );
-        } qr/invalid_request_error/, 'missing card and customer';
 
-        throws_ok {
-            $stripe->post_charge(
-                amount => 3300,
-                currency => 'usd',
-                description => 'Wikileaks donation',
-                customer => 'fake-customer-id',
-                card => {
-                    number => '4242-4242-4242-4242',
-                    exp_month => $future->month,
-                    exp_year  => $future->year,
-                    cvc => 123,
-                    name => 'Anonymous',
-                },
-            );
-        } qr/invalid_request_error/, 'missing card and customer';
+        };
+        if ($@) {
+            my $e = $@;
+            isa_ok $e, 'Net::Stripe::Error', 'error raised is an object';
+            is $e->type, 'invalid_request_error', 'error type';
+            is $e->message, 'Must provide source or customer.', 'error message';
+        } else {
+            fail 'missing card and customer';
+        }
 
         # Test an invalid currency
         eval {
             $stripe->post_charge(
                 amount => 3300,
                 currency => 'zzz',
-                card => {
-                    number => '4242-4242-4242-4242',
-                    exp_month => $future->month,
-                    exp_year  => $future->year,
-                    cvc => 123,
-                },
+                card => $fake_card,
             );
         };
         if ($@) {
@@ -330,8 +453,6 @@ Charges: {
         } else {
             fail 'report invalid currency';
         }
-        close STDERR;
-        open(STDERR, ">&", STDOUT);
     }
 
     Charge_with_receipt_email: {

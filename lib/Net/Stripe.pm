@@ -8,6 +8,7 @@ use HTTP::Request::Common qw/GET POST DELETE/;
 use MIME::Base64 qw/encode_base64/;
 use URI::Escape qw/uri_escape/;
 use JSON qw/decode_json/;
+use Net::Stripe::TypeConstraints;
 use Net::Stripe::Token;
 use Net::Stripe::Invoiceitem;
 use Net::Stripe::Invoice;
@@ -87,6 +88,19 @@ top-level keys and the list elements in an arrayref with the key 'data',
 which is the format that C<Net::Stripe::List> expects. This makes the SDK
 compatible with the Stripe API back to the earliest documented API version
 <https://stripe.com/docs/upgrades#2011-06-21>.
+
+=item fix post_charge() arguments
+
+Some argument types for `customer` and `card` were non-functional in the
+current code and have been removed from the Kavorka method signature. We
+removed `Net::Stripe::Customer` and `HashRef` for `customer` and we removed
+`Net::Stripe::Card` and `Net::Stripe::Token` for `card`, as none of these
+forms were being serialized correctly for passing to the API call. We must
+retain `Net::Stripe::Card` for the `card` attribute in `Net::Stripe::Charge`
+because the `card` value returned from the API call is objectified into
+a card object. We have also added TypeConstraints for the string arguments
+passed and added in-method validation to ensure that the passed argument
+values make sense in the context of one another.
 
 =back
 
@@ -215,8 +229,8 @@ Returns a list of L<Net::Stripe::Charge> objects.
 Charges: {
     method post_charge(Int :$amount,
                        Str :$currency,
-                       Net::Stripe::Customer|HashRef|Str :$customer?,
-                       Net::Stripe::Card|Net::Stripe::Token|Str|HashRef :$card?,
+                       StripeCustomerId :$customer?,
+                       StripeTokenId|StripeCardId|HashRef :$card?,
                        Str :$description?,
                        HashRef :$metadata?,
                        Bool :$capture?,
@@ -224,6 +238,31 @@ Charges: {
                        Int :$application_fee?,
                        Str :$receipt_email?
                      ) {
+
+        if ( defined( $card ) ) {
+            my $card_id_type = Moose::Util::TypeConstraints::find_type_constraint( 'StripeCardId' );
+            if ( defined( $customer ) && ! $card_id_type->check( $card ) ) {
+                die Net::Stripe::Error->new(
+                    type => "post_charge error",
+                    message => sprintf(
+                        "Invalid value '%s' passed for parameter 'card'. Charges for an existing customer can only accept a card id.",
+                        $card,
+                    ),
+                );
+            }
+
+            my $token_id_type = Moose::Util::TypeConstraints::find_type_constraint( 'StripeTokenId' );
+            if ( ! defined( $customer ) && ! $token_id_type->check( $card ) && ref( $card ) ne 'HASH' ) {
+                die Net::Stripe::Error->new(
+                    type => "post_charge error",
+                    message => sprintf(
+                        "Invalid value '%s' passed for parameter 'card'. Charges without an existing customer can only accept a token id or card hashref.",
+                        $card,
+                    ),
+                );
+            }
+        }
+
         my $charge = Net::Stripe::Charge->new(amount => $amount,
                                               currency => $currency,
                                               customer => $customer,
