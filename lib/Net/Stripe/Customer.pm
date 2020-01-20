@@ -40,13 +40,9 @@ sub _build_subscription {
 }
 
 method form_fields {
-    return (
-        $self->fields_for('card'),
-        $self->fields_for('plan'),
-        $self->fields_for('coupon'),
-        $self->form_fields_for_metadata(),
-        map { ($_ => $self->$_) }
-            grep { defined $self->$_ } qw/email description trial_end account_balance quantity/
+    return $self->form_fields_for(
+        qw/email description trial_end account_balance quantity card plan coupon
+            metadata/
     );
 }
 

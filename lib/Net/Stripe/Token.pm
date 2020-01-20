@@ -18,11 +18,8 @@ has 'used'        => (is => 'ro', isa => 'Maybe[Bool|Object]');
 has 'livemode'    => (is => 'ro', isa => 'Maybe[Bool|Object]');
 
 method form_fields {
-    return (
-        (defined $self->card ? $self->card->form_fields : () ),
-        map { $_ => $self->$_ }
-            grep { defined $self->$_ }
-                qw/amount currency/
+    return $self->form_fields_for(
+        qw/amount currency card/
     );
 }
 

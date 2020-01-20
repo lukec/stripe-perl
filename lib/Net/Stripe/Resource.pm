@@ -58,27 +58,39 @@ around BUILDARGS => sub {
     $class->$orig(%args);
 };
 
-method form_fields_for_metadata {
-    my $metadata = $self->metadata();
-    my @metadata = ();
-    while( my($k,$v) = each(%$metadata) ) {
-      push @metadata, 'metadata['.$k.']';
-      push @metadata, $v;
+fun form_fields_for_hashref (
+    Str $field_name!,
+    HashRef $hashref!,
+) {
+    my @field_values;
+    foreach my $key (sort keys %$hashref) {
+        my $value = $hashref->{$key};
+        my $nested_field_name = sprintf( '%s[%s]', $field_name, $key );
+        if ( ref( $value ) eq 'HASH' ) {
+            push @field_values, form_fields_for_ref( $nested_field_name, $value );
+        } else {
+            push @field_values, ( $nested_field_name => $value );
+        }
     }
-    return @metadata;
+    return @field_values;
 }
 
 method fields_for($for) {
     return unless $self->can($for);
     my $thingy = $self->$for;
-    return unless $thingy;
+    return unless defined( $thingy );
     return ($for => $thingy->id) if $for eq 'card' && ref($thingy) eq 'Net::Stripe::Token';
     return $thingy->form_fields if ref($thingy) =~ m/^Net::Stripe::/;
-    return ($for => $thingy);
+    return form_fields_for_hashref( $for, $thingy ) if ref( $thingy ) eq 'HASH';
+    return ( $for => $self->get_form_field_value( $for ) );
+}
+
+method form_fields_for(@fields!) {
+  return map { $self->fields_for( $_ ) } @fields;
 }
 
 method is_a_boolean(Str $attr!) {
-  my %boolean_attributes = map { $_ => 1 } @{$self->boolean_attributes()};
+  my %boolean_attributes = map { $_ => 1 } @{$self->boolean_attributes() || []};
   return exists( $boolean_attributes{$attr} );
 }
 
