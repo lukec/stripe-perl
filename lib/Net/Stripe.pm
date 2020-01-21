@@ -236,6 +236,20 @@ Returns a list of L<Net::Stripe::Charge> objects.
 
   $stripe->get_charges(customer => $customer, limit => 5);
 
+=charge_method capture_charge
+
+L<https://stripe.com/docs/api/charges/capture#capture_charge>
+
+=over
+
+=item * charge - L<Net::Stripe::Charge> or Str - charge to capture
+
+=back
+
+Returns a L<Net::Stripe::Charge>.
+
+  $stripe->capture_charge(charge => $charge_id);
+
 =cut
 
 Charges: {
