@@ -156,9 +156,9 @@ L<https://stripe.com/docs/api#create_charge>
 
 =item * currency - Str - currency for charge
 
-=item * customer - L<Net::Stripe::Customer>, HashRef or Str - customer to charge - optional
+=item * customer - L<StripeCustomerId> - customer to charge - optional
 
-=item * card - L<Net::Stripe::Card>, L<Net::Stripe::Token>, Str or HashRef - card to use - optional
+=item * card - L<StripeTokenId>, L<StripeCardId> or HashRef - card to use - optional
 
 =item * description - Str - description for the charge - optional
 

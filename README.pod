@@ -148,9 +148,9 @@ L<https://stripe.com/docs/api#create_charge>
 
 =item * currency - Str - currency for charge
 
-=item * customer - L<Net::Stripe::Customer>, HashRef or Str - customer to charge - optional
+=item * customer - L<StripeCustomerId> - customer to charge - optional
 
-=item * card - L<Net::Stripe::Card>, L<Net::Stripe::Token>, Str or HashRef - card to use - optional
+=item * card - L<StripeTokenId>, L<StripeCardId> or HashRef - card to use - optional
 
 =item * description - Str - description for the charge - optional
 
@@ -158,7 +158,7 @@ L<https://stripe.com/docs/api#create_charge>
 
 =item * capture - Bool - optional
 
-=item * statement_description - Str - description for statement - optional
+=item * statement_descriptor - Str - descriptor for statement - optional
 
 =item * application_fee - Int - optional
 
@@ -380,6 +380,35 @@ Returns a L<Net::Stripe::Card>.
 
   $stripe->create_card(customer => $customer, card => $card);
 
+=head2 update_card
+
+Update a card.
+
+L<https://stripe.com/docs/api/cards/update#update_card>
+
+=over
+
+=item * customer_id - L<StripeCustomerId>
+
+=item * card_id - L<StripeCardId>
+
+=item * card - HashRef
+
+=back
+
+Returns a L<Net::Stripe::Card>.
+
+  $stripe->update_card(
+      customer_id => $customer_id,
+      card_id => $card_id,
+      card => {
+          name => $new_name,
+          metadata => {
+              'account-number' => $new_account_nunmber,
+          },
+      },
+  );
+
 =head2 get_cards
 
 Returns a list of cards.
@@ -548,7 +577,7 @@ L<https://stripe.com/docs/api#create_plan>
 
 =item * trial_period_days - Int - optional
 
-=item * statement_description - Str - optional
+=item * statement_descriptor - Str - optional
 
 =back
 
@@ -941,6 +970,57 @@ Returns hashref of the form
   {
     deleted => <bool>
   }
+
+=head1 RELEASE NOTES
+
+=head2 Version 0.40
+
+=over
+
+=item update statement_description to statement_descriptor
+
+The statement_description attribute is now statement_descriptor for
+L<Net::Stripe::Charge> and L<Net::Stripe::Plan>. The API docs
+L<https://stripe.com/docs/upgrades#2014-12-17> indicate that this change
+is backwards-compatible. You must update your code to reflect this change
+for parameters passed to these objects and methods called on these objects.
+
+=item coerce old lists
+
+In older Stripe API versions, some list-type data structures were returned
+as arrayrefs. We now coerce those old-style lists and collections into the
+hashref format that newer versions of the API return, with metadata stored
+top-level keys and the list elements in an arrayref with the key 'data',
+which is the format that C<Net::Stripe::List> expects. This makes the SDK
+compatible with the Stripe API back to the earliest documented API version
+<https://stripe.com/docs/upgrades#2011-06-21>.
+
+=item fix post_charge() arguments
+
+Some argument types for `customer` and `card` were non-functional in the
+current code and have been removed from the Kavorka method signature. We
+removed `Net::Stripe::Customer` and `HashRef` for `customer` and we removed
+`Net::Stripe::Card` and `Net::Stripe::Token` for `card`, as none of these
+forms were being serialized correctly for passing to the API call. We must
+retain `Net::Stripe::Card` for the `card` attribute in `Net::Stripe::Charge`
+because the `card` value returned from the API call is objectified into
+a card object. We have also added TypeConstraints for the string arguments
+passed and added in-method validation to ensure that the passed argument
+values make sense in the context of one another.
+
+=item add update_card()
+This method allows updates to card address, expiration, metadata, etc for
+existing customer cards.
+
+=item encode card metdata in convert_to_form_fields()
+
+When passing a hashref with a nested metadata hashref to _post(), that
+metadata must be encoded properly before being passed to the Stripe API.
+There is now a dedicated block in convert_to_form_fields for this operation.
+This update was necessary because of the addition of update_card(), which
+accepts a card hashref, which may include metadata.
+
+=back
 
 =head1 SEE ALSO
 
