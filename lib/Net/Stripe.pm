@@ -156,9 +156,9 @@ L<https://stripe.com/docs/api#create_charge>
 
 =item * currency - Str - currency for charge
 
-=item * customer - L<StripeCustomerId> - customer to charge - optional
+=item * customer - StripeCustomerId - customer to charge - optional
 
-=item * card - L<StripeTokenId>, L<StripeCardId> or HashRef - card to use - optional
+=item * card - StripeTokenId, StripeCardId or HashRef - card to use - optional
 
 =item * description - Str - description for the charge - optional
 
@@ -610,9 +610,9 @@ L<https://stripe.com/docs/api/cards/update#update_card>
 
 =over
 
-=item * customer_id - L<StripeCustomerId>
+=item * customer_id - StripeCustomerId
 
-=item * card_id - L<StripeCardId>
+=item * card_id - StripeCardId
 
 =item * card - HashRef
 
