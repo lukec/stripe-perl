@@ -16,7 +16,7 @@ has 'address_zip'     => (is => 'ro', isa => 'Maybe[Str]');
 has 'address_city'    => (is => 'ro', isa => 'Maybe[Str]');
 has 'address_state'   => (is => 'ro', isa => 'Maybe[Str]');
 has 'address_country' => (is => 'ro', isa => 'Maybe[Str]');
-has 'metadata'        => (is => 'rw', isa => 'Maybe[HashRef]');
+has 'metadata'        => (is => 'ro', isa => 'Maybe[HashRef]');
 
 # Both input and output
 has 'exp_month'       => (is => 'ro', isa => 'Maybe[Int]', required => 1);
