@@ -114,6 +114,19 @@ There is now a dedicated block in convert_to_form_fields for this operation.
 This update was necessary because of the addition of update_card(), which
 accepts a card hashref, which may include metadata.
 
+=item cleanup post_card():
+
+Some argument types for `card` are not legitimate, or are being deprecated
+and have been removed from the Kavorka method signature. We removed
+`Net::Stripe::Card` and updated the string validation to disallow card id
+for `card`, as neither of these are legitimate when creating or updating a
+card L<https://github.com/lukec/stripe-perl/issues/138>, and the code path
+that appeared to be handling `Net::Stripe::Card` was actually unreachable
+L<https://github.com/lukec/stripe-perl/issues/100>. We removed the dead code
+paths and made the conditional structure more explicit, per discussion in
+<https://github.com/lukec/stripe-perl/pull/133>. We also added unit tests
+for all calling forms, per <https://github.com/lukec/stripe-perl/issues/139>.
+
 =back
 
 =method new PARAMHASH
@@ -586,21 +599,21 @@ Returns a L<Net::Stripe::Card>.
 
 =card_method post_card
 
-Create or update a card.
+Create a card.
 
-L<https://stripe.com/docs/api#create_card>
+L<https://stripe.com/docs/api/cards/create#create_card>
 
 =over
 
-=item * customer - L<Net::Stripe::Customer> or Str
+=item * customer - L<Net::Stripe::Customer> or StripeCustomerId
 
-=item * card - L<Net::Stripe::Card> or HashRef
+=item * card - L<Net::Stripe::Card>, L<Net::Stripe::Token>, StripeTokenId or HashRef
 
 =back
 
 Returns a L<Net::Stripe::Card>.
 
-  $stripe->create_card(customer => $customer, card => $card);
+  $stripe->post_card(customer => $customer, card => $card);
 
 =card_method update_card
 
@@ -699,28 +712,17 @@ Cards: {
                                 starting_after => $starting_after);
     }
 
-    method post_card(Net::Stripe::Customer|Str :$customer,
-                     HashRef|Net::Stripe::Card|Net::Stripe::Token|Str :$card) {
-        if (ref($customer)) {
-            $customer = $customer->id;
+    method post_card(Net::Stripe::Customer|StripeCustomerId :$customer!,
+                     HashRef|Net::Stripe::Token|StripeTokenId :$card!) {
+        my $customer_id = ref( $customer ) ? $customer->id : $customer;
+        if ( ref( $card ) eq 'HASH' ) {
+            my $card_obj = Net::Stripe::Card->new( $card );
+            return $self->_post("customers/$customer_id/cards", $card_obj);
+        } else {
+            # card here is either Net::Stripe::Token or StripeTokenId
+            my $token_id = ref( $card ) ? $card->id : $card;
+            return $self->_post("customers/$customer_id/cards", {card=> $token_id});
         }
-        if (! ref($card) && $card =~ /^tok_.+/) {
-            return $self->_post("customers/$customer/cards", {card=> $card});
-        }
-        if (ref($card) eq 'Net::Stripe::Token' && $card->id) {
-            return $self->_post("customers/$customer/cards", {card=> $card->id});
-        }
-        # Update the card.
-        if (ref($card) eq 'Net::Stripe::Card' && $card->id) {
-            return $self->_post("customers/$customer/cards", $card);
-        }
-        if (ref($card) eq 'HASH') {
-            $card = Net::Stripe::Card->new($card);
-        }
-        if (defined($card->id)) {
-            return $self->_post("customers/$customer/cards/" . $card->id, $card);
-        }
-        return $self->_post("customers/$customer/cards", $card);
     }
 
     method update_card(StripeCustomerId :$customer_id!,
