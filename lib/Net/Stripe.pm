@@ -127,6 +127,16 @@ paths and made the conditional structure more explicit, per discussion in
 <https://github.com/lukec/stripe-perl/pull/133>. We also added unit tests
 for all calling forms, per <https://github.com/lukec/stripe-perl/issues/139>.
 
+=item fix post_customer() arguments
+
+Some argument types for `card` are not legitimate and have been removed from
+the Kavorka method signature. We removed `Net::Stripe::Card` and updated the
+string validation to disallow card id for `card`, as neither of these are
+legitimate when creating or updating a customer L<https://github.com/lukec/stripe-perl/issues/138>.
+We have also updated the structure of the method so that we always create a
+Net::Stripe::Customer object before posting L<https://github.com/lukec/stripe-perl/issues/148>
+and cleaned up and centralized Net::Stripe:Token coercion code.
+
 =back
 
 =method new PARAMHASH
@@ -392,11 +402,11 @@ L<https://stripe.com/docs/api#create_customer>
 
 =over
 
-=item * customer - L<Net::Stripe::Customer> - existing customer to update, optional
+=item * customer - L<Net::Stripe::Customer> or StripeCustomerId - existing customer to update, optional
 
 =item * account_balance - Int, optional
 
-=item * card - L<Net::Stripe::Card>, L<Net::Stripe::Token>, Str or HashRef, default card for the customer, optional
+=item * card - L<Net::Stripe::Token>, StripeTokenId or HashRef, default card for the customer, optional
 
 =item * coupon - Str, optional
 
@@ -499,9 +509,9 @@ Returns a L<Net::Stripe::List> object containing L<Net::Stripe::Customer> object
 =cut
 
 Customers: {
-    method post_customer(Net::Stripe::Customer|Str :$customer?,
+    method post_customer(Net::Stripe::Customer|StripeCustomerId :$customer?,
                          Int :$account_balance?,
-                         Net::Stripe::Card|Net::Stripe::Token|Str|HashRef :$card?,
+                         Net::Stripe::Token|StripeTokenId|HashRef :$card?,
                          Str :$coupon?,
                          Str :$default_card?,
                          Str :$description?,
@@ -511,13 +521,10 @@ Customers: {
                          Int :$quantity?,
                          Int|Str :$trial_end?) {
 
-        if (defined($card) && ref($card) eq 'HASH') {
-            $card = Net::Stripe::Card->new($card);
-        }
-
-        if (ref($customer) eq 'Net::Stripe::Customer') {
-            return $self->_post("customers/" . $customer->id, $customer);
-        } elsif (defined($customer)) {
+        my $customer_obj;
+        if ( ref( $customer ) ) {
+            $customer_obj = $customer;
+        } else {
             my %args = (
                 account_balance => $account_balance,
                 card => $card,
@@ -525,22 +532,20 @@ Customers: {
                 default_card => $default_card,
                 email => $email,
                 metadata => $metadata,
+                plan => $plan,
+                quantity => $quantity,
+                trial_end => $trial_end,
             );
+            $args{id} = $customer if defined( $customer );
 
-            return $self->_post("customers/" . $customer, \%args);
+            $customer_obj = Net::Stripe::Customer->new( %args );
         }
 
-
-        $customer = Net::Stripe::Customer->new(account_balance => $account_balance,
-                                               card => $card,
-                                               coupon => $coupon,
-                                               description => $description,
-                                               email => $email,
-                                               metadata => $metadata,
-                                               plan => $plan,
-                                               quantity => $quantity,
-                                               trial_end => $trial_end);
-        return $self->_post('customers', $customer);
+        if ( my $customer_id = $customer_obj->id ) {
+            return $self->_post("customers/$customer_id", $customer_obj);
+        } else {
+            return $self->_post('customers', $customer_obj);
+        }
     }
 
     method list_subscriptions(Net::Stripe::Customer|Str :$customer,
