@@ -137,6 +137,16 @@ We have also updated the structure of the method so that we always create a
 Net::Stripe::Customer object before posting L<https://github.com/lukec/stripe-perl/issues/148>
 and cleaned up and centralized Net::Stripe:Token coercion code.
 
+=item update unit tests for Charge->status
+
+For Stripe API versions after 2015-02-18 L<https://stripe.com/docs/upgrades#2015-02-18>,
+the status property on the Charge object has a value of 'succeeded' for
+successful charges. Previously, the status property would be 'paid' for
+successful charges. This change does not affect the API calls themselves, but
+if your account is using Stripe API version 2015-02-18 or later, you should
+update any code that relies on strict checking of the return value of
+Charge->status.
+
 =back
 
 =method new PARAMHASH
