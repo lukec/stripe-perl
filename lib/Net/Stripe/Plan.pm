@@ -22,10 +22,9 @@ has 'trial_period_days' => (is => 'ro', isa => 'Maybe[Int]');
 has 'statement_descriptor' => (is => 'ro', isa => 'Maybe[StatementDescriptor]', required => 0);
 
 method form_fields {
-    return (
-        map { $_ => $self->$_ }
-            grep { defined $self->$_ }
-                qw/id amount currency interval interval_count name statement_descriptor trial_period_days/
+    return $self->form_fields_for(
+        qw/id amount currency interval interval_count name statement_descriptor
+            trial_period_days/
     );
 }
 

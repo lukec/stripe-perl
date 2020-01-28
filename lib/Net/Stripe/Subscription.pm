@@ -33,11 +33,8 @@ has 'cancel_at_period_end' => (is => 'rw', isa => 'Maybe[Bool]');
 
 
 method form_fields {
-    return (
-        $self->fields_for('card'),
-        $self->fields_for('plan'),
-        map { $_ => $self->get_form_field_value( $_ ) }
-            grep { defined $self->$_ } qw/coupon prorate trial_end quantity/
+    return $self->form_fields_for(
+        qw/coupon prorate trial_end quantity card plan/
     );
 }
 

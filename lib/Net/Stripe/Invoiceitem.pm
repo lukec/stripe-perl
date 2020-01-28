@@ -17,12 +17,9 @@ has 'invoice'           => (is => 'ro', isa => 'Maybe[Str]');
 has 'metadata'          => (is => 'rw', isa => 'Maybe[HashRef]');
 
 method form_fields {
-    return (
-        $self->form_fields_for_metadata(),
-        map { $_ => $self->$_ }
-            grep { defined $self->$_ }
-                qw/amount currency description invoice/,
-                ($self->id ? () : qw/customer/)
+    return $self->form_fields_for(
+        qw/amount currency description invoice metadata/,
+        ($self->id ? () : qw/customer/)
     );
 }
 

@@ -31,11 +31,8 @@ has 'description'         => (
 has 'refund_application_fee' => (is => 'ro', isa => 'Maybe[Bool|Object]');
 
 method form_fields {
-    return (
-        $self->form_fields_for_metadata(),
-        map { $_ => $self->$_ }
-            grep { defined $self->$_ }
-                qw/amount refund_application_fee reason/
+    return $self->form_fields_for(
+        qw/amount refund_application_fee reason metadata/
     );
 }
 
