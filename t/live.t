@@ -160,7 +160,7 @@ Charges: {
         }
         ok !$charge->refunded, 'charge is not refunded';
         ok $charge->paid, 'charge was paid';
-        is $charge->status, 'paid', 'charge status is paid';
+        like $charge->status, qr/^(?:paid|succeeded)$/, 'charge was successful';
         ok $charge->captured, 'charge was captured';
         is $charge->statement_descriptor, 'Statement Descr', 'charge statement_descriptor matches';
 
@@ -258,7 +258,7 @@ Charges: {
         );
         isa_ok $charge, 'Net::Stripe::Charge';
         ok $charge->paid, 'charge was paid';
-        is $charge->status, 'paid', 'charge status is paid';
+        like $charge->status, qr/^(?:paid|succeeded)$/, 'charge was successful';
 
         my $cards = $stripe->get_cards(customer => $customer, limit => 1);
         isa_ok $cards, "Net::Stripe::List";
@@ -276,7 +276,7 @@ Charges: {
         );
         isa_ok $charge, 'Net::Stripe::Charge';
         ok $charge->paid, 'charge was paid';
-        is $charge->status, 'paid', 'charge status is paid';
+        like $charge->status, qr/^(?:paid|succeeded)$/, 'charge was successful';
         is $charge->card->id, $token->card->id, 'charge card id matches';
     }
 
@@ -307,7 +307,7 @@ Charges: {
         );
         isa_ok $charge, 'Net::Stripe::Charge';
         ok $charge->paid, 'charge was paid';
-        is $charge->status, 'paid', 'charge status is paid';
+        like $charge->status, qr/^(?:paid|succeeded)$/, 'charge was successful';
         is $charge->card->last4, substr( $fake_card->{number}, -4 ), 'charge card last4 matches';
     }
 
@@ -322,7 +322,7 @@ Charges: {
         );
         isa_ok $charge, 'Net::Stripe::Charge';
         ok $charge->paid, 'charge was paid';
-        is $charge->status, 'paid', 'charge status is paid';
+        like $charge->status, qr/^(?:paid|succeeded)$/, 'charge was successful';
         is $charge->card->id, $customer->default_card, 'charged default card';
     }
 
@@ -391,7 +391,7 @@ Charges: {
         );
         isa_ok $charge, 'Net::Stripe::Charge';
         ok $charge->paid, 'charge was paid';
-        is $charge->status, 'paid', 'charge status is paid';
+        like $charge->status, qr/^(?:paid|succeeded)$/, 'charge was successful';
         is $charge->card->id, $card->id, 'charge card id matches';
     }
 
