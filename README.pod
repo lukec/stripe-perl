@@ -989,25 +989,9 @@ Returns hashref of the form
 
 =head2 Version 0.40
 
+=head3 BUG FIXES
+
 =over
-
-=item update statement_description to statement_descriptor
-
-The statement_description attribute is now statement_descriptor for
-L<Net::Stripe::Charge> and L<Net::Stripe::Plan>. The API docs
-L<https://stripe.com/docs/upgrades#2014-12-17> indicate that this change
-is backwards-compatible. You must update your code to reflect this change
-for parameters passed to these objects and methods called on these objects.
-
-=item coerce old lists
-
-In older Stripe API versions, some list-type data structures were returned
-as arrayrefs. We now coerce those old-style lists and collections into the
-hashref format that newer versions of the API return, with metadata stored
-top-level keys and the list elements in an arrayref with the key 'data',
-which is the format that C<Net::Stripe::List> expects. This makes the SDK
-compatible with the Stripe API back to the earliest documented API version
-<https://stripe.com/docs/upgrades#2011-06-21>.
 
 =item fix post_charge() arguments
 
@@ -1022,19 +1006,7 @@ a card object. We have also added TypeConstraints for the string arguments
 passed and added in-method validation to ensure that the passed argument
 values make sense in the context of one another.
 
-=item add update_card()
-This method allows updates to card address, expiration, metadata, etc for
-existing customer cards.
-
-=item encode card metdata in convert_to_form_fields()
-
-When passing a hashref with a nested metadata hashref to _post(), that
-metadata must be encoded properly before being passed to the Stripe API.
-There is now a dedicated block in convert_to_form_fields for this operation.
-This update was necessary because of the addition of update_card(), which
-accepts a card hashref, which may include metadata.
-
-=item cleanup post_card():
+=item cleanup post_card()
 
 Some argument types for `card` are not legitimate, or are being deprecated
 and have been removed from the Kavorka method signature. We removed
@@ -1056,6 +1028,49 @@ legitimate when creating or updating a customer L<https://github.com/lukec/strip
 We have also updated the structure of the method so that we always create a
 Net::Stripe::Customer object before posting L<https://github.com/lukec/stripe-perl/issues/148>
 and cleaned up and centralized Net::Stripe:Token coercion code.
+
+=back
+
+=head3 ENHANCEMENTS
+
+=over
+
+=item coerce old lists
+
+In older Stripe API versions, some list-type data structures were returned
+as arrayrefs. We now coerce those old-style lists and collections into the
+hashref format that newer versions of the API return, with metadata stored
+top-level keys and the list elements in an arrayref with the key 'data',
+which is the format that C<Net::Stripe::List> expects. This makes the SDK
+compatible with the Stripe API back to the earliest documented API version
+<https://stripe.com/docs/upgrades#2011-06-21>.
+
+=item add update_card()
+
+This method allows updates to card address, expiration, metadata, etc for
+existing customer cards.
+
+=item encode card metdata in convert_to_form_fields()
+
+When passing a hashref with a nested metadata hashref to _post(), that
+metadata must be encoded properly before being passed to the Stripe API.
+There is now a dedicated block in convert_to_form_fields for this operation.
+This update was necessary because of the addition of update_card(), which
+accepts a card hashref, which may include metadata.
+
+=back
+
+=head3 UPDATES
+
+=over
+
+=item update statement_description to statement_descriptor
+
+The statement_description attribute is now statement_descriptor for
+L<Net::Stripe::Charge> and L<Net::Stripe::Plan>. The API docs
+L<https://stripe.com/docs/upgrades#2014-12-17> indicate that this change
+is backwards-compatible. You must update your code to reflect this change
+for parameters passed to these objects and methods called on these objects.
 
 =item update unit tests for Charge->status
 
