@@ -41,6 +41,13 @@ my $fake_card = {
     address_country => 'United States',
 };
 
+# add a temporary test for serializing multi-level hashrefs until we have
+# actual methods with parameters that exercise this code
+Placeholder: {
+    my $return = { Net::Stripe::Resource::form_fields_for_hashref( "hashref", { level1=> { level2=> "value" } } ) };
+    is_deeply $return, { 'hashref[level1][level2]' => 'value' };
+}
+
 Card_Tokens: {
     Basic_successful_use: {
 

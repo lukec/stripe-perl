@@ -67,7 +67,7 @@ fun form_fields_for_hashref (
         my $value = $hashref->{$key};
         my $nested_field_name = sprintf( '%s[%s]', $field_name, $key );
         if ( ref( $value ) eq 'HASH' ) {
-            push @field_values, form_fields_for_ref( $nested_field_name, $value );
+            push @field_values, form_fields_for_hashref( $nested_field_name, $value );
         } else {
             push @field_values, ( $nested_field_name => $value );
         }
