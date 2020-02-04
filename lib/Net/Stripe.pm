@@ -69,6 +69,22 @@ where discussion on these topics takes place.
 
 =head2 Version 0.40
 
+=head3 BREAKING CHANGES
+
+=over
+
+=item deprecate direct handling of PANs
+
+Stripe strongly discourages direct handling of PANs (primary account numbers),
+even in test mode, and returns invalid_request_error when passing PANs to the
+API from accounts that were created after October 2017. In live mode, all
+tokenization should be performed via client-side libraries because direct
+handling of PANs violates PCI compliance. So we have removed the methods and
+parameter constraints that allow direct handling of PANs and updated the
+unit tests appropriately.
+
+=back
+
 =head3 BUG FIXES
 
 =over
@@ -206,7 +222,7 @@ L<https://stripe.com/docs/api#create_charge>
 
 =item * customer - StripeCustomerId - customer to charge - optional
 
-=item * card - StripeTokenId, StripeCardId or HashRef - card to use - optional
+=item * card - StripeTokenId or StripeCardId - card to use - optional
 
 =item * description - Str - description for the charge - optional
 
@@ -304,7 +320,7 @@ Charges: {
     method post_charge(Int :$amount,
                        Str :$currency,
                        StripeCustomerId :$customer?,
-                       StripeTokenId|StripeCardId|HashRef :$card?,
+                       StripeTokenId|StripeCardId :$card?,
                        Str :$description?,
                        HashRef :$metadata?,
                        Bool :$capture?,
@@ -326,11 +342,11 @@ Charges: {
             }
 
             my $token_id_type = Moose::Util::TypeConstraints::find_type_constraint( 'StripeTokenId' );
-            if ( ! defined( $customer ) && ! $token_id_type->check( $card ) && ref( $card ) ne 'HASH' ) {
+            if ( ! defined( $customer ) && ! $token_id_type->check( $card ) ) {
                 die Net::Stripe::Error->new(
                     type => "post_charge error",
                     message => sprintf(
-                        "Invalid value '%s' passed for parameter 'card'. Charges without an existing customer can only accept a token id or card hashref.",
+                        "Invalid value '%s' passed for parameter 'card'. Charges without an existing customer can only accept a token id.",
                         $card,
                     ),
                 );
@@ -431,7 +447,7 @@ L<https://stripe.com/docs/api#create_customer>
 
 =item * account_balance - Int, optional
 
-=item * card - L<Net::Stripe::Token>, StripeTokenId or HashRef, default card for the customer, optional
+=item * card - L<Net::Stripe::Token> or StripeTokenId, default card for the customer, optional
 
 =item * coupon - Str, optional
 
@@ -452,7 +468,7 @@ L<https://stripe.com/docs/api#create_customer>
 Returns a L<Net::Stripe::Customer> object.
 
   my $customer = $stripe->post_customer(
-    card => $fake_card,
+    card => $token_id,
     email => 'stripe@example.com',
     description => 'Test for Net::Stripe',
   );
@@ -536,7 +552,7 @@ Returns a L<Net::Stripe::List> object containing L<Net::Stripe::Customer> object
 Customers: {
     method post_customer(Net::Stripe::Customer|StripeCustomerId :$customer?,
                          Int :$account_balance?,
-                         Net::Stripe::Token|StripeTokenId|HashRef :$card?,
+                         Net::Stripe::Token|StripeTokenId :$card?,
                          Str :$coupon?,
                          Str :$default_card?,
                          Str :$description?,
@@ -637,7 +653,7 @@ L<https://stripe.com/docs/api/cards/create#create_card>
 
 =item * customer - L<Net::Stripe::Customer> or StripeCustomerId
 
-=item * card - L<Net::Stripe::Card>, L<Net::Stripe::Token>, StripeTokenId or HashRef
+=item * card - L<Net::Stripe::Token> or StripeTokenId
 
 =back
 
@@ -743,7 +759,7 @@ Cards: {
     }
 
     method post_card(Net::Stripe::Customer|StripeCustomerId :$customer!,
-                     HashRef|Net::Stripe::Token|StripeTokenId :$card!) {
+                     Net::Stripe::Token|StripeTokenId :$card!) {
         my $customer_id = ref( $customer ) ? $customer->id : $customer;
         if ( ref( $card ) eq 'HASH' ) {
             my $card_obj = Net::Stripe::Card->new( $card );
@@ -786,7 +802,7 @@ L<https://stripe.com/docs/api#create_subscription>
 
 =item * subscription - L<Net::Stripe::Subscription> or Str
 
-=item * card - L<Net::Stripe::Card>, L<Net::Stripe::Token>, Str or HashRef, default card for the customer, optional
+=item * card - L<Net::Stripe::Card>, L<Net::Stripe::Token> or Str, default card for the customer, optional
 
 =item * coupon - Str, optional
 
@@ -858,7 +874,7 @@ Subscriptions: {
                              Net::Stripe::Plan|Str :$plan?,
                              Str :$coupon?,
                              Int|Str :$trial_end?,
-                             Net::Stripe::Card|Net::Stripe::Token|Str|HashRef :$card?,
+                             Net::Stripe::Card|Net::Stripe::Token|Str :$card?,
                              Int :$quantity? where { $_ >= 0 },
                              Num :$application_fee_percent?,
                              Bool :$prorate? = 1
@@ -909,22 +925,6 @@ Subscriptions: {
     }
 }
 
-=token_method post_token
-
-Create a new token.
-
-L<https://stripe.com/docs/api#create_card_token>
-
-=over
-
-=item * card - L<Net::Stripe::Card> or HashRef
-
-=back
-
-Returns a L<Net::Stripe::Token>.
-
-  $stripe->post_token(card => $test_card);
-
 =token_method get_token
 
 Retrieves an existing token.
@@ -944,11 +944,6 @@ Returns a L<Net::Stripe::Token>.
 =cut
 
 Tokens: {
-    method post_token(Net::Stripe::Card|HashRef :$card) {
-        my $token = Net::Stripe::Token->new(card => $card);
-        return $self->_post('tokens', $token);
-    }
-
     method get_token(Str :$token_id) {
         return $self->_get("tokens/$token_id");
     }
