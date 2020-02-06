@@ -761,14 +761,9 @@ Cards: {
     method post_card(Net::Stripe::Customer|StripeCustomerId :$customer!,
                      Net::Stripe::Token|StripeTokenId :$card!) {
         my $customer_id = ref( $customer ) ? $customer->id : $customer;
-        if ( ref( $card ) eq 'HASH' ) {
-            my $card_obj = Net::Stripe::Card->new( $card );
-            return $self->_post("customers/$customer_id/cards", $card_obj);
-        } else {
-            # card here is either Net::Stripe::Token or StripeTokenId
-            my $token_id = ref( $card ) ? $card->id : $card;
-            return $self->_post("customers/$customer_id/cards", {card=> $token_id});
-        }
+        # card here is either Net::Stripe::Token or StripeTokenId
+        my $token_id = ref( $card ) ? $card->id : $card;
+        return $self->_post("customers/$customer_id/cards", {card=> $token_id});
     }
 
     method update_card(StripeCustomerId :$customer_id!,
