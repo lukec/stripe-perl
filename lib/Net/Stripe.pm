@@ -112,8 +112,8 @@ card L<https://github.com/lukec/stripe-perl/issues/138>, and the code path
 that appeared to be handling `Net::Stripe::Card` was actually unreachable
 L<https://github.com/lukec/stripe-perl/issues/100>. We removed the dead code
 paths and made the conditional structure more explicit, per discussion in
-<https://github.com/lukec/stripe-perl/pull/133>. We also added unit tests
-for all calling forms, per <https://github.com/lukec/stripe-perl/issues/139>.
+L<https://github.com/lukec/stripe-perl/pull/133>. We also added unit tests
+for all calling forms, per L<https://github.com/lukec/stripe-perl/issues/139>.
 
 =item fix post_customer() arguments
 
@@ -139,7 +139,7 @@ hashref format that newer versions of the API return, with metadata stored
 top-level keys and the list elements in an arrayref with the key 'data',
 which is the format that C<Net::Stripe::List> expects. This makes the SDK
 compatible with the Stripe API back to the earliest documented API version
-<https://stripe.com/docs/upgrades#2011-06-21>.
+L<https://stripe.com/docs/upgrades#2011-06-21>.
 
 =item add update_card()
 
