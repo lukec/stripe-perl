@@ -265,26 +265,6 @@ Charges: {
         is $charge2->metadata->{'hasmetadata'}, 'hello world', 'charge metadata in retrieved object';
     }
 
-
-    Post_charge_using_customer: {
-        my $token = $stripe->get_token( token_id => $token_id_visa );
-        my $customer = $stripe->post_customer( card => $token->id );
-        my $charge = $stripe->post_charge(
-            customer => $customer->id,
-            amount => 250,
-            currency => 'usd',
-        );
-        isa_ok $charge, 'Net::Stripe::Charge';
-        ok $charge->paid, 'charge was paid';
-        like $charge->status, qr/^(?:paid|succeeded)$/, 'charge was successful';
-
-        my $cards = $stripe->get_cards(customer => $customer, limit => 1);
-        isa_ok $cards, "Net::Stripe::List";
-        my $card = @{$cards->data}[0];
-        isa_ok $card, "Net::Stripe::Card";
-        is $card->id, $token->card->id, 'card id matches';
-    }
-
     Post_charge_using_token_id: {
         my $token = $stripe->get_token( token_id => $token_id_visa );
         my $charge = $stripe->post_charge(
