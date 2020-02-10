@@ -1082,6 +1082,10 @@ if your account is using Stripe API version 2015-02-18 or later, you should
 update any code that relies on strict checking of the return value of
 Charge->status.
 
+=item update Token attributes
+
+Added type and client_ip attributes for L<Net::Stripe::Token>.
+
 =back
 
 =head1 SEE ALSO

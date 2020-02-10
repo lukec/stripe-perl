@@ -77,11 +77,13 @@ Card_Tokens: {
         my $token = $stripe->get_token( token_id => $token_id_visa );
         isa_ok $token, 'Net::Stripe::Token', 'got a token back from post';
 
+        is $token->type, 'card', 'token type is card';
         is $token->card->last4, '4242', 'token card';
         ok !$token->used, 'token is not used';
+        ok !$token->livemode, 'token not created in livemode';
 
         my $same = $stripe->get_token(token_id => $token->id);
-        isa_ok $token, 'Net::Stripe::Token', 'got a token back';
+        isa_ok $same, 'Net::Stripe::Token', 'got a token back';
         is $same->id, $token->id, 'token id matches';
     }
 }

@@ -16,6 +16,8 @@ has 'id'          => (is => 'ro', isa => 'Maybe[Str]');
 has 'created'     => (is => 'ro', isa => 'Maybe[Int]');
 has 'used'        => (is => 'ro', isa => 'Maybe[Bool|Object]');
 has 'livemode'    => (is => 'ro', isa => 'Maybe[Bool|Object]');
+has 'type'        => (is => 'ro', isa => 'Maybe[Str]');
+has 'client_ip'   => (is => 'ro', isa => 'Maybe[Str]');
 
 method form_fields {
     return $self->form_fields_for(
