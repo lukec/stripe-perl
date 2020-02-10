@@ -827,6 +827,30 @@ Customers: {
             is $new_card->id, $new_token->card->id, 'card token id matches';
         }
 
+        Delete_card: {
+            my $token = $stripe->get_token( token_id => $token_id_visa );
+            my $customer = $stripe->post_customer(
+                card => $token->id,
+            );
+            isa_ok $customer, 'Net::Stripe::Customer';
+
+            my $cards = $stripe->get_cards( customer => $customer );
+            isa_ok $cards, "Net::Stripe::List";
+            my @cards = $cards->elements;
+            is scalar( @cards ), 1, 'customer has one card';
+
+            my $deleted = $stripe->delete_card(
+                customer => $customer->id,
+                card => $cards[0]->id,
+            );
+            ok $deleted->{deleted}, 'card is now deleted';
+
+            $cards = $stripe->get_cards( customer => $customer );
+            isa_ok $cards, "Net::Stripe::List";
+            @cards = $cards->elements;
+            is scalar( @cards ), 0, 'customer has zero cards';
+        }
+
         Update_existing_card_for_customer_id: {
             my $token = $stripe->get_token( token_id => $token_id_visa );
             my $customer = $stripe->post_customer(
