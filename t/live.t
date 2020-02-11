@@ -682,6 +682,12 @@ Customers: {
             isa_ok $card, "Net::Stripe::Card";
 
             $customer->card($token_id_visa);
+            # we must unset the default_card attribute in the existing object.
+            # otherwise there is a conflict since the old default_card id is
+            # serialized in the POST stream, and it appears that we are
+            # requesting to set default_card to the id of a card that no
+            # longer exists, but rather is being replaced by the new card.
+            $customer->default_card(undef);
             $stripe->post_customer(customer => $customer);
             $cards = $stripe->get_cards(customer => $customer);
             isa_ok $cards, "Net::Stripe::List";
@@ -730,6 +736,12 @@ Customers: {
 
             my $new_token = $stripe->get_token( token_id => $token_id_visa );
             $customer->card($new_token);
+            # we must unset the default_card attribute in the existing object.
+            # otherwise there is a conflict since the old default_card id is
+            # serialized in the POST stream, and it appears that we are
+            # requesting to set default_card to the id of a card that no
+            # longer exists, but rather is being replaced by the new card.
+            $customer->default_card(undef);
             $stripe->post_customer(customer => $customer);
             $cards = $stripe->get_cards(customer => $customer);
             isa_ok $cards, "Net::Stripe::List";
@@ -911,6 +923,50 @@ Customers: {
                     is $card->$f, $updated_fake_card->{$f}, "updated card $f matches";
                 }
             }
+        }
+
+        Set_default_card: {
+            my $customer = $stripe->post_customer(
+                card => $token_id_visa,
+            );
+            isa_ok $customer, 'Net::Stripe::Customer';
+            my $customer_id = $customer->id;
+            my $default_card_id = $customer->default_card;
+
+            my $cards = $stripe->get_cards( customer => $customer_id );
+            isa_ok $cards, "Net::Stripe::List";
+            my @cards = $cards->elements;
+            is scalar( @cards ), 1, 'customer only has one card';
+            is $cards[0]->id, $default_card_id, 'default_card matches';
+
+            my $new_card = $stripe->post_card(
+                customer => $customer_id,
+                card => $token_id_visa,
+            );
+            isa_ok $new_card, 'Net::Stripe::Card';
+            $cards = $stripe->get_cards( customer => $customer_id );
+            isa_ok $cards, "Net::Stripe::List";
+            @cards = $cards->elements;
+            is scalar( @cards ), 2, 'customer now has two cards';
+            isnt $new_card->id, $cards[0]->id, 'new card has different card id';
+
+            $customer = $stripe->get_customer(
+                customer_id => $customer_id,
+            );
+            isa_ok $customer, 'Net::Stripe::Customer';
+            is $customer->default_card, $default_card_id, 'default_card unchanged';
+
+            $customer = $stripe->post_customer(
+                customer => $customer_id,
+                default_card => $new_card->id,
+            );
+
+            $customer = $stripe->get_customer(
+                customer_id => $customer_id,
+            );
+            isa_ok $customer, 'Net::Stripe::Customer';
+            is $customer->default_card, $new_card->id, 'default_card matches new card';
+            isnt $customer->default_card, $default_card_id, 'default_card changed';
         }
 
         Customers_with_plans: {

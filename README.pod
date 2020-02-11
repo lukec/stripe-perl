@@ -989,6 +989,27 @@ handling of PANs violates PCI compliance. So we have removed the methods and
 parameter constraints that allow direct handling of PANs and updated the
 unit tests appropriately.
 
+=item updating customer card by passing Customer object to post_customer()
+
+If you have code that updates a customer card by updating the internal values
+for an existing customer object and then posting that object:
+
+    my $customer_obj = $stripe->get_customer(
+        customer_id => $customer_id,
+    );
+    $customer_obj->card( $new_card );
+    $stripe->post_customer( customer => $customer_obj );
+
+you must unset the default_card attribute in the existing object before
+posting the customer object.
+
+    $customer_obj->default_card( undef );
+
+Otherwise there is a conflict, since the old default_card attribute in the
+object is serialized in the POST stream, and it appears that you are requesting
+to set default_card to the id of a card that no longer exists, but rather
+is being replaced by the new value of the card attribute in the object.
+
 =back
 
 =head3 BUG FIXES
@@ -1030,6 +1051,14 @@ legitimate when creating or updating a customer L<https://github.com/lukec/strip
 We have also updated the structure of the method so that we always create a
 Net::Stripe::Customer object before posting L<https://github.com/lukec/stripe-perl/issues/148>
 and cleaned up and centralized Net::Stripe:Token coercion code.
+
+=item default_card not updating in post_customer()
+
+Prior to ff84dd7, we were passing %args directly to _post(), and therefore
+default_card would have been included in the POST stream. Now we are creating
+a L<Net::Stripe::Customer> object and posting it, so the posted parameters
+rely on the explicit list in $customer_obj->form_fields(), which was lacking
+default_card. See also BREAKING CHANGES.
 
 =back
 
