@@ -28,6 +28,7 @@ has 'receipt_email'       => (is => 'ro', isa => 'Maybe[Str]');
 has 'status'              => (is => 'ro', isa => 'Maybe[Str]');
 has 'capture'             => (is => 'ro', isa => 'Bool', default=> 1);
 has 'statement_descriptor' => (is => 'ro', isa => 'Maybe[Str]');
+has 'refunds'             => (is => 'ro', isa => 'Net::Stripe::List');
 
 method form_fields {
     return $self->form_fields_for(

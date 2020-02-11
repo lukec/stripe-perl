@@ -236,6 +236,8 @@ L<https://stripe.com/docs/api/charges/capture#capture_charge>
 
 =item * charge - L<Net::Stripe::Charge> or Str - charge to capture
 
+=item * amount - Int - amount to capture
+
 =back
 
 Returns a L<Net::Stripe::Charge>.
@@ -1085,6 +1087,13 @@ Charge->status.
 =item update Token attributes
 
 Added type and client_ip attributes for L<Net::Stripe::Token>.
+
+=item allow capture of partial charge
+
+Passing 'amount' to capture_charge() allows capture of a partial charge.
+Per the API, any remaining amount is immediately refunded. The charge object
+now also has a 'refunds' attribute, representing a L<Net::Stripe::List>
+of L<Net::Stripe::Refund> objects for the charge.
 
 =back
 
