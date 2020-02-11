@@ -493,6 +493,46 @@ Charges: {
         is $captured_charge->amount, $amount, "amount is $amount";
         is $captured_charge->id, $charge->id, 'Charge ids match';
     }
+
+    Auth_then_partial_capture: {
+        my $amount = 1234;
+        my $charge = $stripe->post_charge(
+            amount => $amount,
+            currency => 'usd',
+            card => $token_id_visa,
+            capture => 0,
+        );
+        isa_ok $charge, 'Net::Stripe::Charge';
+        ok !$charge->refunded, 'charge is not refunded';
+        ok $charge->paid, 'charge was paid';
+        ok !$charge->captured, 'charge was not captured';
+        ok !defined( $charge->balance_transaction ), 'balance_transaction is undef';
+        is $charge->amount, $amount, "amount matches";
+        my $refunds = $charge->refunds;
+        isa_ok $refunds, "Net::Stripe::List";
+        my @refunds = $refunds->elements;
+        is scalar( @refunds ), 0, 'charge has no refunds';
+
+        my $auth_charge_id = $charge->id;
+        my $partial = 567;
+        my $captured_charge = $stripe->capture_charge(
+            charge => $auth_charge_id,
+            amount => $partial,
+        );
+        ok !$captured_charge->refunded, 'charge is not refunded';
+        ok $captured_charge->paid, 'charge was paid';
+        ok $captured_charge->captured, 'charge was captured';
+        ok defined( $captured_charge->balance_transaction ), 'balance_transaction is defined';
+        is $captured_charge->amount, $amount, "amount matches";
+        is $captured_charge->id, $charge->id, 'Charge ids match';
+        is $captured_charge->amount_refunded, $amount - $partial, "amount_refunded matches";
+        $refunds = $captured_charge->refunds;
+        isa_ok $refunds, "Net::Stripe::List";
+        @refunds = $refunds->elements;
+        is scalar( @refunds ), 1, 'charge has one refund';
+        is $refunds[0]->amount, $amount - $partial, "refund amount matches";
+        is $refunds[0]->status, 'succeeded', 'refund was successful';
+    }
 }
 
 Customers: {

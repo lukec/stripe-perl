@@ -182,6 +182,13 @@ Charge->status.
 
 Added type and client_ip attributes for L<Net::Stripe::Token>.
 
+=item allow capture of partial charge
+
+Passing 'amount' to capture_charge() allows capture of a partial charge.
+Per the API, any remaining amount is immediately refunded. The charge object
+now also has a 'refunds' attribute, representing a L<Net::Stripe::List>
+of L<Net::Stripe::Refund> objects for the charge.
+
 =back
 
 =method new PARAMHASH
@@ -312,6 +319,8 @@ L<https://stripe.com/docs/api/charges/capture#capture_charge>
 
 =item * charge - L<Net::Stripe::Charge> or Str - charge to capture
 
+=item * amount - Int - amount to capture
+
 =back
 
 Returns a L<Net::Stripe::Charge>.
@@ -403,12 +412,18 @@ Charges: {
                             );
     }
 
-    method capture_charge(Net::Stripe::Charge|Str :$charge) {
+    method capture_charge(
+        Net::Stripe::Charge|Str :$charge!,
+        Int :$amount?,
+    ) {
         if (ref($charge)) {
             $charge = $charge->id;
         }
 
-        return $self->_post("charges/$charge/capture");
+        my %args = (
+            amount => $amount,
+        );
+        return $self->_post("charges/$charge/capture", \%args);
     }
 
 }
@@ -1846,6 +1861,27 @@ sub _pre_2011_08_01_processing {
 
             # mimic the url sent with standard Stripe lists
             $hash->{$type}->{url} = "/v1/customers/$customer_id/$type";
+        }
+    }
+
+    foreach my $type ( qw/ refunds / ) {
+        if ( exists( $hash->{$type} ) && ref( $hash->{$type} ) eq 'ARRAY' ) {
+            $hash->{$type} = _array_to_list( delete( $hash->{$type} ) );
+            my $charge_id;
+            if ( exists( $hash->{object} ) && $hash->{object} eq 'charge' && exists( $hash->{id} ) ) {
+                $charge_id = $hash->{id};
+            }
+            # Net::Stripe::List->new() will fail without url, but we
+            # can make debugging easier by providing a message here
+            die Net::Stripe::Error->new(
+                type => "object coercion error",
+                message => sprintf(
+                    "Could not determine charge id while coercing %s list into Net::Stripe::List.",
+                    $type,
+                ),
+            ) unless $charge_id;
+            # mimic the url sent with standard Stripe lists
+            $hash->{$type}->{url} = "/v1/charges/$charge_id/$type";
         }
     }
     return $hash;
