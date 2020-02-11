@@ -23,12 +23,12 @@ has 'discount'    => (is => 'rw', isa => 'Maybe[Net::Stripe::Discount]');
 has 'metadata'    => (is => 'rw', isa => 'Maybe[HashRef]');
 has 'cards'       => (is => 'ro', isa => 'Net::Stripe::List');
 has 'account_balance' => (is => 'ro', isa => 'Maybe[Int]', default => 0);
+has 'default_card' => (is => 'rw', isa => 'Maybe[Net::Stripe::Token|Net::Stripe::Card|Str]');
 
 # API object args
 
 has 'id'           => (is => 'ro', isa => 'Maybe[Str]');
 has 'deleted'      => (is => 'ro', isa => 'Maybe[Bool|Object]', default => 0);
-has 'default_card' => (is => 'ro', isa => 'Maybe[Net::Stripe::Token|Net::Stripe::Card|Str]');
 has 'subscriptions' => (is => 'ro', isa => 'Net::Stripe::List');
 has 'subscription' => (is => 'ro',
                        lazy => 1,
@@ -42,7 +42,7 @@ sub _build_subscription {
 method form_fields {
     return $self->form_fields_for(
         qw/email description trial_end account_balance quantity card plan coupon
-            metadata/
+            metadata default_card/
     );
 }
 
