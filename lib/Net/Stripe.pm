@@ -1016,6 +1016,8 @@ L<https://stripe.com/docs/api#create_plan>
 
 =item * statement_descriptor - Str - optional
 
+=item * metadata - HashRef - optional
+
 =back
 
 Returns a L<Net::Stripe::Plan> object.

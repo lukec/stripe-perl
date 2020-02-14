@@ -20,11 +20,12 @@ has 'interval_count'    => (is => 'ro', isa => 'Maybe[Int]', required => 0);
 has 'name'              => (is => 'ro', isa => 'Maybe[Str]', required => 1);
 has 'trial_period_days' => (is => 'ro', isa => 'Maybe[Int]');
 has 'statement_descriptor' => (is => 'ro', isa => 'Maybe[StatementDescriptor]', required => 0);
+has 'metadata'          => (is => 'ro', isa => 'Maybe[HashRef]');
 
 method form_fields {
     return $self->form_fields_for(
         qw/id amount currency interval interval_count name statement_descriptor
-            trial_period_days/
+            trial_period_days metadata/
     );
 }
 

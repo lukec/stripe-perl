@@ -119,7 +119,7 @@ Plans: {
     Basic_successful_use: {
         # Notice that the plan ID requires uri escaping
         my $id = $future_ymdhms;
-        my $plan = $stripe->post_plan(
+        my %plan_args = (
             id => $id,
             amount => 0,
             currency => 'usd',
@@ -127,17 +127,22 @@ Plans: {
             name => "Test Plan - $future",
             trial_period_days => 10,
             statement_descriptor => 'Statement Descr',
+            metadata => {
+                'somemetadata' => 'hello world',
+            },
         );
-        isa_ok $plan, 'Net::Stripe::Plan',
-            'I love it when a plan comes together';
-        is $plan->statement_descriptor, 'Statement Descr', 'plan statement_descriptor matches';
+        my $plan = $stripe->post_plan( %plan_args );
+        isa_ok $plan, 'Net::Stripe::Plan';
+        for my $f ( sort( keys( %plan_args ) ) ) {
+            is_deeply $plan->$f, $plan_args{$f}, "plan $f matches";
+        }
 
         my $newplan = $stripe->get_plan(plan_id => $id);
-        isa_ok $newplan, 'Net::Stripe::Plan',
-            'I love it when another plan comes together';
+        isa_ok $newplan, 'Net::Stripe::Plan';
         is $newplan->id, $id, 'Plan id was encoded correctly';
-        is($newplan->$_, $plan->$_, "$_ matches")
-            for qw/id amount currency interval name trial_period_days/;
+        for my $f ( sort( keys( %plan_args ) ) ) {
+            is_deeply $newplan->$f, $plan->$f, "$f matches for both plans";
+        }
 
         my $plans = $stripe->get_plans(limit => 1);
         is scalar(@{$plans->data}), 1, 'got just one plan';
@@ -146,13 +151,21 @@ Plans: {
 
         my $hash = $stripe->delete_plan($plan);
         ok $hash->{deleted}, 'delete response indicates delete was successful';
-        # swallow the expected warning rather than have it print out durring tests.
-        close STDERR;
-        open(STDERR, ">", "/dev/null");
-        eval { $stripe->get_plan(plan_id => $id) };
-        ok $@, "no longer can fetch deleted plans";
-        close STDERR;
-        open(STDERR, ">&", STDOUT);
+        is $hash->{id}, $id, 'deleted id is correct';
+        eval {
+            # swallow the expected warning rather than have it print out during tests.
+            local $SIG{__WARN__} = sub {};
+            $stripe->get_plan(plan_id => $id);
+        };
+        if ($@) {
+            my $e = $@;
+            isa_ok $e, 'Net::Stripe::Error', 'error raised is an object';
+            is $e->type, 'invalid_request_error', 'error type';
+            is $e->message, "No such plan: $id", 'error message';
+        } else {
+            fail "no longer can fetch deleted plans";
+
+        }
     }
 }
 
