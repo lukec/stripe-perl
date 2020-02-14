@@ -95,7 +95,7 @@ TypeConstraints: {
         my $invalid = 'xxx_123';
         isa_ok $constraint, 'Moose::Meta::TypeConstraint';
         lives_ok { $constraint->assert_valid( $valid ) } "valid $object id";
-        throws_ok { $constraint->assert_valid( $invalid ) } qr/Value '$invalid' must be a $object id string of the form $prefix\.\+/, 'invalid source id';
+        throws_ok { $constraint->assert_valid( $invalid ) } qr/Value '$invalid' must be a $object id string of the form $prefix\.\+/, "invalid $object id";
     }
 }
 
