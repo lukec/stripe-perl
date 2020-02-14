@@ -172,25 +172,29 @@ Plans: {
 Coupons: {
     Basic_successful_use: {
         my $id = "coupon-$future_ymdhms";
-        my $coupon = $stripe->post_coupon(
+        my %coupon_args = (
             id => $id,
             percent_off => 50,
             duration => 'repeating',
             duration_in_months => 3,
             max_redemptions => 5,
             redeem_by => time() + 100,
+            metadata => {
+                'somemetadata' => 'hello world',
+            },
         );
-        isa_ok $coupon, 'Net::Stripe::Coupon',
-            'I love it when a coupon comes together';
-        is $coupon->id, $id, 'coupon id is the same';
+        my $coupon = $stripe->post_coupon( %coupon_args );
+        isa_ok $coupon, 'Net::Stripe::Coupon';
+        for my $f ( sort( keys( %coupon_args ) ) ) {
+            is_deeply $coupon->$f, $coupon_args{$f}, "coupon $f matches";
+        }
 
         my $newcoupon = $stripe->get_coupon(coupon_id => $id);
-        isa_ok $newcoupon, 'Net::Stripe::Coupon',
-            'I love it when another coupon comes together';
+        isa_ok $newcoupon, 'Net::Stripe::Coupon';
         is $newcoupon->id, $id, 'coupon id was encoded correctly';
-        is($newcoupon->$_, $coupon->$_, "$_ matches")
-            for qw/id percent_off duration duration_in_months
-                   max_redemptions redeem_by/;
+        for my $f ( sort( keys( %coupon_args ) ) ) {
+            is_deeply $newcoupon->$f, $coupon->$f, "$f matches for both coupon";
+        }
 
         my $coupons = $stripe->get_coupons(limit => 1);
         is scalar(@{$coupons->data}), 1, 'got just one coupon';
@@ -198,13 +202,21 @@ Coupons: {
 
         my $hash = $stripe->delete_coupon($coupon);
         ok $hash->{deleted}, 'delete response indicates delete was successful';
-        # swallow the expected warning rather than have it print out durring tests.
-        close STDERR;
-        open(STDERR, ">", "/dev/null");
-        eval { $stripe->get_coupon(coupon_id => $id) };
-        ok $@, "no longer can fetch deleted coupons";
-        close STDERR;
-        open(STDERR, ">&", STDOUT);
+        is $hash->{id}, $id, 'deleted id is correct';
+        eval {
+            # swallow the expected warning rather than have it print out during tests.
+            local $SIG{__WARN__} = sub {};
+            $stripe->get_coupon(coupon_id => $id);
+        };
+        if ($@) {
+            my $e = $@;
+            isa_ok $e, 'Net::Stripe::Error', 'error raised is an object';
+            is $e->type, 'invalid_request_error', 'error type';
+            is $e->message, "No such coupon: $id", 'error message';
+        } else {
+            fail "no longer can fetch deleted coupons";
+
+        }
     }
 }
 
