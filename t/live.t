@@ -65,40 +65,6 @@ my $updated_fake_card = {
 # unique card id each time, which is sufficient for the behaviors we are testing
 my $token_id_visa = 'tok_visa';
 
-# add a temporary test for serializing multi-level hashrefs until we have
-# actual methods with parameters that exercise this code
-Placeholder: {
-    my $return = { Net::Stripe::Resource::form_fields_for_hashref( "hashref", { level1=> { level2=> "value" } } ) };
-    is_deeply $return, { 'hashref[level1][level2]' => 'value' };
-}
-
-TypeConstraints: {
-    my %id_objects = (
-        StripeTokenId => {
-            object => 'token',
-            prefix => 'tok_',
-        },
-        StripeCardId => {
-            object => 'card',
-            prefix => 'card_',
-        },
-        StripeCustomerId => {
-            object => 'customer',
-            prefix => 'cus_',
-        },
-    );
-    foreach my $name ( sort( keys( %id_objects ) ) ) {
-        my $constraint = Moose::Util::TypeConstraints::find_type_constraint( $name );
-        my $object = $id_objects{$name}->{object};
-        my $prefix = $id_objects{$name}->{prefix};
-        my $valid = $prefix . '123';
-        my $invalid = 'xxx_123';
-        isa_ok $constraint, 'Moose::Meta::TypeConstraint';
-        lives_ok { $constraint->assert_valid( $valid ) } "valid $object id";
-        throws_ok { $constraint->assert_valid( $invalid ) } qr/Value '$invalid' must be a $object id string of the form $prefix\.\+/, "invalid $object id";
-    }
-}
-
 Card_Tokens: {
     Basic_successful_use: {
         my $token = $stripe->get_token( token_id => $token_id_visa );
