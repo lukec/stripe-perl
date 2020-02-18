@@ -24,6 +24,8 @@ use Net::Stripe::BalanceTransaction;
 use Net::Stripe::List;
 use Net::Stripe::LineItem;
 use Net::Stripe::Refund;
+use Net::Stripe::EphemeralKey;
+
 
 # ABSTRACT: API client for Stripe.com
 
@@ -1660,6 +1662,36 @@ InvoiceItems: {
     }
 }
 
+=ephemeralkey_method post_ephemeral_key
+
+Create an Ephemeral Key, currently undocumented.
+
+L<https://stripe.com/docs/api>
+
+=over
+
+=item * customer - L<Net::Stripe::Customer> or Str
+
+=back
+
+Returns a L<Net::Stripe::EphemeralKey> object.
+
+  $stripe->post_ephemeral_key(customer => 'test');
+=cut
+
+EphemeralKeys: {
+  method post_ephemeral_key(Net::Stripe::Customer|Str :$customer) {
+      if (ref($customer)) {
+          $customer = $customer->id;
+      }
+      warn "Posting Ephemeral Key for $customer";
+      return $self->_post("ephemeral_keys",
+        { customer => $customer },
+        '2018-02-28');
+  }
+}
+
+
 # Helper methods
 
 method _get(Str $path) {
@@ -1741,9 +1773,10 @@ sub convert_to_form_fields {
     return $hash;
 }
 
-method _post(Str $path, $obj?) {
+method _post(Str $path, $obj?, $version?) {
     my $req = POST $self->api_base . '/' . $path,
         ($obj ? (Content => [ref($obj) eq 'HASH' ? %{convert_to_form_fields($obj)} : $obj->form_fields]) : ());
+    defined($version) ? $req->header('Stripe-Version' => $version) : undef;
     return $self->_make_request($req);
 }
 
