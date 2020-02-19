@@ -3,6 +3,8 @@ use strict;
 use warnings;
 use Test::More;
 use Test::Exception;
+use DateTime;
+use DateTime::Duration;
 
 # These tests should not do any network activity
 
@@ -101,6 +103,39 @@ TypeConstraints: {
         lives_ok { $constraint->assert_valid( $valid ) } "valid $object id";
         throws_ok { $constraint->assert_valid( $invalid ) } qr/Value '$invalid' must be a $object id string of the form $prefix\.\+/, "invalid $object id";
     }
+    my $stripe_resource_type = Moose::Util::TypeConstraints::find_type_constraint( 'StripeResourceObject' );
+    lives_ok { $stripe_resource_type->assert_valid( Net::Stripe::Customer->new() ) } "valid stripe resource object";
+    throws_ok { $stripe_resource_type->assert_valid( DateTime->now ) } qr/Value '.+' must be an object that inherits from Net::Stripe::Resource with a 'form_fields' method/, "invalid stripe resource object";
+}
+
+# explicitly exercise a possibly-unused code path in convert_to_form_fields()
+# in order to prevent regressions until we are able to verify that it is
+# unused and properly deprecate it
+For_later_deprecation: {
+    my $future = DateTime->now + DateTime::Duration->new(months=> 1, years => 1);
+    my $card_obj = Net::Stripe::Card->new(
+        number => 4242424242424242,
+        cvc => 123,
+        exp_month => $future->month,
+        exp_year => $future->year,
+    );
+    my $customer_obj = Net::Stripe::Customer->new(
+        email => 'anonymous@example.com',
+        account_balance => 1000,
+    );
+    # mimick previous code structure in convert_to_form_fields()
+    my $expected;
+    foreach my $obj ( $card_obj, $customer_obj ) {
+        my %fields = $obj->form_fields();
+        foreach my $fn (keys %fields) {
+            $expected->{$fn} = $fields{$fn};
+        }
+    }
+    my $return = Net::Stripe::convert_to_form_fields( {
+        card => $card_obj,
+        customer=> $customer_obj,
+    } );
+    is_deeply $return, $expected;
 }
 
 done_testing();

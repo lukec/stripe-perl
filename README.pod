@@ -1091,6 +1091,25 @@ There is now a dedicated block in convert_to_form_fields for this operation.
 This update was necessary because of the addition of update_card(), which
 accepts a card hashref, which may include metadata.
 
+=item encode objects in convert_to_form_fields()
+
+We removed the nested tertiary operator in _post() and updated
+convert_to_form_fields() so that it now handles encoding of objects, both
+top-level and nested. This streamlines the hashref vs object serailizing
+code, making it easy to adapt to other methods.
+
+=item remove manual serialization in _get_collections() and _get_with_args()
+
+We were using string contatenation to both serilize the individual query args,
+in _get_collections(), and to join the individual query args together, in
+_get_with_args(). This also involved some unnecessary duplication of the
+logic that convert_to_form_fields() was already capable of handling. We now
+use convert_to_form_fields() to process the passed data, and L<URI> to
+encode and serialize the query string. Along with other updates to
+convert_to_form_fields(), _get() can now easily handle the same calling
+form as _post(), eliminating the need for _get_collections() and
+_get_with_args(). We have also updated _delete() accordingly.
+
 =back
 
 =head3 UPDATES

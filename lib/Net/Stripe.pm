@@ -8,6 +8,7 @@ use HTTP::Request::Common qw/GET POST DELETE/;
 use MIME::Base64 qw/encode_base64/;
 use URI::Escape qw/uri_escape/;
 use JSON qw/decode_json/;
+use URI qw//;
 use Net::Stripe::TypeConstraints;
 use Net::Stripe::Token;
 use Net::Stripe::Invoiceitem;
@@ -182,6 +183,25 @@ metadata must be encoded properly before being passed to the Stripe API.
 There is now a dedicated block in convert_to_form_fields for this operation.
 This update was necessary because of the addition of update_card(), which
 accepts a card hashref, which may include metadata.
+
+=item encode objects in convert_to_form_fields()
+
+We removed the nested tertiary operator in _post() and updated
+convert_to_form_fields() so that it now handles encoding of objects, both
+top-level and nested. This streamlines the hashref vs object serailizing
+code, making it easy to adapt to other methods.
+
+=item remove manual serialization in _get_collections() and _get_with_args()
+
+We were using string contatenation to both serilize the individual query args,
+in _get_collections(), and to join the individual query args together, in
+_get_with_args(). This also involved some unnecessary duplication of the
+logic that convert_to_form_fields() was already capable of handling. We now
+use convert_to_form_fields() to process the passed data, and L<URI> to
+encode and serialize the query string. Along with other updates to
+convert_to_form_fields(), _get() can now easily handle the same calling
+form as _post(), eliminating the need for _get_collections() and
+_get_with_args(). We have also updated _delete() accordingly.
 
 =back
 
@@ -432,13 +452,14 @@ Charges: {
         if (ref($customer)) {
             $customer = $customer->id;
         }
-        $self->_get_collections('charges',
-                                created => $created,
-                                customer => $customer,
-                                ending_before => $ending_before,
-                                limit => $limit,
-                                starting_after => $starting_after
-                            );
+        my %args = (
+            created => $created,
+            customer => $customer,
+            ending_before => $ending_before,
+            limit => $limit,
+            starting_after => $starting_after,
+        );
+        $self->_get('charges', \%args);
     }
 
     method capture_charge(
@@ -644,11 +665,12 @@ Customers: {
         if (ref($customer)) {
             $customer = $customer->id;
         }
-        return $self->_get_collections("customers/$customer/subscriptions",
-                           ending_before => $ending_before,
-                           limit => $limit,
-                           starting_after => $starting_after
-                       );
+        my %args = (
+            ending_before => $ending_before,
+            limit => $limit,
+            starting_after => $starting_after,
+        );
+        return $self->_get("customers/$customer/subscriptions", \%args);
     }
 
     method get_customer(Str :$customer_id) {
@@ -663,13 +685,14 @@ Customers: {
     }
 
     method get_customers(HashRef :$created?, Str :$ending_before?, Int :$limit?, Str :$starting_after?, Str :$email?) {
-        $self->_get_collections('customers',
-                                created => $created,
-                                ending_before => $ending_before,
-                                limit => $limit,
-                                starting_after => $starting_after,
-                                email => $email,
-                            );
+        my %args = (
+            created => $created,
+            ending_before => $ending_before,
+            limit => $limit,
+            starting_after => $starting_after,
+            email => $email,
+        );
+        $self->_get('customers', \%args);
     }
 }
 
@@ -798,12 +821,14 @@ Cards: {
             $customer = $customer->id;
         }
 
-        $self->_get_collections("customers/$customer/sources",
-                                object => "card",
-                                created => $created,
-                                ending_before => $ending_before,
-                                limit => $limit,
-                                starting_after => $starting_after);
+        my %args = (
+            object => "card",
+            created => $created,
+            ending_before => $ending_before,
+            limit => $limit,
+            starting_after => $starting_after,
+        );
+        $self->_get("customers/$customer/sources", \%args);
     }
 
     method post_card(Net::Stripe::Customer|StripeCustomerId :$customer!,
@@ -962,9 +987,9 @@ Subscriptions: {
             $subscription = $subscription->id;
         }
 
-        my $query = '';
-        $query .= '?at_period_end=true' if $at_period_end;
-        return $self->_delete("customers/$customer/subscriptions/$subscription$query");
+        my %args;
+        $args{at_period_end} = 'true' if $at_period_end;
+        return $self->_delete("customers/$customer/subscriptions/$subscription", \%args);
     }
 }
 
@@ -1116,10 +1141,12 @@ Plans: {
     }
 
     method get_plans(Str :$ending_before?, Int :$limit?, Str :$starting_after?) {
-        $self->_get_collections('plans',
-                                ending_before => $ending_before,
-                                limit => $limit,
-                                starting_after => $starting_after);
+        my %args = (
+            ending_before => $ending_before,
+            limit => $limit,
+            starting_after => $starting_after,
+        );
+        $self->_get('plans', \%args);
     }
 }
 
@@ -1245,10 +1272,12 @@ Coupons: {
     }
 
     method get_coupons(Str :$ending_before?, Int :$limit?, Str :$starting_after?) {
-        $self->_get_collections('coupons',
-                                ending_before => $ending_before,
-                                limit => $limit,
-                                starting_after => $starting_after);
+        my %args = (
+            ending_before => $ending_before,
+            limit => $limit,
+            starting_after => $starting_after,
+        );
+        $self->_get('coupons', \%args);
     }
 }
 
@@ -1465,18 +1494,24 @@ Invoices: {
             $customer = $customer->id
         }
 
-        $self->_get_collections('invoices', customer => $customer,
-                            date => $date,
-                            ending_before => $ending_before,
-                            limit => $limit,
-                            starting_after => $starting_after);
+        my %args = (
+            customer => $customer,
+            date => $date,
+            ending_before => $ending_before,
+            limit => $limit,
+            starting_after => $starting_after,
+        );
+        $self->_get('invoices', \%args);
     }
 
     method get_upcominginvoice(Net::Stripe::Customer|Str $customer) {
         if (ref($customer)) {
             $customer = $customer->id;
         }
-        return $self->_get("invoices/upcoming?customer=$customer");
+        my %args = (
+            customer => $customer,
+        );
+        return $self->_get("invoices/upcoming", \%args);
     }
 }
 
@@ -1651,84 +1686,51 @@ InvoiceItems: {
         if (ref($customer)) {
             $customer = $customer->id;
         }
-        $self->_get_collections('invoiceitems',
-                                created => $created,
-                                ending_before => $ending_before,
-                                limit => $limit,
-                                starting_after => $starting_after
-                            );
+        my %args = (
+            created => $created,
+            ending_before => $ending_before,
+            limit => $limit,
+            starting_after => $starting_after,
+        );
+        $self->_get('invoiceitems', \%args);
     }
 }
 
 # Helper methods
 
-method _get(Str $path) {
-    my $req = GET $self->api_base . '/' . $path;
+method _get(Str $path!, HashRef|StripeResourceObject $obj?) {
+    my $uri_obj = URI->new( $self->api_base . '/' . $path );
+
+    if ( $obj ) {
+        my %form_fields = %{ convert_to_form_fields( $obj ) };
+        $uri_obj->query_form( \%form_fields ) if %form_fields;
+    }
+
+    my $req = GET $uri_obj->as_string;
     return $self->_make_request($req);
 }
 
-method _get_with_args(Str $path, $args?) {
-    if (@$args) {
-        $path .= "?" . join('&', @$args);
-    }
-    return $self->_get($path);
-}
+method _delete(Str $path!, HashRef|StripeResourceObject $obj?) {
+    my $uri_obj = URI->new( $self->api_base . '/' . $path );
 
-sub _get_collections {
-    my $self = shift;
-    my $path = shift;
-    my %args = @_;
-    my @path_args;
-    if (my $c = $args{limit}) {
-        push @path_args, "limit=$c";
-    }
-    if (my $o = $args{offset}) {
-        push @path_args, "offset=$o";
-    }
-    if (my $c = $args{customer}) {
-        push @path_args, "customer=$c";
-    }
-    if (my $c = $args{object}) {
-        push @path_args, "object=$c";
-    }
-    if (my $c = $args{ending_before}) {
-        push @path_args, "ending_before=$c";
-    }
-    if (my $c = $args{starting_after}) {
-        push @path_args, "starting_after=$c";
-    }
-    if (my $e = $args{email}) {
-        push @path_args, "email=$e";
+    if ( $obj ) {
+        my %form_fields = %{ convert_to_form_fields( $obj ) };
+        $uri_obj->query_form( \%form_fields ) if %form_fields;
     }
 
-    # example: $Stripe->get_charges( 'count' => 100, 'created' => { 'gte' => 1397663381 } );
-    if (defined($args{created})) {
-      my %c = %{$args{created}};
-      foreach my $key (keys %c) {
-        if ($key =~ /(?:l|g)te?/) {
-          push @path_args, "created[".$key."]=".$c{$key};
-        }
-      }
-    }
-    return $self->_get_with_args($path, \@path_args);
-}
-
-method _delete(Str $path) {
-    my $req = DELETE $self->api_base . '/' . $path;
+    my $req = DELETE $uri_obj->as_string;
     return $self->_make_request($req);
 }
 
 sub convert_to_form_fields {
     my $hash = shift;
+    my $stripe_resource_object_type = Moose::Util::TypeConstraints::find_type_constraint( 'StripeResourceObject' );
     if (ref($hash) eq 'HASH') {
         my $r = {};
         foreach my $key (grep { defined($hash->{$_}) }keys %$hash) {
-            if (ref($hash->{$key}) =~ /^Net::Stripe/) {
-                my %fields = $hash->{$key}->form_fields();
-                foreach my $fn (keys %fields) {
-                    $r->{$fn} = $fields{$fn};
-                }
-            } elsif ($key eq 'metadata' && ref($hash->{$key}) eq 'HASH') {
+            if ( $stripe_resource_object_type->check( $hash->{$key} ) ) {
+                %{$r} = ( %{$r}, %{ convert_to_form_fields($hash->{$key}) } );
+            } elsif (ref($hash->{$key}) eq 'HASH') {
                 foreach my $fn (keys %{$hash->{$key}}) {
                     $r->{$key . '[' . $fn . ']'} = $hash->{$key}->{$fn};
                 }
@@ -1737,13 +1739,20 @@ sub convert_to_form_fields {
             }
         }
         return $r;
+    } elsif ($stripe_resource_object_type->check($hash)) {
+        return { $hash->form_fields };
     }
     return $hash;
 }
 
-method _post(Str $path, $obj?) {
-    my $req = POST $self->api_base . '/' . $path,
-        ($obj ? (Content => [ref($obj) eq 'HASH' ? %{convert_to_form_fields($obj)} : $obj->form_fields]) : ());
+method _post(Str $path!, HashRef|StripeResourceObject $obj?) {
+    my %headers;
+    if ( $obj ) {
+        my %form_fields = %{ convert_to_form_fields( $obj ) };
+        $headers{Content} = [ %form_fields ] if %form_fields;
+    }
+
+    my $req = POST $self->api_base . '/' . $path, %headers;
     return $self->_make_request($req);
 }
 

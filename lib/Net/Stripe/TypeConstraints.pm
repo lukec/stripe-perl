@@ -32,4 +32,13 @@ subtype 'StripeCustomerId',
         sprintf( "Value '%s' must be a customer id string of the form cus_.+", $_ );
     };
 
+subtype 'StripeResourceObject',
+    as 'Object',
+    where {
+        ( $_->isa( 'Net::Stripe::Resource' ) || $_->isa( 'Net::Stripe::Card' ) ) && $_->can( 'form_fields' )
+    },
+    message {
+        sprintf( "Value '%s' must be an object that inherits from Net::Stripe::Resource with a 'form_fields' method", $_ );
+    };
+
 1;
