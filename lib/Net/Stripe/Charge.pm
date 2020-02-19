@@ -12,6 +12,7 @@ has 'amount'              => (is => 'ro', isa => 'Maybe[Int]', required => 1);
 has 'currency'            => (is => 'ro', isa => 'Maybe[Str]', required => 1);
 has 'customer'            => (is => 'ro', isa => 'Maybe[StripeCustomerId]');
 has 'card'                => (is => 'ro', isa => 'Maybe[Net::Stripe::Card|StripeTokenId|StripeCardId]');
+has 'source'              => (is => 'ro', isa => 'Maybe[Net::Stripe::Card|Net::Stripe::Source|StripeTokenId|StripeCardId|StripeSourceId]');
 has 'description'         => (is => 'ro', isa => 'Maybe[Str]');
 has 'livemode'            => (is => 'ro', isa => 'Maybe[Bool|Object]');
 has 'paid'                => (is => 'ro', isa => 'Maybe[Bool|Object]');
@@ -33,7 +34,7 @@ has 'refunds'             => (is => 'ro', isa => 'Net::Stripe::List');
 method form_fields {
     return $self->form_fields_for(
         qw/amount currency customer description application_fee receipt_email
-            capture statement_descriptor card metadata/
+            capture statement_descriptor card source metadata/
     );
 }
 

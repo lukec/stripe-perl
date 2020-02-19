@@ -19,6 +19,12 @@ around BUILDARGS => sub {
         }
     }
 
+    if (my $s = $args{source}) {
+        if (ref($s) eq 'HASH' && $s->{object} eq 'source') {
+            $args{source} = Net::Stripe::Source->new($s);
+        }
+    }
+
     for my $f (qw/card default_card/) {
         next unless $args{$f};
         next unless ref($args{$f}) eq 'HASH';
@@ -80,6 +86,7 @@ method fields_for($for) {
     my $thingy = $self->$for;
     return unless defined( $thingy );
     return ($for => $thingy->id) if $for eq 'card' && ref($thingy) eq 'Net::Stripe::Token';
+    return ($for => $thingy->id) if $for eq 'source' && ref($thingy) eq 'Net::Stripe::Token';
     return $thingy->form_fields if ref($thingy) =~ m/^Net::Stripe::/;
     return form_fields_for_hashref( $for, $thingy ) if ref( $thingy ) eq 'HASH';
     return ( $for => $self->get_form_field_value( $for ) );

@@ -2,6 +2,7 @@ package Net::Stripe;
 
 use Moose;
 use Class::Load;
+use Type::Tiny 1.008004;
 use Kavorka;
 use LWP::UserAgent;
 use HTTP::Request::Common qw/GET POST DELETE/;
@@ -14,6 +15,7 @@ use Net::Stripe::Token;
 use Net::Stripe::Invoiceitem;
 use Net::Stripe::Invoice;
 use Net::Stripe::Card;
+use Net::Stripe::Source;
 use Net::Stripe::Plan;
 use Net::Stripe::Coupon;
 use Net::Stripe::Charge;
@@ -35,7 +37,7 @@ use Net::Stripe::Refund;
  my $charge = $stripe->post_charge(  # Net::Stripe::Charge
      amount      => 12500,
      currency    => 'usd',
-     card        => $card_token,
+     source      => $card_token,
      description => 'YAPC Registration',
  );
  print "Charge was not paid!\n" unless $charge->paid;
@@ -272,7 +274,7 @@ has 'ua'            => (is => 'ro', isa => 'Object', lazy_build => 1, documentat
 
 Create a new charge.
 
-L<https://stripe.com/docs/api#create_charge>
+L<https://stripe.com/docs/api/charges/create#create_charge>
 
 =over
 
@@ -283,6 +285,8 @@ L<https://stripe.com/docs/api#create_charge>
 =item * customer - StripeCustomerId - customer to charge - optional
 
 =item * card - StripeTokenId or StripeCardId - card to use - optional
+
+=item * source - StripeTokenId or StripeCardId - source to use - optional
 
 =item * description - Str - description for the charge - optional
 
@@ -383,6 +387,7 @@ Charges: {
                        Str :$currency,
                        StripeCustomerId :$customer?,
                        StripeTokenId|StripeCardId :$card?,
+                       StripeTokenId|StripeCardId|StripeSourceId :$source?,
                        Str :$description?,
                        HashRef :$metadata?,
                        Bool :$capture?,
@@ -415,10 +420,36 @@ Charges: {
             }
         }
 
+        if ( defined( $source ) ) {
+            my $card_id_type = Moose::Util::TypeConstraints::find_type_constraint( 'StripeCardId' );
+            if ( defined( $customer ) && ! $card_id_type->check( $source ) ) {
+                die Net::Stripe::Error->new(
+                    type => "post_charge error",
+                    message => sprintf(
+                        "Invalid value '%s' passed for parameter 'source'. Charges for an existing customer can only accept a card id.",
+                        $source,
+                    ),
+                );
+            }
+
+            my $token_id_type = Moose::Util::TypeConstraints::find_type_constraint( 'StripeTokenId' );
+            my $source_id_type = Moose::Util::TypeConstraints::find_type_constraint( 'StripeSourceId' );
+            if ( ! defined( $customer ) && ! $token_id_type->check( $source ) && ! $source_id_type->check( $source ) ) {
+                die Net::Stripe::Error->new(
+                    type => "post_charge error",
+                    message => sprintf(
+                        "Invalid value '%s' passed for parameter 'source'. Charges without an existing customer can only accept a token id or source id.",
+                        $source,
+                    ),
+                );
+            }
+        }
+
         my $charge = Net::Stripe::Charge->new(amount => $amount,
                                               currency => $currency,
                                               customer => $customer,
                                               card => $card,
+                                              source => $source,
                                               description => $description,
                                               metadata => $metadata,
                                               capture => $capture,
@@ -508,7 +539,8 @@ BalanceTransactions: {
 
 Create or update a customer.
 
-L<https://stripe.com/docs/api#create_customer>
+L<https://stripe.com/docs/api/customers/create#create_customer>
+L<https://stripe.com/docs/api/customers/update#update_customer>
 
 =over
 
@@ -518,7 +550,13 @@ L<https://stripe.com/docs/api#create_customer>
 
 =item * card - L<Net::Stripe::Token> or StripeTokenId, default card for the customer, optional
 
+=item * source - StripeTokenId or StripeSourceId, source for the customer, optional
+
 =item * coupon - Str, optional
+
+=item * default_card - L<Net::Stripe::Token>, L<Net::Stripe::Card>, Str or HashRef, default card for the customer, optional
+
+=item * default_source - StripeCardId or StripeSourceId, default source for the customer, optional
 
 =item * description - Str, optional
 
@@ -537,7 +575,7 @@ L<https://stripe.com/docs/api#create_customer>
 Returns a L<Net::Stripe::Customer> object.
 
   my $customer = $stripe->post_customer(
-    card => $token_id,
+    source => $token_id,
     email => 'stripe@example.com',
     description => 'Test for Net::Stripe',
   );
@@ -624,11 +662,13 @@ Customers: {
                          Net::Stripe::Token|StripeTokenId :$card?,
                          Str :$coupon?,
                          Str :$default_card?,
+                         StripeCardId|StripeSourceId :$default_source?,
                          Str :$description?,
                          Str :$email?,
                          HashRef :$metadata?,
                          Str :$plan?,
                          Int :$quantity?,
+                         StripeTokenId|StripeSourceId :$source?,
                          Int|Str :$trial_end?) {
 
         my $customer_obj;
@@ -640,10 +680,12 @@ Customers: {
                 card => $card,
                 coupon => $coupon,
                 default_card => $default_card,
+                default_source => $default_source,
                 email => $email,
                 metadata => $metadata,
                 plan => $plan,
                 quantity => $quantity,
+                source => $source,
                 trial_end => $trial_end,
             );
             $args{id} = $customer if defined( $customer );
@@ -726,11 +768,13 @@ L<https://stripe.com/docs/api/cards/create#create_card>
 
 =item * card - L<Net::Stripe::Token> or StripeTokenId
 
+=item * source - StripeTokenId
+
 =back
 
 Returns a L<Net::Stripe::Card>.
 
-  $stripe->post_card(customer => $customer, card => $card);
+  $stripe->post_card(customer => $customer, source => $token_id);
 
 =card_method update_card
 
@@ -809,7 +853,7 @@ Cards: {
         if (ref($customer)) {
             $customer = $customer->id;
         }
-        return $self->_get("customers/$customer/cards/$card_id");
+        return $self->_get("customers/$customer/sources/$card_id");
     }
 
     method get_cards(Net::Stripe::Customer|Str :$customer,
@@ -831,12 +875,28 @@ Cards: {
         $self->_get("customers/$customer/sources", \%args);
     }
 
-    method post_card(Net::Stripe::Customer|StripeCustomerId :$customer!,
-                     Net::Stripe::Token|StripeTokenId :$card!) {
+    method post_card(
+        Net::Stripe::Customer|StripeCustomerId :$customer!,
+        Net::Stripe::Token|StripeTokenId :$card?,
+        StripeTokenId :$source?,
+    ) {
+
+        die Net::Stripe::Error->new(
+            type => "post_card error",
+            message => "One of parameters 'source' or 'card' is required.",
+        ) unless defined( $card ) || defined( $source );
+
         my $customer_id = ref( $customer ) ? $customer->id : $customer;
-        # card here is either Net::Stripe::Token or StripeTokenId
-        my $token_id = ref( $card ) ? $card->id : $card;
-        return $self->_post("customers/$customer_id/cards", {card=> $token_id});
+
+        if ( defined( $card ) ) {
+            # card here is either Net::Stripe::Token or StripeTokenId
+            my $token_id = ref( $card ) ? $card->id : $card;
+            return $self->_post("customers/$customer_id/cards", {card=> $token_id});
+        }
+
+        if ( defined( $source ) ) {
+            return $self->_post("customers/$customer_id/cards", { source=> $source });
+        }
     }
 
     method update_card(StripeCustomerId :$customer_id!,
@@ -854,7 +914,289 @@ Cards: {
           $card = $card->id;
       }
 
-      return $self->_delete("customers/$customer/cards/$card");
+      return $self->_delete("customers/$customer/sources/$card");
+    }
+}
+
+=source_method create_source
+
+Create a new source object
+
+L<https://stripe.com/docs/api/sources/create#create_source>
+
+=over
+
+=item * amount - Int - amount associated with the source
+
+=item * currency - Str - currency associated with the source
+
+=item * flow - StripeSourceFlow - authentication flow for the source
+
+=item * mandate - HashRef - information about a mandate attached to the source
+
+=item * metadata - HashRef - metadata for the source
+
+=item * owner - HashRef - information about the owner of the payment instrument
+
+=item * receiver - HashRef - parameters for the receiver flow
+
+=item * redirect - HashRef - parameters required for the redirect flow
+
+=item * source_order - HashRef - information about the items and shipping associated with the source
+
+=item * statement_descriptor - Str - descriptor for statement
+
+=item * token - StripeTokenId - token used to create the source
+
+=item * type - StripeSourceType - type of source to create - required
+
+=item * usage - StripeSourceUsage - whether the source should be reusable or not
+
+=back
+
+Returns a L<Net::Stripe::Source>
+
+  $stripe->create_source(
+      type => 'card',
+      token => $token_id,
+  );
+
+=source_method get_source
+
+Retrieve an existing source object
+
+L<https://stripe.com/docs/api/sources/retrieve#retrieve_source>
+
+=over
+
+=item * source_id - StripeSourceId - id of source to retrieve - required
+
+=item * client_secret - Str - client secret of the source
+
+=back
+
+Returns a L<Net::Stripe::Source>
+
+  $stripe->get_source(
+      source_id => $source_id,
+  );
+
+=source_method update_source
+
+Update the specified source by setting the values of the parameters passed
+
+L<https://stripe.com/docs/api/sources/update#update_source>
+
+=over
+
+=item * source_id - StripeSourceId - id of source to update - required
+
+=item * amount - Int - amount associated with the source
+
+=item * metadata - HashRef - metadata for the source
+
+=item * mandate - HashRef - information about a mandate attached to the source
+
+=item * owner - HashRef - information about the owner of the payment instrument
+
+=item * source_order - HashRef - information about the items and shipping associated with the source
+
+=back
+
+Returns a L<Net::Stripe::Source>
+
+  $stripe->update_source(
+      source_id => $source_id,
+      owner => {
+          email => $new_email,
+          phone => $new_phone,
+      },
+  );
+
+=source_method attach_source
+
+Attaches a Source object to a Customer
+
+L<https://stripe.com/docs/api/sources/attach#attach_source>
+
+=over
+
+=item * source_id - StripeSourceId - id of source to be attached - required
+
+=item * customer_id - StripeCustomerId - id of customer to which source should be attached - required
+
+=back
+
+Returns a L<Net::Stripe::Source>
+
+  $stripe->attach_source(
+      customer_id => $customer_id,
+      source_id => $source->id,
+  );
+
+=source_method detach_source
+
+Detaches a Source object from a Customer
+
+L<https://stripe.com/docs/api/sources/detach#detach_source>
+
+=over
+
+=item * source_id - StripeSourceId - id of source to be detached - required
+
+=item * customer_id - StripeCustomerId - id of customer from which source should be detached - required
+
+=back
+
+Returns a L<Net::Stripe::Source>
+
+  $stripe->detach_source(
+      customer_id => $customer_id,
+      source_id => $source->id,
+  );
+
+=source_method list_sources
+
+List all sources belonging to a Customer
+
+=over
+
+=item * customer_id - StripeCustomerId - id of customer for which source to list sources - required
+
+=item * object - Str - object type - required
+
+=item * ending_before - Str - ending before condition
+
+=item * limit - Int - maximum number of charges to return
+
+=item * starting_after - Str - starting after condition
+
+=back
+
+Returns a L<Net::Stripe::List> object containing objects of the requested type
+
+  $stripe->list_sources(
+      customer_id => $customer_id,
+      object => 'card',
+      limit => 10,
+  );
+
+=cut
+
+Sources: {
+    method create_source(
+        StripeSourceType :$type!,
+        Int :$amount?,
+        Str :$currency?,
+        StripeSourceFlow :$flow?,
+        HashRef :$mandate?,
+        HashRef :$metadata?,
+        HashRef :$owner?,
+        HashRef :$receiver?,
+        HashRef :$redirect?,
+        HashRef :$source_order?,
+        Str :$statement_descriptor?,
+        StripeTokenId :$token?,
+        StripeSourceUsage :$usage?,
+    ) {
+
+        die Net::Stripe::Error->new(
+            type => "create_source error",
+            message => "Parameter 'token' is required for source type 'card'",
+            param => 'token',
+        ) if defined( $type ) && $type eq 'card' && ! defined( $token );
+
+        my %args = (
+            amount => $amount,
+            currency => $currency,
+            flow => $flow,
+            mandate => $mandate,
+            metadata => $metadata,
+            owner => $owner,
+            receiver => $receiver,
+            redirect => $redirect,
+            source_order => $source_order,
+            statement_descriptor => $statement_descriptor,
+            token => $token,
+            type => $type,
+            usage => $usage,
+        );
+        my $source_obj = Net::Stripe::Source->new( %args );
+        return $self->_post("sources", $source_obj);
+    }
+
+    method get_source(
+        StripeSourceId :$source_id!,
+        Str :$client_secret?,
+    ) {
+        my %args = (
+            client_secret => $client_secret,
+        );
+        return $self->_get("sources/$source_id", \%args);
+    }
+
+    method update_source(
+        StripeSourceId :$source_id!,
+        Int :$amount?,
+        HashRef :$mandate?,
+        HashRef|EmptyStr :$metadata?,
+        HashRef :$owner?,
+        HashRef :$source_order?,
+    ) {
+        my %args = (
+            amount => $amount,
+            mandate => $mandate,
+            metadata => $metadata,
+            owner => $owner,
+            source_order => $source_order,
+        );
+        my $source_obj = Net::Stripe::Source->new( %args );
+
+        my @one_of = qw/ amount mandate metadata owner source_order /;
+        my @defined = grep { defined( $source_obj->$_ ) } @one_of;
+
+        die Net::Stripe::Error->new(
+            type => "update_source error",
+            message => sprintf( "at least one of: %s is required to update a source",
+                join( ', ', @one_of ),
+            ),
+        ) if ! @defined;
+
+        return $self->_post("sources/$source_id", $source_obj);
+    }
+
+    method attach_source (
+        StripeCustomerId :$customer_id!,
+        StripeSourceId :$source_id!,
+    ) {
+        my %args = (
+            source => $source_id,
+        );
+        return $self->_post("customers/$customer_id/sources", \%args);
+    }
+
+    method detach_source(
+        StripeCustomerId :$customer_id!,
+        StripeSourceId :$source_id!,
+    ) {
+      return $self->_delete("customers/$customer_id/sources/$source_id");
+    }
+
+    # undocumented API endpoint
+    method list_sources(
+        StripeCustomerId :$customer_id!,
+        Str :$object!,
+        Str :$ending_before?,
+        Int :$limit?,
+        Str :$starting_after?,
+    ) {
+        my %args = (
+            ending_before => $ending_before,
+            limit => $limit,
+            object => $object,
+            starting_after => $starting_after,
+        );
+        return $self->_get("customers/$customer_id/sources", \%args);
     }
 }
 
@@ -943,6 +1285,7 @@ Subscriptions: {
                              Str :$coupon?,
                              Int|Str :$trial_end?,
                              Net::Stripe::Card|Net::Stripe::Token|Str :$card?,
+                             Net::Stripe::Card|Net::Stripe::Token|Str :$source?,
                              Int :$quantity? where { $_ >= 0 },
                              Num :$application_fee_percent?,
                              Bool :$prorate? = 1
@@ -960,6 +1303,7 @@ Subscriptions: {
                         coupon => $coupon,
                         trial_end => $trial_end,
                         card => $card,
+                        source => $source,
                         prorate => $prorate,
                         quantity => $quantity,
                         application_fee_percent => $application_fee_percent);
@@ -1828,6 +2172,9 @@ sub _hash_to_object {
     # compatible with Net::Stripe::List
     $hash = _pre_2012_10_26_processing( $hash );
 
+    # coerce post-2015-02-18 source-type args to to card-type args
+    $hash = _post_2015_02_18_processing( $hash );
+
     foreach my $k (grep { ref($hash->{$_}) } keys %$hash) {
         my $v = $hash->{$k};
         if (ref($v) eq 'HASH' && defined($v->{object})) {
@@ -1880,7 +2227,7 @@ sub _array_to_list {
 # compatible with Net::Stripe::List
 sub _pre_2011_08_01_processing {
     my $hash = shift;
-    foreach my $type ( qw/ cards subscriptions / ) {
+    foreach my $type ( qw/ cards sources subscriptions / ) {
         if ( exists( $hash->{$type} ) && ref( $hash->{$type} ) eq 'ARRAY' ) {
             $hash->{$type} = _array_to_list( delete( $hash->{$type} ) );
             my $customer_id;
@@ -1968,6 +2315,42 @@ sub _pre_2012_10_26_processing {
 
         # mimic the url sent with standard Stripe lists
         $hash->{lines}->{url} = "/v1/invoices/upcoming/lines?customer=$customer_id";
+    }
+    return $hash;
+}
+
+# coerce post-2015-02-18 source-type args to to card-type args
+sub _post_2015_02_18_processing {
+    my $hash = shift;
+
+    if (
+        exists( $hash->{object} ) &&
+        ( $hash->{object} eq 'charge' || $hash->{object} eq 'customer' )
+    ) {
+        if (
+            ! exists( $hash->{card} ) &&
+            exists( $hash->{source} ) && ref( $hash->{source} ) eq 'HASH' &&
+            exists( $hash->{source}->{object} ) && $hash->{source}->{object} eq 'card'
+        ) {
+            $hash->{card} = Storable::dclone( $hash->{source} );
+        }
+
+        if (
+            ! exists( $hash->{cards} ) &&
+            exists( $hash->{sources} ) && ref( $hash->{sources} ) eq 'HASH' &&
+            exists( $hash->{sources}->{object} ) && $hash->{sources}->{object} eq 'list'
+        ) {
+            $hash->{cards} = Storable::dclone( $hash->{sources} );
+        }
+
+        my $card_id_type = Moose::Util::TypeConstraints::find_type_constraint( 'StripeCardId' );
+        if (
+            ! exists( $hash->{default_card} ) &&
+            exists( $hash->{default_source} ) &&
+            $card_id_type->check( $hash->{default_source} )
+        ) {
+            $hash->{default_card} = $hash->{default_source};
+        }
     }
     return $hash;
 }

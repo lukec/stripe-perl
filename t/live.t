@@ -32,33 +32,75 @@ my $future_future = $future + DateTime::Duration->new(years => 1);
 my $stripe = Net::Stripe->new(api_key => $API_KEY, debug => 1);
 isa_ok $stripe, 'Net::Stripe', 'API object created today';
 
-my $fake_card = {
+my $fake_card_exp = {
     exp_month => $future->month,
     exp_year  => $future->year,
-    name      => 'Anonymous',
-    metadata  => {
-        'somecardmetadata' => 'testing, testing, 1-2-3',
-    },
-    address_line1   => '123 Main Street',
-    address_city    => 'Anytown',
-    address_state   => 'Anystate',
-    address_zip     => '55555',
-    address_country => 'US',
 };
 
-my $updated_fake_card = {
-    exp_month       => $future_future->month,
-    exp_year        => $future_future->year,
-    name            => 'Dr. Anonymous',
-    metadata  => {
-        'somenewcardmetadata' => 'can you hear me now?',
-    },
-    address_line1   => '321 Easy Street',
-    address_city    => 'Beverly Hills',
-    address_state   => 'California',
-    address_zip     => '90210',
-    address_country => 'US',
+my $fake_name = 'Anonymous';
+
+my $fake_metadata = {
+    'somecardmetadata' => 'testing, testing, 1-2-3',
 };
+
+my $fake_address = {
+    line1       => '123 Main Street',
+    line2       => '',
+    city        => 'Anytown',
+    state       => 'Anystate',
+    postal_code => '55555',
+    country     => 'US',
+};
+
+my $fake_email = 'anonymous@example.com';
+my $fake_phone = '555-555-1212';
+
+my $fake_card = {
+    %$fake_card_exp,
+    name      => $fake_name,
+    metadata  => $fake_metadata,
+};
+
+for my $field ( sort( keys( %$fake_address ) ) ) {
+  my $key = 'address_'.$field;
+  $key = 'address_zip' if $key eq 'address_postal_code';
+  $fake_card->{$key} = $fake_address->{$field};
+}
+
+my $updated_fake_card_exp = {
+    exp_month => $future_future->month,
+    exp_year  => $future_future->year,
+};
+
+my $updated_fake_name = 'Dr. Anonymous';
+
+my $updated_fake_metadata = {
+    'somenewcardmetadata' => 'can you hear me now?',
+};
+
+my $updated_fake_address = {
+    line1       => '321 Easy Street',
+    line2       => '',
+    city        => 'Beverly Hills',
+    state       => 'California',
+    postal_code => '90210',
+    country     => 'US',
+};
+
+my $updated_fake_email = 'dr.anonymous@example.com';
+my $updated_fake_phone = '310-555-1212';
+
+my $updated_fake_card = {
+    %$updated_fake_card_exp,
+    name      => $fake_name,
+    metadata  => $updated_fake_metadata,
+};
+
+for my $field ( sort( keys( %$updated_fake_address ) ) ) {
+  my $key = 'address_'.$field;
+  $key = 'address_zip' if $key eq 'address_postal_code';
+  $updated_fake_card->{$key} = $updated_fake_address->{$field};
+}
 
 # passing a test token id to get_token() retrieves a token object with a card
 # that has the same card number, based on the test token passed, but it has a
@@ -79,6 +121,217 @@ Card_Tokens: {
         isa_ok $same, 'Net::Stripe::Token', 'got a token back';
         is $same->id, $token->id, 'token id matches';
     }
+}
+
+Sources: {
+    Create_for_payment_type_card: {
+        eval {
+            $stripe->create_source(
+                type => 'card',
+            );
+        };
+        if ($@) {
+            my $e = $@;
+            isa_ok $e, 'Net::Stripe::Error', 'error raised is an object';
+            is $e->type, 'create_source error', 'error type';
+            is $e->message, "Parameter 'token' is required for source type 'card'", 'error message';
+            is $e->param, 'token', 'error param';
+        } else {
+            fail 'missing card';
+        }
+
+        my $source = $stripe->create_source(
+            type => 'card',
+            token => $token_id_visa,
+        );
+        isa_ok $source, 'Net::Stripe::Source';
+        is $source->type, 'card', 'source type is card';
+
+        ok defined( $source->card ), 'source has card';
+        is $source->card->{last4}, '4242', 'card last4 matches';
+    }
+
+    # special source types are required to test the passing of:
+    # mandate, redirect, source_order.
+    # so we cannot test them at this time.
+    Create_with_generic_fields: {
+        my %source_args = (
+            amount => 1234,
+            currency => 'usd',
+            owner => {
+                address => $fake_address,
+                email => $fake_email,
+                name => $fake_name,
+                phone => $fake_phone,
+            },
+            metadata => $fake_metadata,
+            statement_descriptor => 'Statement Descriptor',
+            usage => 'single_use',
+        );
+        my $source = $stripe->create_source(
+            type => 'card',
+            token => $token_id_visa,
+            %source_args,
+        );
+        isa_ok $source, 'Net::Stripe::Source';
+        for my $field (qw/amount client_secret created currency flow id livemode metadata owner statement_descriptor status type usage/) {
+            ok defined( $source->$field ), "source has $field";
+        }
+    }
+
+    Create_with_receiver_flow_fields: {
+        my %source_args = (
+            type => 'ach_credit_transfer',
+            amount => 1234,
+            currency => 'usd',
+            flow => 'receiver',
+            receiver => {
+                refund_attributes_method => 'manual',
+            },
+            statement_descriptor => 'Statement Descr',
+        );
+        my $source = $stripe->create_source(
+            %source_args,
+        );
+        isa_ok $source, 'Net::Stripe::Source';
+
+        # we cannot use is_deeply on the entire hash because the returned
+        # 'receiver' hash has some keys that do not exist in our hash
+        for my $f ( sort( grep { $_ ne 'receiver' } keys( %source_args ) ) ) {
+            is $source->$f, $source_args{$f}, "source $f matches";
+        }
+        for my $f ( sort( keys( %{$source_args{receiver}} ) ) ) {
+            is $source->receiver->{$f}, $source_args{receiver}->{$f}, "source receiver $f matches";
+        }
+    }
+
+    Retrieve: {
+        my $source = $stripe->create_source(
+            type => 'card',
+            token => $token_id_visa,
+        );
+        isa_ok $source, 'Net::Stripe::Source';
+
+        my $retrieved = $stripe->get_source( source_id => $source->id );
+        isa_ok $retrieved, 'Net::Stripe::Source';
+        is $retrieved->id, $source->id, 'retrieved source id matches';
+    }
+
+    Attach_and_detach: {
+        my $source = $stripe->create_source(
+            type => 'card',
+            token => $token_id_visa,
+        );
+        isa_ok $source, 'Net::Stripe::Source';
+
+        my $customer = $stripe->post_customer();
+        my $attached = $stripe->attach_source(
+            customer_id => $customer->id,
+            source_id => $source->id
+        );
+        isa_ok $attached, 'Net::Stripe::Source';
+        is $attached->id, $source->id, 'attached source id matches';
+
+        my $sources = $stripe->list_sources(
+            customer_id => $customer->id,
+            object => 'source',
+        );
+        isa_ok $sources, 'Net::Stripe::List';
+        my @sources = $sources->elements;
+        is scalar( @sources ), 1, 'customer has one card';
+        is $sources[0]->id, $source->id, "list element source id matches";
+
+        my $detached = $stripe->detach_source(
+            customer_id => $customer->id,
+            source_id => $source->id,
+        );
+        isa_ok $detached, 'Net::Stripe::Source';
+        is $detached->id, $source->id, "detached source id matches";
+        is $detached->status, 'consumed', 'detached source status is "consumed"';
+
+        $sources = $stripe->list_sources(
+            customer_id => $customer->id,
+            object => 'source',
+        );
+        isa_ok $sources, 'Net::Stripe::List';
+        @sources = $sources->elements;
+        is scalar( @sources ), 0, 'customer has zero cards';
+    }
+
+    Update: {
+        my %source_args = (
+            owner => {
+                address => $fake_address,
+                email => $fake_email,
+                name => $fake_name,
+                phone => $fake_phone,
+            },
+            metadata => $fake_metadata,
+        );
+        my $source = $stripe->create_source(
+            type => 'card',
+            token => $token_id_visa,
+            %source_args,
+        );
+        isa_ok $source, 'Net::Stripe::Source';
+
+        # we cannot use is_deeply on the entire hash because the returned
+        # 'owner' hash has some keys that do not exist in our hash
+        for my $f ( sort( grep { $_ ne 'owner' } keys( %source_args ) ) ) {
+            is_deeply $source->$f, $source_args{$f}, "source $f matches";
+        }
+        for my $f ( sort( keys( %{$source_args{owner}} ) ) ) {
+            is_deeply $source->owner->{$f}, $source_args{owner}->{$f}, "source owner $f matches";
+        }
+
+        my %updated_source_args = (
+            owner => {
+                address => $updated_fake_address,
+                email => $updated_fake_email,
+                name => $updated_fake_name,
+                phone => $updated_fake_phone,
+            },
+            metadata => $updated_fake_metadata,
+        );
+        my $updated = $stripe->update_source(
+            source_id => $source->id,
+            %updated_source_args,
+        );
+
+        for my $f ( sort( grep { $_ ne 'owner' } keys( %updated_source_args ) ) ) {
+            if ( ref( $updated_source_args{$f} ) eq 'HASH' ) {
+                my $merged = { %{$source_args{$f} || {}}, %{$updated_source_args{$f} || {}} };
+                is_deeply $updated->$f, $merged, "updated source $f matches";
+            } else {
+                is $updated->$f, $updated_source_args{$f}, "updated source $f matches";
+            }
+        }
+
+        for my $f ( sort( grep { $_ !~ /^verified_/ } keys( %{$updated_source_args{owner}} ) ) ) {
+            is_deeply $updated->owner->{$f}, $updated_source_args{owner}->{$f}, "updated source owner $f matches";
+        }
+
+        $updated = $stripe->update_source(
+            source_id => $source->id,
+            metadata => '',
+        );
+        is_deeply $updated->metadata, {}, "cleared source metadata";
+
+        eval {
+            $stripe->update_source(
+                source_id => $source->id,
+            );
+        };
+        if ($@) {
+            my $e = $@;
+            isa_ok $e, 'Net::Stripe::Error', 'error raised is an object';
+            is $e->type, 'update_source error', 'error type';
+            like $e->message, qr/^at least one of: .+ is required to update a source$/, 'error message';
+        } else {
+            fail 'missing param';
+        }
+    }
+
 }
 
 Plans: {
@@ -193,13 +446,13 @@ Charges: {
             $charge = $stripe->post_charge(
                 amount => 3300,
                 currency => 'usd',
-                card => $token_id_visa,
+                source => $token_id_visa,
                 description => 'Wikileaks donation',
                 statement_descriptor => 'Statement Descr',
             );
         } 'Created a charge object';
         isa_ok $charge, 'Net::Stripe::Charge';
-        for my $field (qw/id amount created currency description
+        for my $field (qw/id amount card source created currency description
                           livemode paid refunded status statement_descriptor/) {
             ok defined($charge->$field), "charge has $field";
         }
@@ -210,8 +463,8 @@ Charges: {
         is $charge->statement_descriptor, 'Statement Descr', 'charge statement_descriptor matches';
 
         # Check out the returned card object
-        my $card = $charge->card;
-        isa_ok $card, 'Net::Stripe::Card';
+        my $source = $charge->source;
+        isa_ok $source, 'Net::Stripe::Card';
 
         # Fetch a charge
         my $charge2;
@@ -250,16 +503,16 @@ Charges: {
             $charge = $stripe->post_charge(
                 amount => 3300,
                 currency => 'usd',
-                card => 'tok_avsLine1Fail',
+                source => 'tok_avsLine1Fail',
                 description => 'Wikileaks donation',
             );
         } 'Created a charge object';
         isa_ok $charge, 'Net::Stripe::Charge';
 
         # Check out the returned card object
-        $card = $charge->card;
-        isa_ok $card, 'Net::Stripe::Card';
-        is $card->address_line1_check, 'fail', 'card address_line1_check';
+        $source = $charge->source;
+        isa_ok $source, 'Net::Stripe::Card';
+        is $source->address_line1_check, 'fail', 'card address_line1_check';
     }
 
     Charge_with_metadata: {
@@ -268,7 +521,7 @@ Charges: {
             $charge = $stripe->post_charge(
                 amount => 2500,
                 currency => 'usd',
-                card => $token_id_visa,
+                source => $token_id_visa,
                 description => 'Testing Metadata',
                 metadata => {'hasmetadata' => 'hello world'},
             );
@@ -285,6 +538,18 @@ Charges: {
         my $charge = $stripe->post_charge(
             amount => 100,
             currency => 'usd',
+            source => $token->id,
+        );
+        isa_ok $charge, 'Net::Stripe::Charge';
+        ok $charge->paid, 'charge was paid';
+        like $charge->status, qr/^(?:paid|succeeded)$/, 'charge was successful';
+        isa_ok $charge->source, 'Net::Stripe::Card';
+        is $charge->source->id, $token->card->id, 'charge card id matches';
+
+        $token = $stripe->get_token( token_id => $token_id_visa );
+        $charge = $stripe->post_charge(
+            amount => 100,
+            currency => 'usd',
             card => $token->id,
         );
         isa_ok $charge, 'Net::Stripe::Charge';
@@ -299,6 +564,23 @@ Charges: {
              $stripe->post_charge(
                 amount => 100,
                 currency => 'usd',
+                source => $token->card->id,
+            );
+        };
+        if ($@) {
+            my $e = $@;
+            isa_ok $e, 'Net::Stripe::Error', 'error raised is an object';
+            is $e->type, 'post_charge error', 'error type';
+            like $e->message, qr/^Invalid value 'card_.+' passed for parameter 'source'\. Charges without an existing customer can only accept a token id or source id\.$/, 'error message';
+        } else {
+            fail 'post source charge with card id';
+        }
+
+        $token = $stripe->get_token( token_id => $token_id_visa );
+        eval {
+             $stripe->post_charge(
+                amount => 100,
+                currency => 'usd',
                 card => $token->card->id,
             );
         };
@@ -308,13 +590,30 @@ Charges: {
             is $e->type, 'post_charge error', 'error type';
             like $e->message, qr/^Invalid value 'card_.+' passed for parameter 'card'\. Charges without an existing customer can only accept a token id\.$/, 'error message';
         } else {
-            fail 'post charge with card id';
+            fail 'post card charge with card id';
         }
+    }
+
+    Post_charge_using_source_id: {
+        my $source = $stripe->create_source(
+            type => 'card',
+            token => $token_id_visa,
+        );
+        my $charge = $stripe->post_charge(
+            amount => 100,
+            currency => 'usd',
+            source => $source->id,
+        );
+        isa_ok $charge, 'Net::Stripe::Charge';
+        ok $charge->paid, 'charge was paid';
+        like $charge->status, qr/^(?:paid|succeeded)$/, 'charge was successful';
+        is $charge->source->type, 'card', 'charge source type is card';
+        is $charge->source->id, $source->id, 'charge source id matches';
     }
 
     Post_charge_for_customer_id_with_attached_card: {
         my $customer = $stripe->post_customer(
-            card => $token_id_visa,
+            source => $token_id_visa,
         );
         my $charge = $stripe->post_charge(
             amount => 100,
@@ -324,7 +623,48 @@ Charges: {
         isa_ok $charge, 'Net::Stripe::Charge';
         ok $charge->paid, 'charge was paid';
         like $charge->status, qr/^(?:paid|succeeded)$/, 'charge was successful';
+        is $charge->source->id, $customer->default_source, 'charged default source';
+
+        $customer = $stripe->post_customer(
+            card => $token_id_visa,
+        );
+        $charge = $stripe->post_charge(
+            amount => 100,
+            currency => 'usd',
+            customer => $customer->id,
+        );
+        isa_ok $charge, 'Net::Stripe::Charge';
+        ok $charge->paid, 'charge was paid';
+        like $charge->status, qr/^(?:paid|succeeded)$/, 'charge was successful';
         is $charge->card->id, $customer->default_card, 'charged default card';
+    }
+
+    Post_charge_for_customer_id_with_attached_source: {
+        my $token = $stripe->get_token( token_id => $token_id_visa );
+        my $source = $stripe->create_source(
+            type => 'card',
+            token => $token->id,
+        );
+        my $customer = $stripe->post_customer();
+        my $customer_id = $customer->id;
+        $stripe->attach_source(
+            customer_id => $customer_id,
+            source_id => $source->id,
+        );
+        $customer = $stripe->get_customer(
+            customer_id => $customer_id,
+        );
+
+        my $charge = $stripe->post_charge(
+            amount => 100,
+            currency => 'usd',
+            customer => $customer_id,
+        );
+        isa_ok $charge, 'Net::Stripe::Charge';
+        ok $charge->paid, 'charge was paid';
+        like $charge->status, qr/^(?:paid|succeeded)$/, 'charge was successful';
+        is $charge->source->id, $customer->default_source, 'charged default source';
+        is $charge->source->id, $source->id, 'charge source id matches';
     }
 
     Post_charge_for_customer_id_without_attached_card: {
@@ -355,6 +695,24 @@ Charges: {
                 amount => 100,
                 currency => 'usd',
                 customer => $customer->id,
+                source => $token_id_visa,
+            );
+        };
+        if ($@) {
+            my $e = $@;
+            isa_ok $e, 'Net::Stripe::Error', 'error raised is an object';
+            is $e->type, 'post_charge error', 'error type';
+            like $e->message, qr/^Invalid value 'tok_.+' passed for parameter 'source'\. Charges for an existing customer can only accept a card id\.$/, 'error message';
+        } else {
+            fail 'post source charge for customer with token id';
+        }
+
+        $customer = $stripe->post_customer();
+        eval {
+            $stripe->post_charge(
+                amount => 100,
+                currency => 'usd',
+                customer => $customer->id,
                 card => $token_id_visa,
             );
         };
@@ -364,15 +722,39 @@ Charges: {
             is $e->type, 'post_charge error', 'error type';
             like $e->message, qr/^Invalid value 'tok_.+' passed for parameter 'card'\. Charges for an existing customer can only accept a card id\.$/, 'error message';
         } else {
-            fail 'post charge for customer with token id';
+            fail 'post card charge for customer with token id';
         }
     }
 
     Post_charge_for_customer_id_using_card_id: {
         # customer may have multiple cards. allow ability to select a specific
         # card for a given charge.
+
         my $customer = $stripe->post_customer();
         my $card = $stripe->post_card(
+            customer => $customer,
+            source => $token_id_visa,
+        );
+        for ( 1..3 ) {
+            my $other_card = $stripe->post_card(
+                customer => $customer,
+                source => $token_id_visa,
+            );
+            isnt $card->id, $other_card->id, 'different card id';
+        }
+        my $charge = $stripe->post_charge(
+            amount => 100,
+            currency => 'usd',
+            customer => $customer->id,
+            source => $card->id,
+        );
+        isa_ok $charge, 'Net::Stripe::Charge';
+        ok $charge->paid, 'charge was paid';
+        like $charge->status, qr/^(?:paid|succeeded)$/, 'charge was successful';
+        is $charge->source->id, $card->id, 'charge card id matches';
+
+        $customer = $stripe->post_customer();
+        $card = $stripe->post_card(
             customer => $customer,
             card => $token_id_visa,
         );
@@ -383,7 +765,7 @@ Charges: {
             );
             isnt $card->id, $other_card->id, 'different card id';
         }
-        my $charge = $stripe->post_charge(
+        $charge = $stripe->post_charge(
             amount => 100,
             currency => 'usd',
             customer => $customer->id,
@@ -413,7 +795,7 @@ Charges: {
             is $e->type, 'invalid_request_error', 'error type';
             is $e->message, 'Must provide source or customer.', 'error message';
         } else {
-            fail 'missing card and customer';
+            fail 'must provide source or customer';
         }
 
         # Test an invalid currency
@@ -421,7 +803,7 @@ Charges: {
             $stripe->post_charge(
                 amount => 3300,
                 currency => 'zzz',
-                card => $token_id_visa,
+                source => $token_id_visa,
             );
         };
         if ($@) {
@@ -441,7 +823,7 @@ Charges: {
             $charge = $stripe->post_charge(
                 amount => 2500,
                 currency => 'usd',
-                card => $token_id_visa,
+                source => $token_id_visa,
                 description => 'Testing Receipt Email',
                 receipt_email => 'stripe@example.com',
             );
@@ -459,7 +841,7 @@ Charges: {
             $charge = Net::Stripe::Charge->new(
                 amount => 3300,
                 currency => 'usd',
-                card => $token_id_visa,
+                source => $token_id_visa,
                 description => 'Wikileaks donation',
                 capture => 0,
             );
@@ -472,7 +854,7 @@ Charges: {
             $charge = $stripe->post_charge(
                 amount => $amount,
                 currency => 'usd',
-                card => $token_id_visa,
+                source => $token_id_visa,
                 description => 'Wikileaks donation',
                 capture => 0,
             );
@@ -549,7 +931,7 @@ Customers: {
             isa_ok $customer, 'Net::Stripe::Customer', 'got back a customer';
             my $id = $customer->id;
             ok $id, 'customer has an id';
-            for my $f (qw/card coupon email description plan trial_end/) {
+            for my $f (qw/card source coupon email description plan trial_end/) {
                 is $customer->$f, undef, "customer has no $f";
             }
             ok !$customer->deleted, 'customer is not deleted';
@@ -637,6 +1019,20 @@ Customers: {
         Create_with_a_token_id: {
             my $token = $stripe->get_token( token_id => $token_id_visa );
             my $customer = $stripe->post_customer(
+                source => $token->id,
+            );
+            isa_ok $customer, 'Net::Stripe::Customer', 'got back a customer';
+            ok $customer->id, 'customer has an id';
+            my $card = $stripe->get_card(
+                customer => $customer,
+                card_id => $customer->default_source,
+            );
+            is $card->id, $token->card->id, 'token card id matches';
+        }
+
+        Create_with_a_token_id_card: {
+            my $token = $stripe->get_token( token_id => $token_id_visa );
+            my $customer = $stripe->post_customer(
                 card => $token->id,
             );
             isa_ok $customer, 'Net::Stripe::Customer', 'got back a customer';
@@ -662,6 +1058,30 @@ Customers: {
             is $card->id, $token->card->id, 'token card id matches';
         }
 
+        Update_source_for_customer_id_via_token_id: {
+            my $customer = $stripe->post_customer(
+                source => $token_id_visa,
+            );
+            isa_ok $customer, 'Net::Stripe::Customer', 'got back a customer';
+            ok $customer->id, 'customer has an id';
+
+            my $cards = $stripe->get_cards(customer => $customer);
+            isa_ok $cards, "Net::Stripe::List";
+            is scalar @{$cards->data}, 1, 'customer has one card';
+            my $card = @{$cards->data}[0];
+            isa_ok $card, "Net::Stripe::Card";
+
+            $stripe->post_customer(
+                customer => $customer->id,
+                source => $token_id_visa,
+            );
+            $cards = $stripe->get_cards(customer => $customer);
+            isa_ok $cards, "Net::Stripe::List";
+            is scalar @{$cards->data}, 1, 'customer still has one card';
+            my $new_card = @{$cards->data}[0];
+            isnt $new_card->id, $card->id, 'new card has different card id';
+        }
+
         Update_card_for_customer_id_via_token_id: {
             my $customer = $stripe->post_customer(
                 card => $token_id_visa,
@@ -679,6 +1099,35 @@ Customers: {
                 customer => $customer->id,
                 card => $token_id_visa,
             );
+            $cards = $stripe->get_cards(customer => $customer);
+            isa_ok $cards, "Net::Stripe::List";
+            is scalar @{$cards->data}, 1, 'customer still has one card';
+            my $new_card = @{$cards->data}[0];
+            isnt $new_card->id, $card->id, 'new card has different card id';
+        }
+
+        Update_source_for_customer_object_via_token_id: {
+            my $customer = $stripe->post_customer(
+                source => $token_id_visa,
+            );
+            isa_ok $customer, 'Net::Stripe::Customer', 'got back a customer';
+            ok $customer->id, 'customer has an id';
+
+            my $cards = $stripe->get_cards(customer => $customer);
+            isa_ok $cards, "Net::Stripe::List";
+            is scalar @{$cards->data}, 1, 'customer has one card';
+            my $card = @{$cards->data}[0];
+            isa_ok $card, "Net::Stripe::Card";
+
+            $customer->source($token_id_visa);
+            # we must unset the default_card attribute in the existing object.
+            # otherwise there is a conflict since the old default_card id is
+            # serialized in the POST stream, and it appears that we are
+            # requesting to set default_card to the id of a card that no
+            # longer exists, but rather is being replaced by the new card.
+            $customer->default_card(undef);
+            $customer->default_source(undef);
+            $stripe->post_customer(customer => $customer);
             $cards = $stripe->get_cards(customer => $customer);
             isa_ok $cards, "Net::Stripe::List";
             is scalar @{$cards->data}, 1, 'customer still has one card';
@@ -706,6 +1155,7 @@ Customers: {
             # requesting to set default_card to the id of a card that no
             # longer exists, but rather is being replaced by the new card.
             $customer->default_card(undef);
+            $customer->default_source(undef);
             $stripe->post_customer(customer => $customer);
             $cards = $stripe->get_cards(customer => $customer);
             isa_ok $cards, "Net::Stripe::List";
@@ -760,12 +1210,37 @@ Customers: {
             # requesting to set default_card to the id of a card that no
             # longer exists, but rather is being replaced by the new card.
             $customer->default_card(undef);
+            $customer->default_source(undef);
             $stripe->post_customer(customer => $customer);
             $cards = $stripe->get_cards(customer => $customer);
             isa_ok $cards, "Net::Stripe::List";
             is scalar @{$cards->data}, 1, 'customer still has one card';
             my $new_card = @{$cards->data}[0];
             isnt $new_card->id, $card->id, 'new card has different card id';
+        }
+
+        Add_source_for_customer_object_via_token_id: {
+            my $customer = $stripe->post_customer(
+                source => $token_id_visa,
+            );
+            isa_ok $customer, 'Net::Stripe::Customer', 'got back a customer';
+            ok $customer->id, 'customer has an id';
+
+            my $cards = $stripe->get_cards(customer => $customer);
+            isa_ok $cards, "Net::Stripe::List";
+            is scalar @{$cards->data}, 1, 'customer has one card';
+            my $card = @{$cards->data}[0];
+            isa_ok $card, "Net::Stripe::Card";
+
+            my $new_card = $stripe->post_card(
+                customer => $customer,
+                source => $token_id_visa,
+            );
+            isnt $new_card->id, $card->id, 'new card has different card id';
+
+            $cards = $stripe->get_cards(customer => $customer);
+            isa_ok $cards, "Net::Stripe::List";
+            is scalar @{$cards->data}, 2, 'customer has two cards';
         }
 
         Add_card_for_customer_object_via_token_id: {
@@ -841,6 +1316,28 @@ Customers: {
             is scalar @{$cards->data}, 2, 'customer has two cards';
         }
 
+        Add_source_for_customer_id_via_token_id: {
+            my $customer = $stripe->post_customer(
+                source => $token_id_visa,
+            );
+
+            my $cards = $stripe->get_cards(customer => $customer);
+            isa_ok $cards, "Net::Stripe::List";
+            is scalar @{$cards->data}, 1, 'customer has one card';
+            my $card = @{$cards->data}[0];
+            isa_ok $card, "Net::Stripe::Card";
+
+            my $new_card = $stripe->post_card(
+                customer => $customer->id,
+                source => $token_id_visa,
+            );
+            isnt $new_card->id, $card->id, 'new card has different card id';
+
+            $cards = $stripe->get_cards(customer => $customer);
+            isa_ok $cards, "Net::Stripe::List";
+            is scalar @{$cards->data}, 2, 'customer has two cards';
+        }
+
         Add_card_for_customer_id_via_token_object: {
             my $customer = $stripe->post_customer(
                 card => $token_id_visa,
@@ -891,7 +1388,7 @@ Customers: {
 
         Update_existing_card_for_customer_id: {
             my $customer = $stripe->post_customer(
-                card => $token_id_visa,
+                source => $token_id_visa,
             );
             isa_ok $customer, 'Net::Stripe::Customer', 'got back a customer';
 
@@ -914,6 +1411,12 @@ Customers: {
 
             is $card->id, $card_id, 'card id matches';
 
+# HACK, HACK, HACK!!
+# the Stripe API has inconsistent responses for empty address_line2 when passing the empty string.
+# on create, it correctly reflects the empty string, while on update it incorrectly reflects undef/null
+my $fake_card = Storable::dclone( $fake_card );
+undef( $fake_card->{address_line2} );
+
             for my $f (sort keys %{$fake_card}) {
                 is_deeply $card->$f, $fake_card->{$f}, "card $f matches";
             }
@@ -933,6 +1436,12 @@ Customers: {
             $card = @{$cards->data}[0];
             is $card->id, $card_id, "card id still matches";
 
+# HACK, HACK, HACK!!
+# the Stripe API has inconsistent responses for empty address_line2 when passing the empty string.
+# on create, it correctly reflects the empty string, while on update it incorrectly reflects undef/null
+my $update_fake_card = Storable::dclone( $updated_fake_card );
+undef( $updated_fake_card->{address_line2} );
+
             for my $f (sort keys %$updated_fake_card) {
                 if ( ref( $updated_fake_card->{$f} ) eq 'HASH' ) {
                     my $merged = { %{$fake_card->{$f} || {}}, %{$updated_fake_card->{$f} || {}} };
@@ -941,6 +1450,65 @@ Customers: {
                     is $card->$f, $updated_fake_card->{$f}, "updated card $f matches";
                 }
             }
+        }
+
+        Set_default_source: {
+            my $source = $stripe->create_source(
+                type => 'card',
+                token => $token_id_visa,
+            );
+            isa_ok $source, 'Net::Stripe::Source';
+            my $customer = $stripe->post_customer(
+                source => $source->id,
+            );
+            isa_ok $customer, 'Net::Stripe::Customer';
+            my $customer_id = $customer->id;
+            my $default_source_id = $customer->default_source;
+
+            my $sources = $stripe->list_sources(
+                customer_id => $customer->id,
+                object => 'source',
+            );
+            isa_ok $sources, "Net::Stripe::List";
+            my @sources = $sources->elements;
+            is scalar( @sources ), 1, 'customer only has one card';
+            is $sources[0]->id, $default_source_id, 'default_source matches';
+
+            my $new_source = $stripe->create_source(
+                type => 'card',
+                token => $token_id_visa,
+            );
+            isa_ok $new_source, 'Net::Stripe::Source';
+            $stripe->attach_source(
+                customer_id => $customer_id,
+                source_id => $new_source->id,
+            );
+            $sources = $stripe->list_sources(
+                customer_id => $customer->id,
+                object => 'source',
+            );
+            isa_ok $sources, "Net::Stripe::List";
+            @sources = $sources->elements;
+            is scalar( @sources ), 2, 'customer now has two cards';
+            isnt $new_source->id, $sources[0]->id, 'new source has different source id';
+
+            $customer = $stripe->get_customer(
+                customer_id => $customer_id,
+            );
+            isa_ok $customer, 'Net::Stripe::Customer';
+            is $customer->default_source, $default_source_id, 'default_source unchanged';
+
+            $customer = $stripe->post_customer(
+                customer => $customer_id,
+                default_source => $new_source->id,
+            );
+
+            $customer = $stripe->get_customer(
+                customer_id => $customer_id,
+            );
+            isa_ok $customer, 'Net::Stripe::Customer';
+            is $customer->default_source, $new_source->id, 'default_source matches new source';
+            isnt $customer->default_source, $default_source_id, 'default_source changed';
         }
 
         Set_default_card: {
@@ -1114,7 +1682,7 @@ Invoices_and_items: {
         );
         ok $plan->id, 'plan has an id';
         my $customer = $stripe->post_customer(
-            card => $token_id_visa,
+            source => $token_id_visa,
             plan => $plan->id,
         );
         ok $customer->id, 'customer has an id';

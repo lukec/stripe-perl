@@ -16,19 +16,22 @@ has 'email'       => (is => 'rw', isa => 'Maybe[Str]');
 has 'description' => (is => 'rw', isa => 'Maybe[Str]');
 has 'trial_end'   => (is => 'rw', isa => 'Maybe[Int|Str]');
 has 'card'        => (is => 'rw', isa => 'Maybe[Net::Stripe::Token|Net::Stripe::Card|StripeTokenId]');
+has 'source'      => (is => 'rw', isa => 'Maybe[Net::Stripe::Card|StripeTokenId|StripeSourceId]');
 has 'quantity'    => (is => 'rw', isa => 'Maybe[Int]');
 has 'plan'        => (is => 'rw', isa => 'Maybe[Net::Stripe::Plan|Str]');
 has 'coupon'      => (is => 'rw', isa => 'Maybe[Net::Stripe::Coupon|Str]');
 has 'discount'    => (is => 'rw', isa => 'Maybe[Net::Stripe::Discount]');
 has 'metadata'    => (is => 'rw', isa => 'Maybe[HashRef]');
-has 'cards'       => (is => 'ro', isa => 'Net::Stripe::List');
 has 'account_balance' => (is => 'ro', isa => 'Maybe[Int]', default => 0);
 has 'default_card' => (is => 'rw', isa => 'Maybe[Net::Stripe::Token|Net::Stripe::Card|Str]');
+has 'default_source' => (is => 'rw', isa => 'Maybe[StripeCardId|StripeSourceId]');
 
 # API object args
 
 has 'id'           => (is => 'ro', isa => 'Maybe[Str]');
+has 'cards'        => (is => 'ro', isa => 'Net::Stripe::List');
 has 'deleted'      => (is => 'ro', isa => 'Maybe[Bool|Object]', default => 0);
+has 'sources'      => (is => 'ro', isa => 'Net::Stripe::List');
 has 'subscriptions' => (is => 'ro', isa => 'Net::Stripe::List');
 has 'subscription' => (is => 'ro',
                        lazy => 1,
@@ -42,7 +45,7 @@ sub _build_subscription {
 method form_fields {
     return $self->form_fields_for(
         qw/email description trial_end account_balance quantity card plan coupon
-            metadata default_card/
+            metadata default_card source default_source/
     );
 }
 

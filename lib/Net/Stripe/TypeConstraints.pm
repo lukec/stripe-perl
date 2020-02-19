@@ -1,7 +1,7 @@
 package Net::Stripe::TypeConstraints;
 
 use strict;
-use Moose::Util::TypeConstraints qw/subtype as where message/;
+use Moose::Util::TypeConstraints qw/subtype as where message enum/;
 
 # ABSTRACT: Custom Moose TypeConstraints for Net::Stripe object attributes and parameters
 
@@ -39,6 +39,33 @@ subtype 'StripeResourceObject',
     },
     message {
         sprintf( "Value '%s' must be an object that inherits from Net::Stripe::Resource with a 'form_fields' method", $_ );
+    };
+
+subtype 'StripeSourceId',
+    as 'Str',
+    where {
+        /^src_.+/
+    },
+    message {
+        sprintf( "Value '%s' must be a source id string of the form src_.+", $_ );
+    };
+
+# ach_credit_transfer, ach_debit, alipay, bancontact, card, card_present, eps,
+# giropay, ideal, multibanco, klarna, p24, sepa_debit, sofort, three_d_secure,
+# or wechat
+enum 'StripeSourceType' => [qw/ ach_credit_transfer card /];
+
+enum 'StripeSourceUsage' => [qw/ reusable single_use /];
+
+enum 'StripeSourceFlow' => [qw/ redirect receiver code_verification none /];
+
+subtype 'EmptyStr',
+    as 'Str',
+    where {
+        $_ eq ''
+    },
+    message {
+        sprintf( "Value '%s' must be an empty string", $_ );
     };
 
 1;
