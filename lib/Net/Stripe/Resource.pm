@@ -81,6 +81,14 @@ fun form_fields_for_hashref (
     return @field_values;
 }
 
+fun form_fields_for_arrayref (
+    Str $field_name!,
+    ArrayRef $arrayref!,
+) {
+    my $nested_field_name = sprintf( '%s[]', $field_name );
+    return $nested_field_name => $arrayref;
+}
+
 method fields_for($for) {
     return unless $self->can($for);
     my $thingy = $self->$for;
@@ -89,6 +97,7 @@ method fields_for($for) {
     return ($for => $thingy->id) if $for eq 'source' && ref($thingy) eq 'Net::Stripe::Token';
     return $thingy->form_fields if ref($thingy) =~ m/^Net::Stripe::/;
     return form_fields_for_hashref( $for, $thingy ) if ref( $thingy ) eq 'HASH';
+    return form_fields_for_arrayref( $for, $thingy ) if ref( $thingy ) eq 'ARRAY';
     return ( $for => $self->get_form_field_value( $for ) );
 }
 

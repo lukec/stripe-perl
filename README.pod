@@ -733,6 +733,182 @@ Returns a L<Net::Stripe::Token>.
 
   $stripe->get_token(token_id => 'testtokenid');
 
+=head1 Product Methods
+
+=head2 create_product
+
+Create a new Product
+
+L<https://stripe.com/docs/api/products/create#create_product>
+L<https://stripe.com/docs/api/service_products/create#create_service_product>
+
+=over
+
+=item * name - Str - name of the product - required
+
+=item * active - Bool - whether the product is currently available for purchase
+
+=item * attributes - ArrayRef[Str] - a list of attributes that each sku can provide values for
+
+=item * caption - Str - a short description
+
+=item * deactivate_on - ArrayRef[Str] - an list of connect application identifiers that cannot purchase this product
+
+=item * description - Str - description
+
+=item * id - Str - unique identifier
+
+=item * images - ArrayRef[Str] - a list of image URLs
+
+=item * metadata - HashRef[Str] - metadata
+
+=item * package_dimensions - HashRef - package dimensions for shipping
+
+=item * shippable - Bool - whether the product is a shipped good
+
+=item * statement_descriptor - Str - descriptor for statement
+
+=item * type - StripeProductType - the type of the product
+
+=item * unit_label - Str - label that represents units of the product
+
+=item * url - Str - URL of a publicly-accessible web page for the product
+
+=back
+
+Returns a L<Net::Stripe::Product>
+
+  $stripe->create_product(
+      name => $product_name,
+      type => 'good',
+  );
+
+=head2 get_product
+
+Retrieve an existing Product
+
+L<https://stripe.com/docs/api/products/retrieve#retrieve_product>
+L<https://stripe.com/docs/api/service_products/retrieve#retrieve_service_product>
+
+=over
+
+=item * product_id - StripeProductId|Str - id of product to retrieve - required
+
+=back
+
+Returns a L<Net::Stripe::Product>
+
+  $stripe->get_product(
+      product_id => $product_id,
+  );
+
+=head2 update_product
+
+Update an existing Product
+
+L<https://stripe.com/docs/api/products/update#update_product>
+L<https://stripe.com/docs/api/service_products/update#update_service_product>
+
+=over
+
+=item * product_id - StripeProductId|Str - id of product to retrieve - required
+
+=item * active - Bool - whether the product is currently available for purchase
+
+=item * attributes - ArrayRef[Str] - a list of attributes that each sku can provide values for
+
+=item * caption - Str - a short description
+
+=item * deactivate_on - ArrayRef[Str] - an list of connect application identifiers that cannot purchase this product
+
+=item * description - Str - description
+
+=item * images - ArrayRef[Str] - a list of image URLs
+
+=item * metadata - HashRef[Str] - metadata
+
+=item * name - Str - name of the product
+
+=item * package_dimensions - HashRef - package dimensions for shipping
+
+=item * shippable - Bool - whether the product is a shipped good
+
+=item * statement_descriptor - Str - descriptor for statement
+
+=item * type - StripeProductType - the type of the product
+
+=item * unit_label - Str - label that represents units of the product
+
+=item * url - Str - URL of a publicly-accessible web page for the product
+
+=back
+
+Returns a L<Net::Stripe::Product>
+
+  $stripe->update_product(
+      product_id => $product_id,
+      name => $new_name,
+  );
+
+=head2 list_products
+
+Retrieve a list of Products
+
+L<https://stripe.com/docs/api/products/list#list_products>
+L<https://stripe.com/docs/api/service_products/list#list_service_products>
+
+=over
+
+=item * active - Bool - only return products that are active or inactive
+
+=item * ids - StripeProductId|Str - only return products with the given ids
+
+=item * shippable - Bool - only return products that can or cannot be shipped
+
+=item * url - Str - only return products with the given url
+
+=item * type - StripeProductType - only return products of this type
+
+=item * created - HashRef[Str] - created conditions to match
+
+=item * ending_before - Str - ending before condition
+
+=item * limit - Int - maximum number of objects to return
+
+=item * starting_after - Str - starting after condition
+
+=back
+
+Returns a L<Net::Stripe::List> object containing L<Net::Stripe::Product> objects.
+
+  $stripe->list_products(
+      limit => 5,
+  );
+
+=head2 delete_product
+
+Delete an existing Product
+
+L<https://stripe.com/docs/api/products/delete#delete_product>
+L<https://stripe.com/docs/api/service_products/delete#delete_service_product>
+
+=over
+
+=item * product_id - StripeProductId|Str - id of product to delete - required
+
+=back
+
+Returns hashref of the form
+
+  {
+    deleted => <bool>,
+    id => <product_id>,
+  }
+
+  $stripe->delete_product(
+      product_id => $product_id,
+  );
+
 =head1 Plan Methods
 
 =head2 post_plan
@@ -810,6 +986,8 @@ Return a list of plans.
 L<https://stripe.com/docs/api#list_plans>
 
 =over
+
+=item * product - StripeProductId|Str - only return plans for the given product
 
 =item * ending_before - Str, optional
 
@@ -1192,6 +1370,13 @@ object is serialized in the POST stream, and it appears that you are requesting
 to set default_card to the id of a card that no longer exists, but rather
 is being replaced by the new value of the card attribute in the object.
 
+=item Plan objects now linked to Product objects
+
+For Stripe API versions after 2018-02-15 L<https://stripe.com/docs/upgrades#2018-02-05>
+each Plan object is linked to a Product object with type=service. The
+Plan object 'name' and 'statement_descriptor' attributes have been moved to
+Product objects.
+
 =back
 
 =head3 DEPRECATION WARNING
@@ -1413,6 +1598,11 @@ Added 'created' attribute for Invoice objects, and removed the required
 constraint for the deprecated 'date' attribute. Also added the 'auto_advance'
 attribute and removed the required constraint for the deprecated 'closed'
 attribute.
+
+=item add Product
+
+Added a Product object. Also added 'product' attribute and argument for Plan
+objects and methods.
 
 =back
 

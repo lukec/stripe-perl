@@ -17,6 +17,7 @@ use Net::Stripe::Invoice;
 use Net::Stripe::Card;
 use Net::Stripe::Source;
 use Net::Stripe::Plan;
+use Net::Stripe::Product;
 use Net::Stripe::Coupon;
 use Net::Stripe::Charge;
 use Net::Stripe::Customer;
@@ -106,6 +107,13 @@ Otherwise there is a conflict, since the old default_card attribute in the
 object is serialized in the POST stream, and it appears that you are requesting
 to set default_card to the id of a card that no longer exists, but rather
 is being replaced by the new value of the card attribute in the object.
+
+=item Plan objects now linked to Product objects
+
+For Stripe API versions after 2018-02-15 L<https://stripe.com/docs/upgrades#2018-02-05>
+each Plan object is linked to a Product object with type=service. The
+Plan object 'name' and 'statement_descriptor' attributes have been moved to
+Product objects.
 
 =back
 
@@ -328,6 +336,11 @@ Added 'created' attribute for Invoice objects, and removed the required
 constraint for the deprecated 'date' attribute. Also added the 'auto_advance'
 attribute and removed the required constraint for the deprecated 'closed'
 attribute.
+
+=item add Product
+
+Added a Product object. Also added 'product' attribute and argument for Plan
+objects and methods.
 
 =back
 
@@ -1462,6 +1475,297 @@ Tokens: {
     }
 }
 
+=product_method create_product
+
+Create a new Product
+
+L<https://stripe.com/docs/api/products/create#create_product>
+L<https://stripe.com/docs/api/service_products/create#create_service_product>
+
+=over
+
+=item * name - Str - name of the product - required
+
+=item * active - Bool - whether the product is currently available for purchase
+
+=item * attributes - ArrayRef[Str] - a list of attributes that each sku can provide values for
+
+=item * caption - Str - a short description
+
+=item * deactivate_on - ArrayRef[Str] - an list of connect application identifiers that cannot purchase this product
+
+=item * description - Str - description
+
+=item * id - Str - unique identifier
+
+=item * images - ArrayRef[Str] - a list of image URLs
+
+=item * metadata - HashRef[Str] - metadata
+
+=item * package_dimensions - HashRef - package dimensions for shipping
+
+=item * shippable - Bool - whether the product is a shipped good
+
+=item * statement_descriptor - Str - descriptor for statement
+
+=item * type - StripeProductType - the type of the product
+
+=item * unit_label - Str - label that represents units of the product
+
+=item * url - Str - URL of a publicly-accessible web page for the product
+
+=back
+
+Returns a L<Net::Stripe::Product>
+
+  $stripe->create_product(
+      name => $product_name,
+      type => 'good',
+  );
+
+=product_method get_product
+
+Retrieve an existing Product
+
+L<https://stripe.com/docs/api/products/retrieve#retrieve_product>
+L<https://stripe.com/docs/api/service_products/retrieve#retrieve_service_product>
+
+=over
+
+=item * product_id - StripeProductId|Str - id of product to retrieve - required
+
+=back
+
+Returns a L<Net::Stripe::Product>
+
+  $stripe->get_product(
+      product_id => $product_id,
+  );
+
+=product_method update_product
+
+Update an existing Product
+
+L<https://stripe.com/docs/api/products/update#update_product>
+L<https://stripe.com/docs/api/service_products/update#update_service_product>
+
+=over
+
+=item * product_id - StripeProductId|Str - id of product to retrieve - required
+
+=item * active - Bool - whether the product is currently available for purchase
+
+=item * attributes - ArrayRef[Str] - a list of attributes that each sku can provide values for
+
+=item * caption - Str - a short description
+
+=item * deactivate_on - ArrayRef[Str] - an list of connect application identifiers that cannot purchase this product
+
+=item * description - Str - description
+
+=item * images - ArrayRef[Str] - a list of image URLs
+
+=item * metadata - HashRef[Str] - metadata
+
+=item * name - Str - name of the product
+
+=item * package_dimensions - HashRef - package dimensions for shipping
+
+=item * shippable - Bool - whether the product is a shipped good
+
+=item * statement_descriptor - Str - descriptor for statement
+
+=item * type - StripeProductType - the type of the product
+
+=item * unit_label - Str - label that represents units of the product
+
+=item * url - Str - URL of a publicly-accessible web page for the product
+
+=back
+
+Returns a L<Net::Stripe::Product>
+
+  $stripe->update_product(
+      product_id => $product_id,
+      name => $new_name,
+  );
+
+=product_method list_products
+
+Retrieve a list of Products
+
+L<https://stripe.com/docs/api/products/list#list_products>
+L<https://stripe.com/docs/api/service_products/list#list_service_products>
+
+=over
+
+=item * active - Bool - only return products that are active or inactive
+
+=item * ids - StripeProductId|Str - only return products with the given ids
+
+=item * shippable - Bool - only return products that can or cannot be shipped
+
+=item * url - Str - only return products with the given url
+
+=item * type - StripeProductType - only return products of this type
+
+=item * created - HashRef[Str] - created conditions to match
+
+=item * ending_before - Str - ending before condition
+
+=item * limit - Int - maximum number of objects to return
+
+=item * starting_after - Str - starting after condition
+
+=back
+
+Returns a L<Net::Stripe::List> object containing L<Net::Stripe::Product> objects.
+
+  $stripe->list_products(
+      limit => 5,
+  );
+
+=product_method delete_product
+
+Delete an existing Product
+
+L<https://stripe.com/docs/api/products/delete#delete_product>
+L<https://stripe.com/docs/api/service_products/delete#delete_service_product>
+
+=over
+
+=item * product_id - StripeProductId|Str - id of product to delete - required
+
+=back
+
+Returns hashref of the form
+
+  {
+    deleted => <bool>,
+    id => <product_id>,
+  }
+
+  $stripe->delete_product(
+      product_id => $product_id,
+  );
+
+=cut
+
+Products: {
+    method create_product(
+        Str :$name!,
+        Bool :$active?,
+        ArrayRef[Str] :$attributes?,
+        Str :$caption?,
+        ArrayRef[Str] :$deactivate_on?,
+        Str :$description?,
+        StripeProductId|Str :$id?,
+        ArrayRef[Str] :$images?,
+        HashRef[Str] :$metadata?,
+        HashRef[Num] :$package_dimensions?,
+        Bool :$shippable?,
+        Str :$statement_descriptor?,
+        StripeProductType :$type?,
+        Str :$unit_label?,
+        Str :$url?,
+    ) {
+        my %args = (
+            name => $name,
+            active => $active,
+            attributes => $attributes,
+            caption => $caption,
+            deactivate_on => $deactivate_on,
+            description => $description,
+            id => $id,
+            images => $images,
+            metadata => $metadata,
+            package_dimensions => $package_dimensions,
+            shippable => $shippable,
+            statement_descriptor => $statement_descriptor,
+            type => $type,
+            unit_label => $unit_label,
+            url => $url,
+        );
+        my $product_obj = Net::Stripe::Product->new( %args );
+        return $self->_post('products', $product_obj);
+    }
+
+    method get_product(
+        StripeProductId|Str :$product_id!,
+    ) {
+        return $self->_get("products/$product_id");
+    }
+
+    method update_product(
+        StripeProductId|Str :$product_id!,
+        Bool :$active?,
+        ArrayRef[Str] :$attributes?,
+        Str :$caption?,
+        ArrayRef[Str] :$deactivate_on?,
+        Str :$description?,
+        ArrayRef[Str] :$images?,
+        HashRef[Str]|EmptyStr :$metadata?,
+        Str :$name?,
+        HashRef[Num] :$package_dimensions?,
+        Bool :$shippable?,
+        Str :$statement_descriptor?,
+        StripeProductType :$type?,
+        Str :$unit_label?,
+        Str :$url?,
+    ) {
+        my %args = (
+            active => $active,
+            attributes => $attributes,
+            caption => $caption,
+            deactivate_on => $deactivate_on,
+            description => $description,
+            images => $images,
+            metadata => $metadata,
+            name => $name,
+            package_dimensions => $package_dimensions,
+            shippable => $shippable,
+            statement_descriptor => $statement_descriptor,
+            type => $type,
+            unit_label => $unit_label,
+            url => $url,
+        );
+        my $product_obj = Net::Stripe::Product->new( %args );
+        return $self->_post("products/$product_id", $product_obj);
+    }
+
+    method list_products(
+        Bool :$active?,
+        ArrayRef[StripeProductId|Str] :$ids,
+        Bool :$shippable?,
+        StripeProductType :$type?,
+        Str :$url?,
+        HashRef[Str] :$created?,
+        Str :$ending_before?,
+        Int :$limit?,
+        Str :$starting_after?,
+    ) {
+        my %args = (
+            path => "products",
+            active => _encode_boolean( $active ),
+            ids => $ids,
+            shippable => _encode_boolean( $shippable ),
+            type => $type,
+            url => $url,
+            created => $created,
+            ending_before => $ending_before,
+            limit => $limit,
+            starting_after => $starting_after,
+        );
+        return $self->_get_all( %args );
+    }
+
+    method delete_product(
+        StripeProductId|Str :$product_id!,
+    ) {
+        $self->_delete("products/$product_id");
+    }
+}
+
 =plan_method post_plan
 
 Create a new plan.
@@ -1538,6 +1842,8 @@ L<https://stripe.com/docs/api#list_plans>
 
 =over
 
+=item * product - StripeProductId|Str - only return plans for the given product
+
 =item * ending_before - Str, optional
 
 =item * limit - Int, optional
@@ -1559,6 +1865,7 @@ Plans: {
                      Str :$interval,
                      Int :$interval_count?,
                      Str :$name,
+                     StripeProductId|Str :$product,
                      Int :$trial_period_days?,
                      HashRef :$metadata?,
                      Str :$statement_descriptor?) {
@@ -1568,6 +1875,7 @@ Plans: {
                                           interval => $interval,
                                           interval_count => $interval_count,
                                           name => $name,
+                                          product => $product,
                                           trial_period_days => $trial_period_days,
                                           metadata => $metadata,
                                           statement_descriptor => $statement_descriptor);
@@ -1585,9 +1893,15 @@ Plans: {
         $self->_delete("plans/$plan");
     }
 
-    method get_plans(Str :$ending_before?, Int :$limit?, Str :$starting_after?) {
+    method get_plans(
+        StripeProductId|Str :$product?,
+        Str :$ending_before?,
+        Int :$limit?,
+        Str :$starting_after?,
+    ) {
         my %args = (
             path => 'plans',
+            product => $product,
             ending_before => $ending_before,
             limit => $limit,
             starting_after => $starting_after,
@@ -2187,6 +2501,8 @@ sub convert_to_form_fields {
                 foreach my $fn (keys %{$hash->{$key}}) {
                     $r->{$key . '[' . $fn . ']'} = $hash->{$key}->{$fn};
                 }
+            } elsif (ref($hash->{$key}) eq 'ARRAY') {
+                $r->{$key . '[]'} = $hash->{$key};
             } else {
                 $r->{$key} = $hash->{$key};
             }
@@ -2537,6 +2853,15 @@ method _get_all(
         }
     }
     return $list;
+}
+
+fun _encode_boolean(
+    Bool $value!,
+) {
+    # a bare `return` with no arguemnts evaluates to an empty list, resulting
+    # in 'odd number of elements in hash assignment, so we must return undef
+    return undef unless defined( $value );
+    return $value ? 'true' : 'false';
 }
 
 method _build_api_base { 'https://api.stripe.com/v1' }

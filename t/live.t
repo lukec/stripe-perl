@@ -334,8 +334,299 @@ Sources: {
 
 }
 
+Products: {
+    Create_retrieve_delete: {
+        my %product_args = (
+            name => 'Product Name',
+            type => 'good',
+        );
+        my $product = $stripe->create_product(
+            %product_args,
+        );
+        isa_ok $product, 'Net::Stripe::Product';
+        # confirm the persistent attributes. other attributes will be
+        # confirmed by actual value when set.
+        for my $field (
+            qw/ id created livemode updated /
+        ) {
+            ok defined( $product->$field ), "product has $field";
+        }
+        for my $f ( sort( keys( %product_args ) ) ) {
+            is $product->$f, $product_args{$f}, "product $f matches";
+        }
+
+        my $retrieved = $stripe->get_product(
+            product_id => $product->id,
+        );
+        isa_ok $retrieved, 'Net::Stripe::Product';
+        is $retrieved->id, $product->id, 'retrieved product id matches';
+
+        my $hash = $stripe->delete_product( product_id => $product->id );
+        ok $hash->{deleted}, 'product successfully deleted';
+        is $hash->{id}, $product->id, 'deleted product id is correct';
+    }
+
+    Custom_id: {
+        my $custom_id = 'custom_product_id_' . $future_ymdhms;
+        my $product = $stripe->create_product(
+            id => $custom_id,
+            name => 'Product Name',
+            type => 'good',
+        );
+        is $product->id, $custom_id, "custom id matches";
+    }
+
+    Clear_metadata: {
+        my $product = $stripe->create_product(
+            name => 'Product Name',
+            metadata => $fake_metadata,
+        );
+        my $updated = $stripe->update_product(
+            product_id => $product->id,
+            metadata => '',
+        );
+        is_deeply $updated->metadata, {}, "cleared product metadata";
+    }
+
+    Create_and_update_goods: {
+        my %product_args = (
+            active => 0,
+            attributes => [qw/ size color /],
+            caption => 'Product Caption',
+            description => 'Product Description',
+            images => [ map { sprintf( 'https://example.com/images/product-pic-%s.png', $_ ) } ( 1..8 ) ],
+            metadata => $fake_metadata,
+            name => 'Product Name',
+            package_dimensions => {
+                height => 0.12,
+                length => 3.45,
+                weight => 6.78,
+                width => 9.01,
+            },
+            shippable => 0,
+            type => 'good',
+            url => 'https://example.com/product.php',
+        );
+        my $product = $stripe->create_product(
+            %product_args,
+        );
+        isa_ok $product, 'Net::Stripe::Product';
+        for my $f ( sort( keys( %product_args ) ) ) {
+            is_deeply $product->$f, $product_args{$f}, "product $f matches";
+        }
+
+        my %updated_product_args = (
+            active => 1,
+            attributes => [qw/ finish material /],
+            caption => 'Updated Product Caption',
+            description => 'Updated Product Description',
+            images => [ map { sprintf( 'https://example.com/images/product-pic-%s-high-res.png', $_ ) } ( 1..8 ) ],
+            metadata => $updated_fake_metadata,
+            name => 'Updated Product Name',
+            package_dimensions => {
+                height => 9.87,
+                length => 6.54,
+                weight => 3.21,
+                width => 0.98,
+            },
+            shippable => 1,
+            url => 'https://example.com/updated-product.php',
+        );
+        my $updated = $stripe->update_product(
+            product_id => $product->id,
+            %updated_product_args,
+        );
+        isa_ok $updated, 'Net::Stripe::Product';
+        for my $f ( sort( grep { $_ ne 'attributes' } keys( %updated_product_args ) ) ) {
+            if ( ref( $updated_product_args{$f} ) eq 'HASH' ) {
+                my $merged = { %{$product_args{$f} || {}}, %{$updated_product_args{$f} || {}} };
+                is_deeply $updated->$f, $merged, "updated product $f matches";
+            } else {
+                is_deeply $updated->$f, $updated_product_args{$f}, "updated product $f matches";
+            }
+        }
+        # get details on failed comparison by using sorted results with is_deeply instead of using eq_set
+        is_deeply [ sort @{$updated->attributes} ], [ sort @{$updated_product_args{attributes}} ], "updated product attributes matches";
+    }
+
+    Create_and_update_services: {
+        my %product_args = (
+            active => 0,
+            description => 'Hourly Service Description',
+            images => [ map { sprintf( 'https://example.com/images/service-pic-%s.png', $_ ) } ( 1..8 ) ],
+            metadata => $fake_metadata,
+            name => 'Hourly Service Name',
+            statement_descriptor => 'Statement Descr',
+            type => 'service',
+            unit_label => 'Hour(s)',
+        );
+        my $product = $stripe->create_product(
+            %product_args,
+        );
+        isa_ok $product, 'Net::Stripe::Product';
+        for my $f ( sort( keys( %product_args ) ) ) {
+            is_deeply $product->$f, $product_args{$f}, "service $f matches";
+        }
+
+        my %updated_product_args = (
+            active => 1,
+            description => 'Daily Service Description',
+            images => [ map { sprintf( 'https://example.com/images/service-pic-%s-high-res.png', $_ ) } ( 1..8 ) ],
+            metadata => $updated_fake_metadata,
+            name => 'Daily Service Name',
+            statement_descriptor => 'Updtd Statement Descr',
+            unit_label => 'Day(s)',
+        );
+        my $updated = $stripe->update_product(
+            product_id => $product->id,
+            %updated_product_args,
+        );
+        isa_ok $updated, 'Net::Stripe::Product';
+        for my $f ( sort( keys( %updated_product_args ) ) ) {
+            if ( ref( $updated_product_args{$f} ) eq 'HASH' ) {
+                my $merged = { %{$product_args{$f} || {}}, %{$updated_product_args{$f} || {}} };
+                is_deeply $updated->$f, $merged, "updated service $f matches";
+            } else {
+                is_deeply $updated->$f, $updated_product_args{$f}, "updated service $f matches";
+            }
+        }
+    }
+
+    List: {
+        my (
+            @product_ids,
+            %active_ids,
+            %shippable_ids,
+            %type_ids,
+            @product_urls,
+        );
+        note "creating products";
+        foreach my $i ( 1..5 ) {
+            foreach my $active ( 0, 1 ) {
+                my $product = $stripe->create_product(
+                    name => sprintf(
+                        '%s Product #%02d',
+                        $active ? 'Active' : 'InActive',
+                        $i,
+                    ),
+                    type => 'good',
+                    active => $active,
+                );
+                push @product_ids, $product->id;
+                push @{$active_ids{$active}}, $product->id;
+            }
+            foreach my $shippable ( 0, 1 ) {
+                my $product = $stripe->create_product(
+                    name => sprintf(
+                        '%s Product #%02d',
+                        ( $shippable ? '' : 'Non-' ) . 'Shippable',
+                        $i,
+                    ),
+                    type => 'good',
+                    shippable => $shippable,
+                    url => sprintf(
+                        'https://example.com/%s-product-%s-%02d.php',
+                        ( $shippable ? '' : 'non-' ) . 'shippable',
+                        $future_ymdhms,
+                        $i,
+                    ),
+                );
+                push @product_ids, $product->id;
+                push @{$shippable_ids{$shippable}}, $product->id;
+                push @product_urls, $product->url;
+            }
+            foreach my $type ( qw/ good service / ) {
+                my $product = $stripe->create_product(
+                    name => sprintf(
+                        '%s #%02d',
+                        $type eq 'service' ? 'Service' : 'Product',
+                        $i,
+                    ),
+                    type => $type,
+                );
+                push @product_ids, $product->id;
+                push @{$type_ids{$type}}, $product->id;
+            }
+        }
+
+        my @subset = @product_ids[0..4];
+        my $products = $stripe->list_products(
+            ids => \@subset,
+        );
+        isa_ok $products, 'Net::Stripe::List';
+        is_deeply [ sort map { $_ ->id } $products->elements ], [ sort @subset ], 'retrieved fixed id list';
+
+        foreach my $active ( sort( keys( %active_ids ) ) ) {
+            my $products = $stripe->list_products(
+                active => $active,
+                limit => 0,
+            );
+            isa_ok $products, 'Net::Stripe::List';
+
+            # since we cannot be sure that our newly-created objects are
+            # the only ones that exist, we must simply confirm that they are
+            # somewhere in the list
+            my %seeking = map { $_ => 1 } @{$active_ids{$active} || []};
+            foreach my $product ( $products->elements ) {
+                delete( $seeking{$product->id} ) if exists( $seeking{$product->id} );
+            }
+            is_deeply \%seeking, {}, "retrieved product objects for active '$active'";
+        }
+
+        foreach my $shippable ( sort( keys( %shippable_ids ) ) ) {
+            my $products = $stripe->list_products(
+                shippable => $shippable,
+                limit => 0,
+            );
+            isa_ok $products, 'Net::Stripe::List';
+
+            # since we cannot be sure that our newly-created objects are
+            # the only ones that exist, we must simply confirm that they are
+            # somewhere in the list
+            my %seeking = map { $_ => 1 } @{$shippable_ids{$shippable} || []};
+            foreach my $product ( $products->elements ) {
+                delete( $seeking{$product->id} ) if exists( $seeking{$product->id} );
+            }
+            is_deeply \%seeking, {}, "retrieved product objects for shippable '$shippable'";
+        }
+
+        foreach my $type ( sort( keys( %type_ids ) ) ) {
+            my $products = $stripe->list_products(
+                type => $type,
+                limit => 0,
+            );
+            isa_ok $products, 'Net::Stripe::List';
+
+            # since we cannot be sure that our newly-created objects are
+            # the only ones that exist, we must simply confirm that they are
+            # somewhere in the list
+            my %seeking = map { $_ => 1 } @{$type_ids{$type} || []};
+            foreach my $product ( $products->elements ) {
+                delete( $seeking{$product->id} ) if exists( $seeking{$product->id} );
+            }
+            is_deeply \%seeking, {}, "retrieved product objects for type '$type'";
+        }
+
+        my $url = $product_urls[ rand( @product_urls ) ];
+        $products = $stripe->list_products(
+            url => $url,
+        );
+        isa_ok $products, 'Net::Stripe::List';
+        my @products = $products->elements;
+        is scalar( @products ), 1, 'retrieved one product object by url';
+        is $products[0]->url, $url, 'retrieved product object url matches';
+
+        note "deleting product objects";
+        $stripe->delete_product( product_id => $_ ) for @product_ids;
+    }
+}
+
 Plans: {
     Basic_successful_use: {
+        my $product = $stripe->create_product(
+            name => "Test Service - $future",
+            type => 'service',
+        );
         # Notice that the plan ID requires uri escaping
         my $id = $future_ymdhms;
         my %plan_args = (
@@ -343,9 +634,8 @@ Plans: {
             amount => 0,
             currency => 'usd',
             interval => 'month',
-            name => "Test Plan - $future",
+            product => $product->id,
             trial_period_days => 10,
-            statement_descriptor => 'Statement Descr',
             metadata => {
                 'somemetadata' => 'hello world',
             },
@@ -1648,12 +1938,16 @@ undef( $updated_fake_card->{address_line2} );
         }
 
         Customers_with_plans: {
+            my $free_product = $stripe->create_product(
+                name => "Freeservice $future_ymdhms",
+                type => 'service',
+            );
             my $freeplan = $stripe->post_plan(
                 id => "free-$future_ymdhms",
                 amount => 0,
                 currency => 'usd',
                 interval => 'year',
-                name => "Freeplan $future_ymdhms",
+                product => $free_product->id,
             );
             ok $freeplan->id, 'freeplan created';
             my $customer = $stripe->post_customer(
@@ -1697,12 +1991,16 @@ undef( $updated_fake_card->{address_line2} );
             ok !$other_dsubs->ended_at, 'does not have ended_at (not at period end yet)';
             ok $other_dsubs->cancel_at_period_end, 'cancel_at_period_end';
 
+            my $pricey_product = $stripe->create_product(
+                name => "Priceyservice $future_ymdhms",
+                type => 'service',
+            );
             my $priceyplan = $stripe->post_plan(
                 id => "pricey-$future_ymdhms",
                 amount => 1000,
                 currency => 'usd',
                 interval => 'year',
-                name => "Priceyplan $future_ymdhms",
+                product => $pricey_product->id,
             );
             ok $priceyplan->id, 'priceyplan created';
             my $coupon_id = "priceycoupon-$future_ymdhms";
@@ -1765,12 +2063,16 @@ undef( $updated_fake_card->{address_line2} );
 
 Invoices_and_items: {
     Successful_usage: {
+        my $product = $stripe->create_product(
+            name => "Service $future_ymdhms",
+            type => 'service',
+        );
         my $plan = $stripe->post_plan(
             id => "plan-$future_ymdhms",
             amount => 1000,
             currency => 'usd',
             interval => 'year',
-            name => "Plan $future_ymdhms",
+            product => $product->id,
         );
         ok $plan->id, 'plan has an id';
         my $customer = $stripe->post_customer(

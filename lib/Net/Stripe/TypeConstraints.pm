@@ -68,4 +68,15 @@ subtype 'EmptyStr',
         sprintf( "Value '%s' must be an empty string", $_ );
     };
 
+subtype 'StripeProductId',
+    as 'Str',
+    where {
+        /^prod_.+/
+    },
+    message {
+        sprintf( "Value '%s' must be a product id string of the form prod_.+", $_ );
+    };
+
+enum 'StripeProductType' => [qw/ good service /];
+
 1;
