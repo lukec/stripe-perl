@@ -92,6 +92,10 @@ TypeConstraints: {
             object => 'customer',
             prefix => 'cus_',
         },
+        StripeSourceId => {
+            object => 'source',
+            prefix => 'src_',
+        },
     );
     foreach my $name ( sort( keys( %id_objects ) ) ) {
         my $constraint = Moose::Util::TypeConstraints::find_type_constraint( $name );

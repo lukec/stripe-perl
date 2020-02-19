@@ -15,7 +15,7 @@ version 0.40
  my $charge = $stripe->post_charge(  # Net::Stripe::Charge
      amount      => 12500,
      currency    => 'usd',
-     card        => $card_token,
+     source      => $card_token,
      description => 'YAPC Registration',
  );
  print "Charge was not paid!\n" unless $charge->paid;
@@ -140,7 +140,7 @@ Returns a L<Net::Stripe::BalanceTransaction>.
 
 Create a new charge.
 
-L<https://stripe.com/docs/api#create_charge>
+L<https://stripe.com/docs/api/charges/create#create_charge>
 
 =over
 
@@ -151,6 +151,8 @@ L<https://stripe.com/docs/api#create_charge>
 =item * customer - StripeCustomerId - customer to charge - optional
 
 =item * card - StripeTokenId or StripeCardId - card to use - optional
+
+=item * source - StripeTokenId or StripeCardId - source to use - optional
 
 =item * description - Str - description for the charge - optional
 
@@ -250,7 +252,8 @@ Returns a L<Net::Stripe::Charge>.
 
 Create or update a customer.
 
-L<https://stripe.com/docs/api#create_customer>
+L<https://stripe.com/docs/api/customers/create#create_customer>
+L<https://stripe.com/docs/api/customers/update#update_customer>
 
 =over
 
@@ -260,7 +263,13 @@ L<https://stripe.com/docs/api#create_customer>
 
 =item * card - L<Net::Stripe::Token> or StripeTokenId, default card for the customer, optional
 
+=item * source - StripeTokenId or StripeSourceId, source for the customer, optional
+
 =item * coupon - Str, optional
+
+=item * default_card - L<Net::Stripe::Token>, L<Net::Stripe::Card>, Str or HashRef, default card for the customer, optional
+
+=item * default_source - StripeCardId or StripeSourceId, default source for the customer, optional
 
 =item * description - Str, optional
 
@@ -279,7 +288,7 @@ L<https://stripe.com/docs/api#create_customer>
 Returns a L<Net::Stripe::Customer> object.
 
   my $customer = $stripe->post_customer(
-    card => $token_id,
+    source => $token_id,
     email => 'stripe@example.com',
     description => 'Test for Net::Stripe',
   );
@@ -390,11 +399,13 @@ L<https://stripe.com/docs/api/cards/create#create_card>
 
 =item * card - L<Net::Stripe::Token> or StripeTokenId
 
+=item * source - StripeTokenId
+
 =back
 
 Returns a L<Net::Stripe::Card>.
 
-  $stripe->post_card(customer => $customer, card => $card);
+  $stripe->post_card(customer => $customer, source => $token_id);
 
 =head2 update_card
 
@@ -464,6 +475,171 @@ L<https://stripe.com/docs/api#delete_card>
 Returns a L<Net::Stripe::Card>.
 
   $stripe->delete_card(customer => $customer, card => $card);
+
+=head1 Source Methods
+
+=head2 create_source
+
+Create a new source object
+
+L<https://stripe.com/docs/api/sources/create#create_source>
+
+=over
+
+=item * amount - Int - amount associated with the source
+
+=item * currency - Str - currency associated with the source
+
+=item * flow - StripeSourceFlow - authentication flow for the source
+
+=item * mandate - HashRef - information about a mandate attached to the source
+
+=item * metadata - HashRef - metadata for the source
+
+=item * owner - HashRef - information about the owner of the payment instrument
+
+=item * receiver - HashRef - parameters for the receiver flow
+
+=item * redirect - HashRef - parameters required for the redirect flow
+
+=item * source_order - HashRef - information about the items and shipping associated with the source
+
+=item * statement_descriptor - Str - descriptor for statement
+
+=item * token - StripeTokenId - token used to create the source
+
+=item * type - StripeSourceType - type of source to create - required
+
+=item * usage - StripeSourceUsage - whether the source should be reusable or not
+
+=back
+
+Returns a L<Net::Stripe::Source>
+
+  $stripe->create_source(
+      type => 'card',
+      token => $token_id,
+  );
+
+=head2 get_source
+
+Retrieve an existing source object
+
+L<https://stripe.com/docs/api/sources/retrieve#retrieve_source>
+
+=over
+
+=item * source_id - StripeSourceId - id of source to retrieve - required
+
+=item * client_secret - Str - client secret of the source
+
+=back
+
+Returns a L<Net::Stripe::Source>
+
+  $stripe->get_source(
+      source_id => $source_id,
+  );
+
+=head2 update_source
+
+Update the specified source by setting the values of the parameters passed
+
+L<https://stripe.com/docs/api/sources/update#update_source>
+
+=over
+
+=item * source_id - StripeSourceId - id of source to update - required
+
+=item * amount - Int - amount associated with the source
+
+=item * metadata - HashRef - metadata for the source
+
+=item * mandate - HashRef - information about a mandate attached to the source
+
+=item * owner - HashRef - information about the owner of the payment instrument
+
+=item * source_order - HashRef - information about the items and shipping associated with the source
+
+=back
+
+Returns a L<Net::Stripe::Source>
+
+  $stripe->update_source(
+      source_id => $source_id,
+      owner => {
+          email => $new_email,
+          phone => $new_phone,
+      },
+  );
+
+=head2 attach_source
+
+Attaches a Source object to a Customer
+
+L<https://stripe.com/docs/api/sources/attach#attach_source>
+
+=over
+
+=item * source_id - StripeSourceId - id of source to be attached - required
+
+=item * customer_id - StripeCustomerId - id of customer to which source should be attached - required
+
+=back
+
+Returns a L<Net::Stripe::Source>
+
+  $stripe->attach_source(
+      customer_id => $customer_id,
+      source_id => $source->id,
+  );
+
+=head2 detach_source
+
+Detaches a Source object from a Customer
+
+L<https://stripe.com/docs/api/sources/detach#detach_source>
+
+=over
+
+=item * source_id - StripeSourceId - id of source to be detached - required
+
+=item * customer_id - StripeCustomerId - id of customer from which source should be detached - required
+
+=back
+
+Returns a L<Net::Stripe::Source>
+
+  $stripe->detach_source(
+      customer_id => $customer_id,
+      source_id => $source->id,
+  );
+
+=head2 list_sources
+
+List all sources belonging to a Customer
+
+=over
+
+=item * customer_id - StripeCustomerId - id of customer for which source to list sources - required
+
+=item * object - Str - object type - required
+
+=item * ending_before - Str - ending before condition
+
+=item * limit - Int - maximum number of charges to return
+
+=item * starting_after - Str - starting after condition
+
+=back
+
+Returns a L<Net::Stripe::List> object containing objects of the requested type
+
+  $stripe->list_sources(
+      customer_id => $customer_id,
+      object => 'card',
+      limit => 10,
+  );
 
 =head1 Subscription Methods
 
