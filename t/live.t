@@ -40,7 +40,7 @@ my $fake_card_exp = {
 my $fake_name = 'Anonymous';
 
 my $fake_metadata = {
-    'somecardmetadata' => 'testing, testing, 1-2-3',
+    'somemetadata' => 'testing, testing, 1-2-3',
 };
 
 my $fake_address = {
@@ -75,7 +75,7 @@ my $updated_fake_card_exp = {
 my $updated_fake_name = 'Dr. Anonymous';
 
 my $updated_fake_metadata = {
-    'somenewcardmetadata' => 'can you hear me now?',
+    'somenewmetadata' => 'can you hear me now?',
 };
 
 my $updated_fake_address = {
