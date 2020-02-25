@@ -71,11 +71,20 @@ Not_specify_api_credentials_should_raise_exception: {
     throws_ok { Net::Stripe->new } qr/\(api_key\) is required/;
 }
 
-# add a temporary test for serializing multi-level hashrefs until we have
-# actual methods with parameters that exercise this code
-Placeholder: {
-    my $return = { Net::Stripe::Resource::form_fields_for_hashref( "hashref", { level1=> { level2=> "value" } } ) };
-    is_deeply $return, { 'hashref[level1][level2]' => 'value' };
+Request_parameter_encoding: {
+    my $fffh = { Net::Stripe::Resource::form_fields_for_hashref(
+        "hashref", { level1=> { level2=> "value" } }
+    ) };
+    is_deeply $fffh, { 'hashref[level1][level2]' => 'value' }, 'form_fields_for_hashref encoding';
+
+    my $ctff = Net::Stripe::convert_to_form_fields(
+        {
+            "scalar" => "value",
+        }
+    );
+    is_deeply $ctff, {
+        "scalar" => "value",
+    }, 'convert_to_form_fields ref encoding';
 }
 
 TypeConstraints: {
@@ -139,7 +148,7 @@ For_later_deprecation: {
         card => $card_obj,
         customer=> $customer_obj,
     } );
-    is_deeply $return, $expected;
+    is_deeply $return, $expected, 'convert_to_form_fields object encoding';
 }
 
 done_testing();
