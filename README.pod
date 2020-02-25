@@ -1190,6 +1190,22 @@ is being replaced by the new value of the card attribute in the object.
 
 =back
 
+=head3 DEPRECATION WARNING
+
+=over
+
+=item update 'card' to 'source' for Charge and Customer
+
+While the API returns both card-related and source-related values for earlier
+versions, making the update mostly backwards-compatible, Stripe API versions
+after 2015-02-18 L<https://stripe.com/docs/upgrades#2015-02-18> will no longer
+return the card-related values, so you should update your code where necessary
+to use the 'source' argument and method for Charge objects, and the 'source',
+'sources' and 'default_source' arguments and methods for Customer, in
+preparation for the eventual deprecation of the card-related arguments.
+
+=back
+
 =head3 BUG FIXES
 
 =over
@@ -1254,11 +1270,6 @@ which is the format that C<Net::Stripe::List> expects. This makes the SDK
 compatible with the Stripe API back to the earliest documented API version
 L<https://stripe.com/docs/upgrades#2011-06-21>.
 
-=item add update_card()
-
-This method allows updates to card address, expiration, metadata, etc for
-existing customer cards.
-
 =item encode card metdata in convert_to_form_fields()
 
 When passing a hashref with a nested metadata hashref to _post(), that
@@ -1310,6 +1321,11 @@ if your account is using Stripe API version 2015-02-18 or later, you should
 update any code that relies on strict checking of the return value of
 Charge->status.
 
+=item add update_card()
+
+This method allows updates to card address, expiration, metadata, etc for
+existing customer cards.
+
 =item update Token attributes
 
 Added type and client_ip attributes for L<Net::Stripe::Token>.
@@ -1320,6 +1336,12 @@ Passing 'amount' to capture_charge() allows capture of a partial charge.
 Per the API, any remaining amount is immediately refunded. The charge object
 now also has a 'refunds' attribute, representing a L<Net::Stripe::List>
 of L<Net::Stripe::Refund> objects for the charge.
+
+=item add Source
+
+Added a Source object. Also added 'source' attribute and argument for Charge
+objects and methods, and added 'source', 'sources' and 'default_source'
+attributes and arguments for Customer objects and methods.
 
 =back
 
