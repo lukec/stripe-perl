@@ -1687,10 +1687,10 @@ undef( $updated_fake_card->{address_line2} );
             ok $dsubs->canceled_at, 'has canceled_at';
             ok $dsubs->ended_at, 'has ended_at';
 
-            my $other_dsubs = $stripe->delete_subscription(
+            my $other_dsubs = $stripe->post_subscription(
                 customer => $other->id,
                 subscription => $subs_again->id,
-                at_period_end => 1,
+                cancel_at_period_end => 1,
             );
             is $other_dsubs->status, 'active', 'subscription is still active';
             ok $other_dsubs->canceled_at, 'has canceled_at';
