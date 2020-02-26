@@ -123,6 +123,15 @@ to use the 'source' argument and method for Charge objects, and the 'source',
 'sources' and 'default_source' arguments and methods for Customer, in
 preparation for the eventual deprecation of the card-related arguments.
 
+=item update 'account_balance' to 'balance' for Customer
+
+While the API returns both 'account_balance' and 'balance' for earlier
+versions, making the update backwards-compatible, Stripe API versions
+after 2019-10-17 L<https://stripe.com/docs/upgrades#2019-10-17> do not
+accept or return 'account_balance', so you should update your code where
+necessary to use the 'balance' argument and method for Customer objects in
+preparation for the eventual deprecation of the 'account_balance' argument.
+
 =back
 
 =head3 BUG FIXES
@@ -261,6 +270,10 @@ of L<Net::Stripe::Refund> objects for the charge.
 Added a Source object. Also added 'source' attribute and argument for Charge
 objects and methods, and added 'source', 'sources' and 'default_source'
 attributes and arguments for Customer objects and methods.
+
+=item add balance for Customer
+
+Added 'balance' attribute and arguments for Customer objects and methods.
 
 =back
 
@@ -570,6 +583,8 @@ L<https://stripe.com/docs/api/customers/update#update_customer>
 
 =item * account_balance - Int, optional
 
+=item * balance - Int, optional
+
 =item * card - L<Net::Stripe::Token> or StripeTokenId, default card for the customer, optional
 
 =item * source - StripeTokenId or StripeSourceId, source for the customer, optional
@@ -681,6 +696,7 @@ Returns a L<Net::Stripe::List> object containing L<Net::Stripe::Customer> object
 Customers: {
     method post_customer(Net::Stripe::Customer|StripeCustomerId :$customer?,
                          Int :$account_balance?,
+                         Int :$balance?,
                          Net::Stripe::Token|StripeTokenId :$card?,
                          Str :$coupon?,
                          Str :$default_card?,
@@ -699,6 +715,7 @@ Customers: {
         } else {
             my %args = (
                 account_balance => $account_balance,
+                balance => $balance,
                 card => $card,
                 coupon => $coupon,
                 default_card => $default_card,
@@ -2197,6 +2214,9 @@ sub _hash_to_object {
     # coerce post-2015-02-18 source-type args to to card-type args
     $hash = _post_2015_02_18_processing( $hash );
 
+    # coerce post-2019-10-17 balance to account_balance
+    $hash = _post_2019_10_17_processing( $hash );
+
     foreach my $k (grep { ref($hash->{$_}) } keys %$hash) {
         my $v = $hash->{$k};
         if (ref($v) eq 'HASH' && defined($v->{object})) {
@@ -2372,6 +2392,18 @@ sub _post_2015_02_18_processing {
             $card_id_type->check( $hash->{default_source} )
         ) {
             $hash->{default_card} = $hash->{default_source};
+        }
+    }
+    return $hash;
+}
+
+# coerce post-2019-10-17 balance to account_balance
+fun _post_2019_10_17_processing(
+    HashRef $hash,
+) {
+    if ( exists( $hash->{object} ) && $hash->{object} eq 'customer' ) {
+        if ( ! exists( $hash->{account_balance} ) && exists( $hash->{balance} ) ) {
+            $hash->{account_balance} = $hash->{balance};
         }
     }
     return $hash;

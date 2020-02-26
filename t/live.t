@@ -1000,6 +1000,98 @@ Customers: {
             is $customer->metadata->{'somemetadata'}, 'hello world', 'customer metadata';
         }
 
+        Customer_with_balance: {
+            Create: {
+                my $balance = 1000;
+                my $customer = $stripe->post_customer(
+                    account_balance => $balance,
+                );
+                isa_ok $customer, 'Net::Stripe::Customer';
+                is $customer->account_balance, $balance, 'account_balance matches';
+                is $customer->balance, $balance, 'balance matches';
+
+                $customer = $stripe->post_customer(
+                    balance => $balance,
+                );
+                isa_ok $customer, 'Net::Stripe::Customer';
+                is $customer->balance, $balance, 'balance matches';
+                is $customer->account_balance, $balance, 'account_balance matches';
+            }
+
+            Update_for_customer_id: {
+                my $balance = 1000;
+                my $customer = $stripe->post_customer(
+                    account_balance => $balance,
+                );
+                isa_ok $customer, 'Net::Stripe::Customer';
+                is $customer->account_balance, $balance, 'account_balance matches';
+                is $customer->balance, $balance, 'balance matches';
+
+                $balance = 999;
+                $customer = $stripe->post_customer(
+                    customer => $customer->id,
+                    account_balance => $balance,
+                );
+                isa_ok $customer, 'Net::Stripe::Customer';
+                is $customer->account_balance, $balance, 'account_balance matches';
+                is $customer->balance, $balance, 'balance matches';
+
+                $balance = 1000;
+                $customer = $stripe->post_customer(
+                    balance => $balance,
+                );
+                isa_ok $customer, 'Net::Stripe::Customer';
+                is $customer->account_balance, $balance, 'account_balance matches';
+                is $customer->balance, $balance, 'balance matches';
+
+                $balance = 999;
+                $customer = $stripe->post_customer(
+                    customer => $customer->id,
+                    balance => $balance,
+                );
+                isa_ok $customer, 'Net::Stripe::Customer';
+                is $customer->account_balance, $balance, 'account_balance matches';
+                is $customer->balance, $balance, 'balance matches';
+            }
+
+            Update_for_customer_object: {
+                my $balance = 1000;
+                my $customer = $stripe->post_customer(
+                    account_balance => $balance,
+                );
+                isa_ok $customer, 'Net::Stripe::Customer';
+                is $customer->account_balance, $balance, 'account_balance matches';
+                is $customer->balance, $balance, 'balance matches';
+
+                $balance = 999;
+                $customer->account_balance( $balance );
+                $customer = $stripe->post_customer(
+                    customer => $customer,
+                );
+                isa_ok $customer, 'Net::Stripe::Customer';
+                is $customer->account_balance, $balance, 'account_balance matches';
+                is $customer->balance, $balance, 'balance matches';
+
+                $balance = 1000;
+                $customer = $stripe->post_customer(
+                    balance => $balance,
+                );
+                isa_ok $customer, 'Net::Stripe::Customer';
+                is $customer->account_balance, $balance, 'account_balance matches';
+                is $customer->balance, $balance, 'balance matches';
+
+                $balance = 999;
+                $customer->balance( $balance );
+                $customer = $stripe->post_customer(
+                    customer => $customer,
+                );
+                isa_ok $customer, 'Net::Stripe::Customer';
+                is $customer->account_balance, $balance, 'account_balance matches';
+                is $customer->balance, $balance, 'balance matches';
+            }
+
+        }
+
         Retrieve_via_email: {
             my $email_address = 'stripe' . time() . '@example.com';
             my $customer = $stripe->post_customer(
