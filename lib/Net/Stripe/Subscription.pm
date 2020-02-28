@@ -34,7 +34,7 @@ has 'cancel_at_period_end' => (is => 'rw', isa => 'Maybe[Bool]');
 
 method form_fields {
     return $self->form_fields_for(
-        qw/coupon prorate trial_end quantity card plan/
+        qw/coupon prorate trial_end quantity card plan cancel_at_period_end/
     );
 }
 

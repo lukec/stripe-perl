@@ -132,6 +132,14 @@ accept or return 'account_balance', so you should update your code where
 necessary to use the 'balance' argument and method for Customer objects in
 preparation for the eventual deprecation of the 'account_balance' argument.
 
+=item use 'cancel_at_period_end' instead of 'at_period_end' for canceling Subscriptions
+
+For Stripe API versions after 2018-08-23
+L<https://stripe.com/docs/upgrades#2018-08-23>, you can no longer use
+'at_period_end' in delete_subscription(). The delete_subscription() method
+is reserved for immediate canceling going forward. You should update your
+code to use 'cancel_at_period_end in update_subscription() instead.
+
 =back
 
 =head3 BUG FIXES
@@ -274,6 +282,11 @@ attributes and arguments for Customer objects and methods.
 =item add balance for Customer
 
 Added 'balance' attribute and arguments for Customer objects and methods.
+
+=item add cancel_at_period_end for update_subscription()
+
+Added 'cancel_at_period_end' argument update_subscription() and added
+'cancel_at_period_end' to the POST stream for Subscription objects.
 
 =back
 
@@ -1267,9 +1280,11 @@ L<https://stripe.com/docs/api#create_subscription>
 
 =item * prorate - Bool, optional
 
+=item * cancel_at_period_end - Bool, optional
+
 =back
 
-Returns a L<Net::Stripe::Customer> object.
+Returns a L<Net::Stripe::Subscription> object.
 
   $stripe->post_subscription(customer => $customer, plan => 'testplan');
 
@@ -1327,7 +1342,8 @@ Subscriptions: {
                              Net::Stripe::Card|Net::Stripe::Token|Str :$source?,
                              Int :$quantity? where { $_ >= 0 },
                              Num :$application_fee_percent?,
-                             Bool :$prorate? = 1
+                             Bool :$prorate? = 1,
+                             Bool :$cancel_at_period_end?,
                          ) {
         if (ref($customer)) {
             $customer = $customer->id;
@@ -1345,7 +1361,8 @@ Subscriptions: {
                         source => $source,
                         prorate => $prorate,
                         quantity => $quantity,
-                        application_fee_percent => $application_fee_percent);
+                        application_fee_percent => $application_fee_percent,
+                        cancel_at_period_end => $cancel_at_period_end);
             if (defined($subscription)) {
                 $args{id} = $subscription;
             }
