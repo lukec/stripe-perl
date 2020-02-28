@@ -1789,7 +1789,7 @@ Returns a L<Net::Stripe::Invoice>.
 
 =over
 
-=item * customer, L<Net::Stripe::Cusotmer> or Str
+=item * customer, L<Net::Stripe::Customer> or Str
 
 =back
 
