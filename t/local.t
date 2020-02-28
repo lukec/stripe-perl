@@ -134,7 +134,6 @@ For_later_deprecation: {
     );
     my $customer_obj = Net::Stripe::Customer->new(
         email => 'anonymous@example.com',
-        account_balance => 1000,
     );
     # mimick previous code structure in convert_to_form_fields()
     my $expected;

@@ -261,6 +261,8 @@ L<https://stripe.com/docs/api/customers/update#update_customer>
 
 =item * account_balance - Int, optional
 
+=item * balance - Int, optional
+
 =item * card - L<Net::Stripe::Token> or StripeTokenId, default card for the customer, optional
 
 =item * source - StripeTokenId or StripeSourceId, source for the customer, optional
@@ -1204,6 +1206,15 @@ to use the 'source' argument and method for Charge objects, and the 'source',
 'sources' and 'default_source' arguments and methods for Customer, in
 preparation for the eventual deprecation of the card-related arguments.
 
+=item update 'account_balance' to 'balance' for Customer
+
+While the API returns both 'account_balance' and 'balance' for earlier
+versions, making the update backwards-compatible, Stripe API versions
+after 2019-10-17 L<https://stripe.com/docs/upgrades#2019-10-17> do not
+accept or return 'account_balance', so you should update your code where
+necessary to use the 'balance' argument and method for Customer objects in
+preparation for the eventual deprecation of the 'account_balance' argument.
+
 =back
 
 =head3 BUG FIXES
@@ -1342,6 +1353,10 @@ of L<Net::Stripe::Refund> objects for the charge.
 Added a Source object. Also added 'source' attribute and argument for Charge
 objects and methods, and added 'source', 'sources' and 'default_source'
 attributes and arguments for Customer objects and methods.
+
+=item add balance for Customer
+
+Added 'balance' attribute and arguments for Customer objects and methods.
 
 =back
 
