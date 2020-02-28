@@ -140,6 +140,27 @@ L<https://stripe.com/docs/upgrades#2018-08-23>, you can no longer use
 is reserved for immediate canceling going forward. You should update your
 code to use 'cancel_at_period_end in update_subscription() instead.
 
+=item update 'date' to 'created' for Invoice
+
+While the API returns both 'date' and 'created' for earlier versions, making
+the update backwards-compatible, Stripe API versions after 2019-03-14
+L<https://stripe.com/docs/upgrades#2019-03-14> only return 'created', so you
+should update your code where necessary to use the 'created' method for
+Invoice objects in preparation for the eventual deprecation of the 'date'
+argument.
+
+=item use 'auto_advance' instead of 'closed' for Invoice
+
+The 'closed' attribute for the Invoice object controls automatic collection,
+and has been deprecated in favor of the more specific 'auto_advance' attribute.
+Where you might have set closed=true on Invoices in the past, set
+auto_advance=false. While the API returns both 'closed' and 'auto_advance'
+for earlier versions, making the update backwards-compatible, Stripe API
+versions after 2018-11-08 L<https://stripe.com/docs/upgrades#2018-11-08>
+only return 'auto_advance', so you should update your code where necessary to
+use the 'auto_advance' argument and method for Invoice objects in preparation
+for the eventual deprecation of the 'closed' argument.
+
 =back
 
 =head3 BUG FIXES
@@ -287,6 +308,13 @@ Added 'balance' attribute and arguments for Customer objects and methods.
 
 Added 'cancel_at_period_end' argument update_subscription() and added
 'cancel_at_period_end' to the POST stream for Subscription objects.
+
+=item update Invoice
+
+Added 'created' attribute for Invoice objects, and removed the required
+constraint for the deprecated 'date' attribute. Also added the 'auto_advance'
+attribute and removed the required constraint for the deprecated 'closed'
+attribute.
 
 =back
 
@@ -1839,7 +1867,8 @@ Invoices: {
                           Int :$application_fee?,
                           Str :$description?,
                           HashRef :$metadata?,
-                          Net::Stripe::Subscription|Str :$subscription?) {
+                          Net::Stripe::Subscription|Str :$subscription?,
+                          Bool :$auto_advance?) {
         if (ref($customer)) {
             $customer = $customer->id;
         }
@@ -1854,7 +1883,8 @@ Invoices: {
                                 application_fee => $application_fee,
                                 description => $description,
                                 metadata => $metadata,
-                                subscription =>$subscription
+                                subscription => $subscription,
+                                auto_advance => $auto_advance,
                             });
     }
 
@@ -1862,6 +1892,7 @@ Invoices: {
     method post_invoice(Net::Stripe::Invoice|Str :$invoice,
                         Int :$application_fee?,
                         Bool :$closed?,
+                        Bool :$auto_advance?,
                         Str :$description?,
                         HashRef :$metadata?) {
         if (ref($invoice)) {
@@ -1872,6 +1903,7 @@ Invoices: {
                             {
                                 application_fee => $application_fee,
                                 closed => $closed,
+                                auto_advance => $auto_advance,
                                 description => $description,
                                 metadata => $metadata
                             });
