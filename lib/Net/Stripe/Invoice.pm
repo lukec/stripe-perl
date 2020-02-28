@@ -12,9 +12,10 @@ has 'subtotal'      => ( is => 'ro', isa => 'Maybe[Int]', required => 1 );
 has 'amount_due'    => ( is => 'ro', isa => 'Maybe[Int]', required => 1 );
 has 'attempt_count' => ( is => 'ro', isa => 'Maybe[Int]', required => 1 );
 has 'attempted'     => ( is => 'ro', isa => 'Maybe[Bool|Object]', required => 1 );
-has 'closed'        => ( is => 'ro', isa => 'Maybe[Bool|Object]', required => 1, trigger => \&_closed_change_detector);
-has 'customer'      => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
-has 'date'          => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
+has 'closed'        => ( is => 'ro', isa => 'Maybe[Bool|Object]', trigger => \&_closed_change_detector);
+has 'auto_advance'  => ( is => 'ro', isa => 'Maybe[Bool]');
+has 'created'       => ( is => 'ro', isa => 'Maybe[Int]' );
+has 'date'          => ( is => 'ro', isa => 'Maybe[Str]' );
 has 'lines'         => ( is => 'ro', isa => 'Net::Stripe::List', required => 1 );
 has 'paid'          => ( is => 'ro', isa => 'Maybe[Bool|Object]', required => 1 );
 has 'period_end'    => ( is => 'ro', isa => 'Maybe[Int]' );
@@ -41,7 +42,7 @@ sub _closed_change_detector {
 
 method form_fields {
     return $self->form_fields_for(
-        qw/description metadata/,
+        qw/description metadata auto_advance/,
         ($self->{closed_value_changed} ? qw/closed/ : ())
     );
 }
