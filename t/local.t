@@ -150,4 +150,42 @@ For_later_deprecation: {
     is_deeply $return, $expected, 'convert_to_form_fields object encoding';
 }
 
+List_pagination: {
+    my $url = '/v1/customers';
+    my @data_a;
+    foreach my $i ( 1..5 ) {
+        push @data_a, Net::Stripe::Customer->new(
+            id => sprintf( 'cus_%02d', $i ),
+        );
+    }
+    my $list_a = Net::Stripe::List->new(
+        count => scalar( @data_a ),
+        data => \@data_a,
+        has_more => undef,
+        url => $url,
+    );
+
+    my @data_b;
+    foreach my $i ( 6..10 ) {
+        push @data_b, Net::Stripe::Customer->new(
+            id => sprintf( 'cus_%02d', $i ),
+        );
+    }
+    my $list_b = Net::Stripe::List->new(
+        count => scalar( @data_b ),
+        data => \@data_b,
+        has_more => undef,
+        url => $url,
+    );
+    is_deeply { $list_b->_previous_page_args() }, { ending_before => 'cus_06' }, '_previous_page_args';
+    is_deeply { $list_b->_next_page_args() }, { starting_after => 'cus_10' }, '_next_page_args';
+
+    my $merged = Net::Stripe::List::_merge_lists(
+        lists => [ $list_a, $list_b ],
+    );
+    is_deeply [ map { $_ ->id } $merged->elements ], [ map { $_->id } ( $list_a->elements, $list_b->elements ) ], 'merged list ids match';
+    is $merged->url, $url, 'merged list url matches';
+    ok defined( $merged->count ), 'merged list has count';
+}
+
 done_testing();
