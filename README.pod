@@ -1339,6 +1339,19 @@ convert_to_form_fields(), _get() can now easily handle the same calling
 form as _post(), eliminating the need for _get_collections() and
 _get_with_args(). We have also updated _delete() accordingly.
 
+=item add _get_all()
+
+Similar to methods provided by other SDKs, calls using this method will allow
+access to all records for a given object type without having to manually
+paginate through the results. It is not intended to be used directly, but
+will be accessed through new and existing list-retrieval methods. In order to
+maintain backwards-compatibility with existing list retrieval behavior, this
+method supports passing a value of 0 for 'limit' in order to retrieve all
+records. Any other positive integer value for 'limit' will attempt to retrieve
+that number of records up to the maximum available. As before, not passing a
+value for 'limit', or explicitly passing an undefined value, retrieves whatever
+number of records the API returns by default.
+
 =back
 
 =head3 UPDATES

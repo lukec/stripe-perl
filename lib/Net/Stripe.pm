@@ -254,6 +254,19 @@ convert_to_form_fields(), _get() can now easily handle the same calling
 form as _post(), eliminating the need for _get_collections() and
 _get_with_args(). We have also updated _delete() accordingly.
 
+=item add _get_all()
+
+Similar to methods provided by other SDKs, calls using this method will allow
+access to all records for a given object type without having to manually
+paginate through the results. It is not intended to be used directly, but
+will be accessed through new and existing list-retrieval methods. In order to
+maintain backwards-compatibility with existing list retrieval behavior, this
+method supports passing a value of 0 for 'limit' in order to retrieve all
+records. Any other positive integer value for 'limit' will attempt to retrieve
+that number of records up to the maximum available. As before, not passing a
+value for 'limit', or explicitly passing an undefined value, retrieves whatever
+number of records the API returns by default.
+
 =back
 
 =head3 UPDATES
@@ -560,13 +573,14 @@ Charges: {
             $customer = $customer->id;
         }
         my %args = (
+            path => 'charges',
             created => $created,
             customer => $customer,
             ending_before => $ending_before,
             limit => $limit,
             starting_after => $starting_after,
         );
-        $self->_get('charges', \%args);
+        $self->_get_all(%args);
     }
 
     method capture_charge(
@@ -788,11 +802,12 @@ Customers: {
             $customer = $customer->id;
         }
         my %args = (
+            path => "customers/$customer/subscriptions",
             ending_before => $ending_before,
             limit => $limit,
             starting_after => $starting_after,
         );
-        return $self->_get("customers/$customer/subscriptions", \%args);
+        return $self->_get_all(%args);
     }
 
     method get_customer(Str :$customer_id) {
@@ -808,13 +823,14 @@ Customers: {
 
     method get_customers(HashRef :$created?, Str :$ending_before?, Int :$limit?, Str :$starting_after?, Str :$email?) {
         my %args = (
+            path => 'customers',
             created => $created,
             ending_before => $ending_before,
             limit => $limit,
             starting_after => $starting_after,
             email => $email,
         );
-        $self->_get('customers', \%args);
+        $self->_get_all(%args);
     }
 }
 
@@ -946,13 +962,14 @@ Cards: {
         }
 
         my %args = (
+            path => "customers/$customer/sources",
             object => "card",
             created => $created,
             ending_before => $ending_before,
             limit => $limit,
             starting_after => $starting_after,
         );
-        $self->_get("customers/$customer/sources", \%args);
+        $self->_get_all(%args);
     }
 
     method post_card(
@@ -1570,11 +1587,12 @@ Plans: {
 
     method get_plans(Str :$ending_before?, Int :$limit?, Str :$starting_after?) {
         my %args = (
+            path => 'plans',
             ending_before => $ending_before,
             limit => $limit,
             starting_after => $starting_after,
         );
-        $self->_get('plans', \%args);
+        $self->_get_all(%args);
     }
 }
 
@@ -1701,11 +1719,12 @@ Coupons: {
 
     method get_coupons(Str :$ending_before?, Int :$limit?, Str :$starting_after?) {
         my %args = (
+            path => 'coupons',
             ending_before => $ending_before,
             limit => $limit,
             starting_after => $starting_after,
         );
-        $self->_get('coupons', \%args);
+        $self->_get_all(%args);
     }
 }
 
@@ -1941,9 +1960,10 @@ Invoices: {
             $customer = $customer->id;
         }
         my %args = (
+            path => 'invoices/upcoming',
             customer => $customer,
         );
-        return $self->_get("invoices/upcoming", \%args);
+        return $self->_get_all(%args);
     }
 }
 
@@ -2119,12 +2139,13 @@ InvoiceItems: {
             $customer = $customer->id;
         }
         my %args = (
+            path => 'invoiceitems',
             created => $created,
             ending_before => $ending_before,
             limit => $limit,
             starting_after => $starting_after,
         );
-        $self->_get('invoiceitems', \%args);
+        $self->_get_all(%args);
     }
 }
 
@@ -2456,6 +2477,66 @@ fun _post_2019_10_17_processing(
         }
     }
     return $hash;
+}
+
+method _get_all(
+    Str :$path!,
+    Maybe[Str] :$ending_before?,
+    Maybe[Int] :$limit?,
+    Maybe[Str] :$starting_after?,
+    %object_filters,
+) {
+
+    # minimize the number of API calls by retrieving as many results as
+    # possible per call. the API currently returns a maximum of 100 results.
+    my $API_PAGE_SIZE = 100;
+    my $PAGE_SIZE = $limit;
+    my $GET_MORE;
+    if ( defined( $limit ) && ( $limit eq '0' || $limit > $API_PAGE_SIZE ) ) {
+        $PAGE_SIZE = $API_PAGE_SIZE;
+        $GET_MORE = 1;
+    }
+
+    my %args = (
+        %object_filters,
+        ending_before => $ending_before,
+        limit => $PAGE_SIZE,
+        starting_after => $starting_after,
+    );
+    my $list = $self->_get($path, \%args);
+
+    if ( $GET_MORE ) {
+        # passing 'ending_before' causes the API to start with the oldest
+        # records. so in order to always provide records in reverse-chronological
+        # order, we must prepend these to the existing records.
+        my $REVERSE = defined( $ending_before ) && ! defined( $starting_after );
+        my $MAX_COUNT = $limit eq '0' ? undef : $limit;
+        while ( 1 ) {
+            my $PAGE_SIZE = $API_PAGE_SIZE;
+            if ( defined( $MAX_COUNT ) ) {
+                my $TO_FETCH = $MAX_COUNT - scalar( $list->elements );
+                last if $TO_FETCH <= 0;
+                $PAGE_SIZE = $TO_FETCH if $TO_FETCH < $PAGE_SIZE;
+            }
+
+            my %args = (
+                %object_filters,
+                limit => $PAGE_SIZE,
+                ( $REVERSE ? $list->_previous_page_args() : $list->_next_page_args() ),
+            );
+            my $page = $self->_get($path, \%args);
+
+            last if $page->is_empty;
+
+            $list = Net::Stripe::List::_merge_lists(
+                lists => [ $REVERSE ?
+                    ( $page, $list ) :
+                    ( $list, $page )
+                ],
+            );
+        }
+    }
+    return $list;
 }
 
 method _build_api_base { 'https://api.stripe.com/v1' }

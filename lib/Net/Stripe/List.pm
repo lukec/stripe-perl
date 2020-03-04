@@ -27,6 +27,32 @@ method last {
     return $self->get(scalar($self->elements)-1);
 }
 
+method _next_page_args() {
+    return (
+        starting_after => $self->get(-1)->id,
+    );
+}
+
+method _previous_page_args() {
+    return (
+        ending_before => $self->get(0)->id,
+    );
+}
+
+fun _merge_lists(
+    ArrayRef[Net::Stripe::List] :$lists!,
+) {
+    my $has_count = defined( $lists->[-1]->count );
+    my $url = $lists->[-1]->url;
+    my %list_args = (
+        count => $has_count ? scalar( map { $_->elements } @$lists ) : undef,
+        data => [ map { $_->elements } @$lists ],
+        has_more => 0,
+        url => $url,
+    );
+    return Net::Stripe::List->new( %list_args );
+}
+
 __PACKAGE__->meta->make_immutable;
 1;
 
