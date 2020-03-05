@@ -77,14 +77,25 @@ Request_parameter_encoding: {
     ) };
     is_deeply $fffh, { 'hashref[level1][level2]' => 'value' }, 'form_fields_for_hashref encoding';
 
+    my $fffa = { Net::Stripe::Resource::form_fields_for_arrayref(
+        "arrayref", [qw/ val1 val2 val3 /],
+    ) };
+    is_deeply $fffa, { 'arrayref[]' => [qw/ val1 val2 val3 /] }, 'form_fields_for_arrayref encoding';
+
     my $ctff = Net::Stripe::convert_to_form_fields(
         {
             "scalar" => "value",
+            "arrayref" => [qw/ val1 val2 val3 /],
         }
     );
     is_deeply $ctff, {
         "scalar" => "value",
+        "arrayref[]" => [qw/ val1 val2 val3 /],
     }, 'convert_to_form_fields ref encoding';
+
+    is Net::Stripe::_encode_boolean( 1 ), 'true', 'encode boolean true';
+    is Net::Stripe::_encode_boolean( 0 ), 'false', 'encode boolean false';
+    ok !defined( Net::Stripe::_encode_boolean( undef ) ), 'encode boolean undef';
 }
 
 TypeConstraints: {
@@ -104,6 +115,10 @@ TypeConstraints: {
         StripeSourceId => {
             object => 'source',
             prefix => 'src_',
+        },
+        StripeProductId => {
+            object => 'product',
+            prefix => 'prod_',
         },
     );
     foreach my $name ( sort( keys( %id_objects ) ) ) {
