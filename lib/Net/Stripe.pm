@@ -10,7 +10,9 @@ use MIME::Base64 qw/encode_base64/;
 use URI::Escape qw/uri_escape/;
 use JSON qw/decode_json/;
 use URI qw//;
+use DateTime qw//;
 use Net::Stripe::TypeConstraints;
+use Net::Stripe::Constants;
 use Net::Stripe::Token;
 use Net::Stripe::Invoiceitem;
 use Net::Stripe::Invoice;
@@ -58,16 +60,41 @@ generally named after the HTTP method and the object name.
 
 This method returns Moose objects for responses from the API.
 
-=head2 WARNING
+=head2 VERSIONING
 
-This SDK is "version agnostic" of the Stripe API
-L<https://github.com/lukec/stripe-perl/issues/80>
-and at the time of this release Stripe has some major changes afoot
-L<https://github.com/lukec/stripe-perl/issues/115>
+Because of occasional non-backward-compatible changes in the Stripe API, a
+given version of the SDK is only guaranteed to support Stripe API versions
+within the range defined by C<Net::Stripe::Constants::MIN_API_VERSION> and
+C<Net::Stripe::Constants::MAX_API_VERSION>.
 
-If you're considering using this please click "Watch" on this github project
-L<https://github.com/lukec/stripe-perl/>
-where discussion on these topics takes place.
+If you need a version of the SDK supporting a specific older Stripe API
+version, you can check for available versions at
+L<https://github.com/lukec/stripe-perl/branches>, or by cloning this
+repository, located at <https://github.com/lukec/stripe-perl> and using
+<git branch> to view available version-specific branches.
+
+=head3 DEFAULT VERSIONING
+
+If you do not set the Stripe API version on object instantiation, API
+calls will default to the API version setting for your Stripe account.
+
+=head3 SPECIFIC VERSIONING
+
+If you set the Stripe API version on object instantiation you are telling
+Stripe to use that version of the API instead of the default for your account,
+and therefore the available API request and response parameters, the names of
+those parameters and the structure of the format of the returned data will all
+be dictated by the version that you specify. You can read more about the
+details of specific API versions at
+<https://stripe.com/docs/upgrades#api-changelog>.
+
+=head3 OUT OF SCOPE VERSIONING
+
+If you are wearing a cowboy hat and think - although your specified account
+version is outside the range defined in C<Net::Stripe::Constants> - that your
+use case is simple enough that it should "just work", you can create your
+object instance with C<force_api_version =E<gt> 1>, but don't say we didn't
+warn you!
 
 =head1 RELEASE NOTES
 
@@ -354,6 +381,11 @@ This creates a new stripe API object.  The following parameters are accepted:
 
 This is required. You get this from your Stripe Account settings.
 
+=item api_version
+
+This is the value of the Stripe-Version header <https://stripe.com/docs/api/versioning>
+you wish to transmit for API calls.
+
 =item debug
 
 You can set this to true to see extra debug info.
@@ -371,6 +403,13 @@ has 'debug_network' => (is => 'rw', isa => 'Bool',   default    => 0, documentat
 has 'api_key'       => (is => 'ro', isa => 'Str',    required   => 1, documentation => "You get this from your Stripe Account settings");
 has 'api_base'      => (is => 'ro', isa => 'Str',    lazy_build => 1, documentation => "This is the base part of the URL for every request made");
 has 'ua'            => (is => 'ro', isa => 'Object', lazy_build => 1, documentation => "The LWP::UserAgent that is used for requests");
+has 'api_version'   => (is => 'ro', isa => 'StripeAPIVersion', documentation => "This is the value of the Stripe-Version header you wish to transmit for API calls");
+
+sub BUILD {
+    my ( $self, $args ) = @_;
+    $self->_validate_api_version_range();
+    $self->_validate_api_version_value();
+}
 
 =charge_method post_charge
 
@@ -2525,9 +2564,16 @@ method _post(Str $path!, HashRef|StripeResourceObject $obj?) {
     return $self->_make_request($req);
 }
 
-method _make_request($req) {
+method _get_response(
+    HTTP::Request :$req!,
+    Bool :$suppress_api_version? = 0,
+) {
     $req->header( Authorization =>
         "Basic " . encode_base64($self->api_key . ':'));
+
+    if ($self->api_version && ! $suppress_api_version) {
+         $req->header( 'Stripe-Version' => $self->api_version );
+    }
 
     if ($self->debug_network) {
         print STDERR "Sending to Stripe:\n------\n" . $req->as_string() . "------\n";
@@ -2540,25 +2586,7 @@ method _make_request($req) {
     }
 
     if ($resp->code == 200) {
-        my $ref = decode_json( $resp->content );
-        if ( ref( $ref ) eq 'ARRAY' ) {
-            # some list-type data structures are arrayrefs in API versions 2012-09-24 and earlier.
-            # if those data structures are at the top level, such as when
-            # we request 'GET /charges/cus_.../', we need to coerce that
-            # arrayref into the form that Net::Stripe::List expects.
-            return _array_to_object( $ref, $req->uri );
-        } elsif ( ref( $ref ) eq 'HASH' ) {
-            # all top-level data structures are hashes in API versions 2012-10-26 and later
-            return _hash_to_object( $ref );
-        } else {
-            die Net::Stripe::Error->new(
-                type => "HTTP request error",
-                message => sprintf(
-                    "Invalid object type returned: '%s'",
-                    ref( $ref ) || 'NONREF',
-                ),
-            );
-        }
+        return $resp;
     } elsif ($resp->code == 500) {
         die Net::Stripe::Error->new(
             type => "HTTP request error",
@@ -2580,6 +2608,31 @@ method _make_request($req) {
 
     warn "$e\n" if $self->debug;
     die $e;
+}
+
+method _make_request(HTTP::Request $req!) {
+    my $resp = $self->_get_response(
+        req => $req,
+    );
+    my $ref = decode_json( $resp->content );
+    if ( ref( $ref ) eq 'ARRAY' ) {
+        # some list-type data structures are arrayrefs in API versions 2012-09-24 and earlier.
+        # if those data structures are at the top level, such as when
+        # we request 'GET /charges/cus_.../', we need to coerce that
+        # arrayref into the form that Net::Stripe::List expects.
+        return _array_to_object( $ref, $req->uri );
+    } elsif ( ref( $ref ) eq 'HASH' ) {
+        # all top-level data structures are hashes in API versions 2012-10-26 and later
+        return _hash_to_object( $ref );
+    } else {
+        die Net::Stripe::Error->new(
+            type => "HTTP request error",
+            message => sprintf(
+                "Invalid object type returned: '%s'",
+                ref( $ref ) || 'NONREF',
+            ),
+        );
+    }
 }
 
 sub _hash_to_object {
@@ -2870,6 +2923,118 @@ method _build_ua {
     my $ua = LWP::UserAgent->new(keep_alive => 4);
     $ua->agent("Net::Stripe/" . ($Net::Stripe::VERSION || 'dev'));
     return $ua;
+}
+
+# since the Stripe API does not have a ping-like method, we have to perform
+# an extraneous request in order to retrieve the Stripe-Version header with
+# the response. for now, we will use the 'balance' endpoint because it one of
+# the simplest and least-privileged.
+method _get_stripe_verison_header(
+    Bool :$suppress_api_version? = 0,
+) {
+    my $path = 'balance';
+    my $req = GET $self->api_base . '/' . $path;
+
+    # swallow the possible invalid API version warning
+    local $SIG{__WARN__} = sub {};
+    my $resp = $self->_get_response(
+        req => $req,
+        suppress_api_version => $suppress_api_version,
+    );
+
+    my $stripe_version = $resp->header( 'Stripe-Version' );
+    my $stripe_api_version_type = Moose::Util::TypeConstraints::find_type_constraint( 'StripeAPIVersion' );
+    die Net::Stripe::Error->new(
+        type => "API version validation error",
+        message => sprintf( "Failed to retrieve the Stripe-Version header: '%s'",
+            defined( $stripe_version ) ? $stripe_version : 'undefined',
+        ),
+    ) unless defined( $stripe_version ) && $stripe_api_version_type->check( $stripe_version );
+
+    return $stripe_version;
+}
+
+method _get_account_api_version {
+    my $stripe_version = $self->_get_stripe_verison_header(
+        suppress_api_version => 1,
+    );
+    return $stripe_version;
+}
+
+# if we have set an explicit API version, confirm that it is valid. if
+# it is invalid, _get_response() dies with an invalid_request_error.
+method _validate_api_version_value {
+    return unless defined( $self->api_version );
+
+    my $stripe_version = $self->_get_stripe_verison_header();
+    die Net::Stripe::Error->new(
+        type => "API version validation error",
+        message => sprintf( "Stripe API version mismatch. Sent: '%s'. Received: '%s'.",
+            $self->api_version,
+            $stripe_version,
+        ),
+    ) unless $stripe_version eq $self->api_version;
+
+    return 1;
+}
+
+# if we have set an explicit API version, confirm that it is within the
+# appropriate range. otherwise, retrieve the default value for this
+# account and confirm that it is within the appropriate range.
+method _validate_api_version_range {
+
+    my $api_version = defined( $self->api_version ) ? $self->api_version : $self->_get_account_api_version();
+
+    my @api_version = split( '-', $api_version );
+    my $api_version_dt;
+    eval {
+        $api_version_dt = DateTime->new(
+            year      => $api_version[0],
+            month     => $api_version[1],
+            day       => $api_version[2],
+            time_zone => 'UTC',
+        );
+    };
+    if ( my $error = $@ ) {
+        die Net::Stripe::Error->new(
+            type => "API version validation error",
+            message => sprintf( "Invalid date string '%s' provided for api_version: %s",
+                $api_version,
+                $error,
+            ),
+        );
+    }
+
+    my @min_api_version = split( '-', Net::Stripe::Constants::MIN_API_VERSION );
+    my $min_api_version_dt = DateTime->new(
+        year      => $min_api_version[0],
+        month     => $min_api_version[1],
+        day       => $min_api_version[2],
+        time_zone => 'UTC',
+    );
+
+    my @max_api_version = split( '-', Net::Stripe::Constants::MAX_API_VERSION );
+    my $max_api_version_dt = DateTime->new(
+        year      => $max_api_version[0],
+        month     => $max_api_version[1],
+        day       => $max_api_version[2],
+        time_zone => 'UTC',
+    );
+
+    my $format = "Stripe API version %s is not supported by this version of Net::Stripe. " .
+                 "This version of Net::Stripe only supports Stripe API versions from %s to %s. " .
+                 "Please check for a version-appropriate branch at https://github.com/lukec/stripe-perl/branches.";
+    my $message = sprintf( $format,
+        $api_version,
+        Net::Stripe::Constants::MIN_API_VERSION,
+        Net::Stripe::Constants::MAX_API_VERSION,
+    );
+    die Net::Stripe::Error->new(
+        type => "API version validation error",
+        message => $message,
+    ) unless $min_api_version_dt <= $api_version_dt && $api_version_dt <= $max_api_version_dt;
+
+    return 1;
 }
 
 =head1 SEE ALSO

@@ -35,16 +35,41 @@ generally named after the HTTP method and the object name.
 
 This method returns Moose objects for responses from the API.
 
-=head2 WARNING
+=head2 VERSIONING
 
-This SDK is "version agnostic" of the Stripe API
-L<https://github.com/lukec/stripe-perl/issues/80>
-and at the time of this release Stripe has some major changes afoot
-L<https://github.com/lukec/stripe-perl/issues/115>
+Because of occasional non-backward-compatible changes in the Stripe API, a
+given version of the SDK is only guaranteed to support Stripe API versions
+within the range defined by C<Net::Stripe::Constants::MIN_API_VERSION> and
+C<Net::Stripe::Constants::MAX_API_VERSION>.
 
-If you're considering using this please click "Watch" on this github project
-L<https://github.com/lukec/stripe-perl/>
-where discussion on these topics takes place.
+If you need a version of the SDK supporting a specific older Stripe API
+version, you can check for available versions at
+L<https://github.com/lukec/stripe-perl/branches>, or by cloning this
+repository, located at <https://github.com/lukec/stripe-perl> and using
+<git branch> to view available version-specific branches.
+
+=head3 DEFAULT VERSIONING
+
+If you do not set the Stripe API version on object instantiation, API
+calls will default to the API version setting for your Stripe account.
+
+=head3 SPECIFIC VERSIONING
+
+If you set the Stripe API version on object instantiation you are telling
+Stripe to use that version of the API instead of the default for your account,
+and therefore the available API request and response parameters, the names of
+those parameters and the structure of the format of the returned data will all
+be dictated by the version that you specify. You can read more about the
+details of specific API versions at
+<https://stripe.com/docs/upgrades#api-changelog>.
+
+=head3 OUT OF SCOPE VERSIONING
+
+If you are wearing a cowboy hat and think - although your specified account
+version is outside the range defined in C<Net::Stripe::Constants> - that your
+use case is simple enough that it should "just work", you can create your
+object instance with C<force_api_version =E<gt> 1>, but don't say we didn't
+warn you!
 
 =head1 METHODS
 
@@ -57,6 +82,11 @@ This creates a new stripe API object.  The following parameters are accepted:
 =item api_key
 
 This is required. You get this from your Stripe Account settings.
+
+=item api_version
+
+This is the value of the Stripe-Version header <https://stripe.com/docs/api/versioning>
+you wish to transmit for API calls.
 
 =item debug
 
@@ -87,6 +117,14 @@ Type: Str
 This attribute is required.
 
 Additional documentation: You get this from your Stripe Account settings
+
+=head2 api_version
+
+Reader: api_version
+
+Type: StripeAPIVersion
+
+Additional documentation: This is the value of the Stripe-Version header you wish to transmit for API calls
 
 =head2 debug
 
