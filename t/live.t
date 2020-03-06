@@ -2166,6 +2166,7 @@ Invoices_and_items: {
 
         my $invoice = $stripe->get_upcominginvoice($customer->id);
         isa_ok $invoice, 'Net::Stripe::Invoice';
+        is $invoice->customer, $customer->id, 'invoice customer id matches';
         is $invoice->{subtotal}, 1700, 'subtotal';
         is $invoice->{total}, 1700, 'total';
         is scalar(@{ $invoice->lines->data }), 2, '2 lines';
