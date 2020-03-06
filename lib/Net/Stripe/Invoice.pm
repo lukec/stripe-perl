@@ -15,6 +15,7 @@ has 'attempted'     => ( is => 'ro', isa => 'Maybe[Bool|Object]', required => 1 
 has 'closed'        => ( is => 'ro', isa => 'Maybe[Bool|Object]', trigger => \&_closed_change_detector);
 has 'auto_advance'  => ( is => 'ro', isa => 'Maybe[Bool]');
 has 'created'       => ( is => 'ro', isa => 'Maybe[Int]' );
+has 'customer'      => ( is => 'ro', isa => 'Maybe[Str]', required => 1 );
 has 'date'          => ( is => 'ro', isa => 'Maybe[Str]' );
 has 'lines'         => ( is => 'ro', isa => 'Net::Stripe::List', required => 1 );
 has 'paid'          => ( is => 'ro', isa => 'Maybe[Bool|Object]', required => 1 );
