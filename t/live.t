@@ -143,7 +143,7 @@ my $updated_fake_phone = '310-555-1212';
 
 my $updated_fake_card = {
     %$updated_fake_card_exp,
-    name      => $fake_name,
+    name      => $updated_fake_name,
     metadata  => $updated_fake_metadata,
 };
 
