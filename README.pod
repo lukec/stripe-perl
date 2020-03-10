@@ -1383,6 +1383,420 @@ Returns hashref of the form
     deleted => <bool>
   }
 
+=head1 Payment Method Methods
+
+=head2 create_payment_method
+
+Create a PaymentMethod
+
+L<https://stripe.com/docs/api/payment_methods/create#create_payment_method>
+
+=over
+
+=item * type - StripePaymentMethodType - type of PaymentMethod - required
+
+=item * card - StripeTokenId - Token id for card associated with the PaymentMethod
+
+=item * billing_details - HashRef - billing information associated with the PaymentMethod
+
+=item * fpx - HashRef - details about the FPX payment method
+
+=item * ideal - HashRef - details about the iDEAL payment method
+
+=item * metadata - HashRef[Str] - metadata
+
+=item * sepa_debit - HashRef - details about the SEPA debit bank account
+
+=back
+
+Returns a L<Net::Stripe::PaymentMethod>.
+
+  $stripe->create_payment_method(
+      type => 'card',
+      card => $token_id,
+  );
+
+=head2 get_payment_method
+
+Retrieve an existing PaymentMethod
+
+L<https://stripe.com/docs/api/payment_methods/retrieve#retrieve_payment_method>
+
+=over
+
+=item * payment_method_id - StripePaymentMethodId - id of PaymentMethod to retrieve - required
+
+=back
+
+Returns a L<Net::Stripe::PaymentMethod>
+
+  $stripe->get_payment_method(
+      payment_method_id => $payment_method_id,
+  );
+
+=head2 update_payment_method
+
+Update a PaymentMethod
+
+L<https://stripe.com/docs/api/payment_methods/update#update_payment_method>
+
+=over
+
+=item * payment_method_id - StripePaymentMethodId - id of PaymentMethod to update - required
+
+=item * billing_details - HashRef - billing information associated with the PaymentMethod
+
+=item * card - HashRef[Int] - card details to update
+
+=item * metadata - HashRef[Str] - metadata
+
+=item * sepa_debit - HashRef - details about the SEPA debit bank account
+
+=back
+
+Returns a L<Net::Stripe::PaymentMethod>
+
+  $stripe->update_payment_method(
+      payment_method_id => $payment_method_id,
+      metadata => $metadata,
+  );
+
+=head2 list_payment_methods
+
+Retrieve a list of PaymentMethods
+
+L<https://stripe.com/docs/api/payment_methods/list#list_payment_methods>
+
+=over
+
+=item * customer - StripeCustomerId - return only PaymentMethods for the specified Customer id - required
+
+=item * type - Str - filter by type - required
+
+=item * ending_before - Str - ending before condition
+
+=item * limit - Int - maximum number of objects to return
+
+=item * starting_after - Str - starting after condition
+
+=back
+
+Returns a L<Net::Stripe::List> object containing L<Net::Stripe::PaymentMethod> objects
+
+  $stripe->list_payment_methods(
+      customer => $customer_id,
+      type => 'card',
+      limit => 10,
+  );
+
+=head2 attach_payment_method
+
+Attach a PaymentMethod to a Customer
+
+L<https://stripe.com/docs/api/payment_methods/attach#customer_attach_payment_method>
+
+=over
+
+=item * payment_method_id - StripePaymentMethodId - id of PaymentMethod to attach - required
+
+=item * customer - StripeCustomerId - id of Customer to which to attach the PaymentMethod - required
+
+=back
+
+Returns a L<Net::Stripe::PaymentMethod>
+
+  $stripe->attach_payment_method(
+      payment_method_id => $payment_method_id,
+      customer => $customer,
+  );
+
+=head2 detach_payment_method
+
+Detach a PaymentMethod from a Customer
+
+L<https://stripe.com/docs/api/payment_methods/detach#customer_detach_payment_method>
+
+=over
+
+=item * payment_method_id - StripePaymentMethodId - id of PaymentMethod to detach - required
+
+=back
+
+Returns a L<Net::Stripe::PaymentMethod>.
+
+  $stripe->detach_payment_method(
+      payment_method_id => $payment_method_id,
+  );
+
+=head1 Payment Intent Methods
+
+=head2 create_payment_intent
+
+Create a PaymentIntent object
+
+L<https://stripe.com/docs/api/payment_intents/create#create_payment_intent>
+
+=over
+
+=item * amount - Int - amount intended to be collected by this PaymentIntent - required
+
+=item * currency - Str - currency - required
+
+=item * application_fee_amount - Int - the amount of the application fee
+
+=item * capture_method - StripeCaptureMethod - capture method
+
+=item * confirm - Bool - attempt to confirm this PaymentIntent immediately
+
+=item * confirmation_method - StripeConfirmationMethod - confirmation method
+
+=item * customer - StripeCustomerId - id of Customer this PaymentIntent belongs to
+
+=item * description - Str - description
+
+=item * error_on_requires_action - Bool - fail the payment attempt if the PaymentIntent transitions into `requires_action`
+
+=item * mandate - Str - id of the mandate to be used for this payment
+
+=item * mandate_data - HashRef - details about the Mandate to create
+
+=item * metadata - HashRef[Str] - metadata
+
+=item * off_session - Bool - indicate that the customer is not in your checkout flow
+
+=item * on_behalf_of - Str - Stripe account ID for which these funds are intended
+
+=item * payment_method - StripePaymentMethodId - id of PaymentMethod to attach to this PaymentIntent
+
+=item * payment_method_options - HashRef - PaymentMethod-specific configuration for this PaymentIntent
+
+=item * payment_method_types - ArrayRef[StripePaymentMethodType] - list of PaymentMethod types that this PaymentIntent is allowed to use
+
+=item * receipt_email - Str - email address to send the receipt to
+
+=item * return_url - Str - URL to redirect your customer back to
+
+=item * save_payment_method - Bool - save the payment method to the customer
+
+=item * setup_future_usage - Str - allow future payments with this PaymentIntent's PaymentMethod
+
+=item * shipping - HashRef - shipping information for this PaymentIntent
+
+=item * statement_descriptor - Str - descriptor for statement
+
+=item * statement_descriptor_suffix - Str - suffix to be concatenated with the statement descriptor
+
+=item * transfer_data - HashRef - parameters used to automatically create a Transfer when the payment succeeds
+
+=item * transfer_group - Str - identifies the resulting payment as part of a group
+
+=item * use_stripe_sdk - Bool - use manual confirmation and the iOS or Android SDKs to handle additional authentication steps
+
+=back
+
+Returns a L<Net::Stripe::PaymentIntent>
+
+  $stripe->create_payment_intent(
+      amount => 3300,
+      currency => 'usd',
+  );
+
+=head2 get_payment_intent
+
+Retrieve an existing PaymentIntent
+
+L<https://stripe.com/docs/api/payment_intents/retrieve#retrieve_payment_intent>
+
+=over
+
+=item * payment_intent_id - StripePaymentIntentId - id of PaymentIntent to retrieve - required
+
+=item * client_secret - Str - client secret of the PaymentIntent to retrieve
+
+=back
+
+Returns a L<Net::Stripe::PaymentIntent>
+
+  $stripe->get_payment_intent(
+      payment_intent_id => $payment_intent_id,
+  );
+
+=head2 update_payment_intent
+
+Update an existing PaymentIntent
+
+L<https://stripe.com/docs/api/payment_intents/update#update_payment_intent>
+
+=over
+
+=item * payment_intent_id - StripePaymentIntentId - id of PaymentIntent to update - required
+
+=item * amount - Int - amount intended to be collected by this PaymentIntent - required
+
+=item * application_fee_amount - Int - the amount of the application fee
+
+=item * currency - Str - currency - required
+
+=item * customer - StripeCustomerId - id of Customer this PaymentIntent belongs to
+
+=item * description - Str - description
+
+=item * metadata - HashRef[Str] - metadata
+
+=item * payment_method - StripePaymentMethodId - id of PaymentMethod to attach to this PaymentIntent
+
+=item * payment_method_options - HashRef - PaymentMethod-specific configuration for this PaymentIntent
+
+=item * payment_method_types - ArrayRef[StripePaymentMethodType] - list of PaymentMethod types that this PaymentIntent is allowed to use
+
+=item * receipt_email - Str - email address to send the receipt to
+
+=item * save_payment_method - Bool - save the payment method to the customer
+
+=item * setup_future_usage - Str - allow future payments with this PaymentIntent's PaymentMethod
+
+=item * shipping - HashRef - shipping information for this PaymentIntent
+
+=item * statement_descriptor - Str - descriptor for statement
+
+=item * statement_descriptor_suffix - Str - suffix to be concatenated with the statement descriptor
+
+=item * transfer_data - HashRef - parameters used to automatically create a Transfer when the payment succeeds
+
+=item * transfer_group - Str - identifies the resulting payment as part of a group
+
+=back
+
+Returns a L<Net::Stripe::PaymentIntent>
+
+  $stripe->update_payment_intent(
+      payment_intent_id => $payment_intent_id,
+      description => 'Updated Description',
+  );
+
+=head2 confirm_payment_intent
+
+Confirm that customer intends to pay with provided PaymentMethod
+
+L<https://stripe.com/docs/api/payment_intents/confirm#confirm_payment_intent>
+
+=over
+
+=item * payment_intent_id - StripePaymentIntentId - id of PaymentIntent to confirm - required
+
+=item * client_secret - Str - client secret of the PaymentIntent
+
+=item * error_on_requires_action - Bool - fail the payment attempt if the PaymentIntent transitions into `requires_action`
+
+=item * mandate - Str - id of the mandate to be used for this payment
+
+=item * mandate_data - HashRef - details about the Mandate to create
+
+=item * off_session - Bool - indicate that the customer is not in your checkout flow
+
+=item * payment_method - StripePaymentMethodId - id of PaymentMethod to attach to this PaymentIntent
+
+=item * payment_method_options - HashRef - PaymentMethod-specific configuration for this PaymentIntent
+
+=item * payment_method_types - ArrayRef[StripePaymentMethodType] - list of PaymentMethod types that this PaymentIntent is allowed to use
+
+=item * receipt_email - Str - email address to send the receipt to
+
+=item * return_url - Str - URL to redirect your customer back to
+
+=item * save_payment_method - Bool - save the payment method to the customer
+
+=item * setup_future_usage - Str - allow future payments with this PaymentIntent's PaymentMethod
+
+=item * shipping - HashRef - shipping information for this PaymentIntent
+
+=item * use_stripe_sdk - Bool - use manual confirmation and the iOS or Android SDKs to handle additional authentication steps
+
+=back
+
+Returns a L<Net::Stripe::PaymentIntent>
+
+  $stripe->confirm_payment_intent(
+      payment_intent_id => $payment_intent_id,
+  );
+
+=head2 capture_payment_intent
+
+Capture the funds for the PaymentIntent
+
+L<https://stripe.com/docs/api/payment_intents/capture#capture_payment_intent>
+
+=over
+
+=item * payment_intent_id - StripePaymentIntentId - id of PaymentIntent to capture - required
+
+=item * amount_to_capture - Int - amount to capture from the PaymentIntent
+
+=item * application_fee_amount - Int - application fee amount
+
+=item * statement_descriptor - Str - descriptor for statement
+
+=item * statement_descriptor_suffix - Str - suffix to be concatenated with the statement descriptor
+
+=item * transfer_data - HashRef - parameters used to automatically create a Transfer when the payment succeeds
+
+=back
+
+Returns a L<Net::Stripe::PaymentIntent>
+
+  $stripe->capture_payment_intent(
+      payment_intent_id => $payment_intent_id,
+  );
+
+=head2 cancel_payment_intent
+
+Cancel the PaymentIntent
+
+L<https://stripe.com/docs/api/payment_intents/cancel#cancel_payment_intent>
+
+=over
+
+=item * payment_intent_id - StripePaymentIntentId - id of PaymentIntent to cancel - required
+
+=item * cancellation_reason - StripeCancellationReason - reason for cancellation
+
+=back
+
+Returns a L<Net::Stripe::PaymentIntent>
+
+  $stripe->cancel_payment_intent(
+      payment_intent_id => $payment_intent_id,
+      cancellation_reason => 'requested_by_customer',
+  );
+
+=head2 list_payment_intents
+
+Retrieve a list of PaymentIntents
+
+L<https://stripe.com/docs/api/payment_intents/list#list_payment_intents>
+
+=over
+
+=item * customer - StripeCustomerId - return only PaymentIntents for the specified Customer id
+
+=item * created - HashRef[Int] - created conditions to match
+
+=item * ending_before - Str - ending before condition
+
+=item * limit - Int - maximum number of objects to return
+
+=item * starting_after - Str - starting after condition
+
+=back
+
+Returns a L<Net::Stripe::List> object containing L<Net::Stripe::PaymentIntent> objects.
+
+  $stripe->list_payment_intents(
+      customer => $customer_id,
+      type => 'card',
+      limit => 10,
+  );
+
 =head1 RELEASE NOTES
 
 =head2 Version 0.40
@@ -1655,6 +2069,10 @@ attribute.
 
 Added a Product object. Also added 'product' attribute and argument for Plan
 objects and methods.
+
+=item add PaymentMethod and PaymentIntent
+
+Added PaymentMethod and PaymentIntent objects and methods.
 
 =back
 

@@ -93,6 +93,8 @@ my $fake_name = 'Anonymous';
 my $fake_metadata = {
     'somemetadata' => 'testing, testing, 1-2-3',
 };
+my $fake_statement_descriptor = 'Stmt Descr';
+my $fake_description = 'Generic Description';
 
 my $fake_address = {
     line1       => '123 Main Street',
@@ -105,6 +107,13 @@ my $fake_address = {
 
 my $fake_email = 'anonymous@example.com';
 my $fake_phone = '555-555-1212';
+
+my $fake_billing_details = {
+    address => $fake_address,
+    email   => $fake_email,
+    name    => $fake_name,
+    phone   => $fake_phone,
+};
 
 my $fake_card = {
     %$fake_card_exp,
@@ -128,6 +137,8 @@ my $updated_fake_name = 'Dr. Anonymous';
 my $updated_fake_metadata = {
     'somenewmetadata' => 'can you hear me now?',
 };
+my $updated_fake_statement_descriptor = 'Updtd Stmt Descr';
+my $updated_fake_description = 'Updated Generic Description';
 
 my $updated_fake_address = {
     line1       => '321 Easy Street',
@@ -140,6 +151,13 @@ my $updated_fake_address = {
 
 my $updated_fake_email = 'dr.anonymous@example.com';
 my $updated_fake_phone = '310-555-1212';
+
+my $updated_fake_billing_details = {
+    address => $updated_fake_address,
+    email   => $updated_fake_email,
+    name    => $updated_fake_name,
+    phone   => $updated_fake_phone,
+};
 
 my $updated_fake_card = {
     %$updated_fake_card_exp,
@@ -157,6 +175,7 @@ for my $field ( sort( keys( %$updated_fake_address ) ) ) {
 # that has the same card number, based on the test token passed, but it has a
 # unique card id each time, which is sufficient for the behaviors we are testing
 my $token_id_visa = 'tok_visa';
+my $payment_method_id_visa = 'pm_card_visa';
 
 Card_Tokens: {
     Basic_successful_use: {
@@ -669,6 +688,136 @@ Products: {
 
         note "deleting product objects";
         $stripe->delete_product( product_id => $_ ) for @product_ids;
+    }
+}
+
+PaymentMethods: {
+    Create_and_retrieve: {
+        my $payment_method = $stripe->create_payment_method(
+            type => 'card',
+            card => $token_id_visa,
+        );
+        isa_ok $payment_method, 'Net::Stripe::PaymentMethod';
+
+        for my $field ( qw/ created id livemode / ) {
+            ok defined( $payment_method->$field ), "payment_method has $field";
+        }
+
+        my $retrieved = $stripe->get_payment_method(
+            payment_method_id => $payment_method->id,
+        );
+        isa_ok $retrieved, 'Net::Stripe::PaymentMethod';
+        is $retrieved->id, $payment_method->id, 'retrieved payment_method id matches';
+    }
+
+    Attach_list_detach: {
+        my $customer = $stripe->post_customer();
+        my $payment_method = $stripe->get_payment_method(
+            payment_method_id => $payment_method_id_visa,
+        );
+        isa_ok $payment_method, 'Net::Stripe::PaymentMethod';
+
+        my $attached = $stripe->attach_payment_method(
+            payment_method_id => $payment_method->id,
+            customer => $customer->id,
+        );
+        isa_ok $attached, 'Net::Stripe::PaymentMethod';
+        is $attached->id, $payment_method->id, 'attached payment_method id matches';
+
+        my $payment_methods = $stripe->list_payment_methods(
+            customer => $customer->id,
+            type => 'card',
+        );
+        isa_ok $payment_methods, 'Net::Stripe::List';
+        my @payment_methods = $payment_methods->elements;
+        is scalar( @payment_methods ), 1, 'one payment_method returned';
+        is $payment_methods[0]->id, $payment_method->id, 'payment_method id matches';
+
+        my $detached = $stripe->detach_payment_method(
+            payment_method_id => $payment_method->id,
+        );
+        isa_ok $detached, 'Net::Stripe::PaymentMethod';
+        is $detached->id, $payment_method->id, 'detached payment_method id matches';
+
+        $payment_methods = $stripe->list_payment_methods(
+            customer => $customer->id,
+            type => 'card',
+        );
+        isa_ok $payment_methods, 'Net::Stripe::List';
+        @payment_methods = $payment_methods->elements;
+        is scalar( @payment_methods ), 0, 'zero payment_methods returned';
+    }
+
+    Update: {
+        my %payment_method_args = (
+            metadata => $fake_metadata,
+            billing_details => $fake_billing_details,
+        );
+        my $payment_method = $stripe->create_payment_method(
+            type => 'card',
+            card => $token_id_visa,
+            %payment_method_args,
+        );
+        isa_ok $payment_method, 'Net::Stripe::PaymentMethod';
+
+        for my $field ( sort( keys( %payment_method_args ) ) ) {
+            is_deeply $payment_method->$field, $payment_method_args{$field}, "payment_method $field matches";
+        }
+
+        my %updated_payment_method_args = (
+            metadata => $updated_fake_metadata,
+            billing_details => $updated_fake_billing_details,
+        );
+        my $customer = $stripe->post_customer();
+        my $attached = $stripe->attach_payment_method(
+            payment_method_id => $payment_method->id,
+            customer => $customer->id,
+        );
+        isa_ok $attached, 'Net::Stripe::PaymentMethod';
+        is $attached->id, $payment_method->id, 'attached payment_method id matches';
+
+        my $updated = $stripe->update_payment_method(
+            payment_method_id => $payment_method->id,
+            card => $updated_fake_card_exp,
+            %updated_payment_method_args,
+        );
+        isa_ok $updated, 'Net::Stripe::PaymentMethod';
+        is $updated->id, $payment_method->id, 'updated payment_method id matches';
+
+# HACK, HACK, HACK!!
+# the Stripe API has inconsistent responses for empty address_line2 when passing the empty string.
+# on create, it correctly reflects the empty string, while on update it incorrectly reflects undef/null
+$updated_payment_method_args{billing_details} = Storable::dclone( $updated_payment_method_args{billing_details} );
+undef( $updated_payment_method_args{billing_details}->{address}->{line2} );
+
+        for my $field ( sort( keys( %updated_payment_method_args ) ) ) {
+            if ( ref( $updated_payment_method_args{$field} ) eq 'HASH' ) {
+                # PaymentMethod metadata appears to behave differently from
+                # other objects. other objects merge new keys on update where
+                # PaymentMethod seems to overwrite the entire hash with the
+                # passed hash.
+                #my $merged = { %{$payment_method_args{$field} || {}}, %{$updated_payment_method_args{$field} || {}} };
+                my $merged = $updated_payment_method_args{$field};
+                is_deeply $updated->$field, $merged, "updated payment_method $field matches";
+            } else {
+                is $updated->$field, $updated_payment_method_args{$field}, "updated payment_method $field matches";
+            }
+        }
+
+        for my $field ( sort( keys( %$updated_fake_card_exp ) ) ) {
+            is $updated->card->$field, $updated_fake_card_exp->{$field}, "updated payment_method card $field matches";
+        }
+
+# API currently returns an error for this request, even though API docs
+# (https://stripe.com/docs/api/payment_methods/update#update_payment_method-metadata)
+# indicate that metadata can be cleared
+=cut
+        $updated = $stripe->update_payment_method(
+            payment_method_id => $payment_method->id,
+            metadata => '',
+        );
+        is_deeply $updated->metadata, {}, "cleared payment_method metadata";
+=cut
     }
 }
 
@@ -1262,6 +1411,229 @@ Charges: {
         is scalar( @refunds ), 1, 'charge has one refund';
         is $refunds[0]->amount, $amount - $partial, "refund amount matches";
         is $refunds[0]->status, 'succeeded', 'refund was successful';
+    }
+}
+
+PaymentIntents: {
+    Create_and_retrieve: {
+        my $payment_intent = $stripe->create_payment_intent(
+            amount => 3300,
+            currency => 'usd',
+        );
+        isa_ok $payment_intent, 'Net::Stripe::PaymentIntent';
+        for my $field ( qw/
+            amount_capturable amount_received charges created
+            id livemode
+        / ) {
+            ok defined( $payment_intent->$field ), "payment_intent has $field";
+        }
+        like $payment_intent->status, qr/^(?:requires_source|requires_payment_method)$/, 'payment_intent status like qr/(requires_source|requires_payment_method)/';
+
+        my $retrieved = $stripe->get_payment_intent(
+            payment_intent_id => $payment_intent->id,
+        );
+        isa_ok $retrieved, 'Net::Stripe::PaymentIntent';
+        is $retrieved->id, $payment_intent->id, 'retrieved payment_intent id matches';
+    }
+
+    Cancel: {
+        my $payment_intent = $stripe->create_payment_intent(
+            amount => 3300,
+            currency => 'usd',
+        );
+        isa_ok $payment_intent, 'Net::Stripe::PaymentIntent';
+        my $cancellation_reason = 'requested_by_customer';
+        my $canceled = $stripe->cancel_payment_intent(
+            payment_intent_id => $payment_intent->id,
+            cancellation_reason => $cancellation_reason,
+        );
+        isa_ok $canceled, 'Net::Stripe::PaymentIntent';
+        is $canceled->id, $payment_intent->id, 'canceled payment_intent id matches';
+        is $canceled->amount_capturable, 0, 'canceled payment_intent amount_capturable is zero';
+        is $canceled->amount_received, 0, 'canceled payment_intent amount_received is zero';
+        is $canceled->status, 'canceled', 'canceled payment_intent status is canceled';
+        is $canceled->cancellation_reason, $cancellation_reason, 'canceled payment_intent cancelation_reason matches';
+    }
+
+    List: {
+        my @payment_intent_ids;
+        for ( 1..15 ) {
+            my $payment_intent = $stripe->create_payment_intent(
+                amount => 3300,
+                currency => 'usd',
+            );
+            push @payment_intent_ids, $payment_intent->id;
+        }
+
+        my $payment_intents = $stripe->list_payment_intents(
+            limit => 10,
+        );
+        isa_ok $payment_intents, 'Net::Stripe::List';
+        my @payment_intents = $payment_intents->elements;
+        is scalar( @payment_intents ), 10, 'ten payment_intents returned';
+
+        my $customer = $stripe->post_customer();
+        my $payment_intent = $stripe->create_payment_intent(
+            amount => 3300,
+            currency => 'usd',
+            customer => $customer->id,
+        );
+        isa_ok $payment_intent, 'Net::Stripe::PaymentIntent';
+        push @payment_intent_ids, $payment_intent->id;
+        is $payment_intent->customer, $customer->id, 'payment_intent customer id matches';
+
+        $payment_intents = $stripe->list_payment_intents(
+            customer => $customer->id
+        );
+        isa_ok $payment_intents, 'Net::Stripe::List';
+        @payment_intents = $payment_intents->elements;
+        is scalar( @payment_intents ), 1, 'one payment_intent returned for customer';
+        is $payment_intents[0]->id, $payment_intent->id, 'payment_intent id matches';
+
+
+        foreach my $payment_intent_id ( @payment_intent_ids ) {
+            $stripe->cancel_payment_intent(
+                payment_intent_id => $payment_intent_id,
+                cancellation_reason => 'requested_by_customer',
+            );
+        }
+    }
+
+    Update: {
+        my %payment_intent_args = (
+            amount => 3300,
+            currency => 'usd',
+            description => $fake_description,
+            metadata => $fake_metadata,
+            receipt_email => $fake_email,
+            statement_descriptor => $fake_statement_descriptor,
+        );
+        my $payment_intent = $stripe->create_payment_intent( %payment_intent_args );
+        isa_ok $payment_intent, 'Net::Stripe::PaymentIntent';
+        for my $field ( sort( keys( %payment_intent_args ) ) ) {
+            is_deeply $payment_intent->$field, $payment_intent_args{$field}, "payment_intent $field matches";
+        }
+
+        my %updated_payment_intent_args = (
+            amount => 6600,
+            currency => 'gbp',
+            description => $updated_fake_description,
+            metadata => $updated_fake_metadata,
+            receipt_email => $updated_fake_email,
+            statement_descriptor => $updated_fake_statement_descriptor,
+        );
+        my $updated = $stripe->update_payment_intent(
+            %updated_payment_intent_args,
+            payment_intent_id => $payment_intent->id,
+        );
+        isa_ok $updated, 'Net::Stripe::PaymentIntent';
+        is $updated->id, $payment_intent->id, 'updated payment_intent id matches';
+
+        for my $field ( sort( keys( %updated_payment_intent_args ) ) ) {
+            if ( ref( $updated_payment_intent_args{$field} ) eq 'HASH' ) {
+                my $merged = { %{$payment_intent_args{$field} || {}}, %{$updated_payment_intent_args{$field} || {}} };
+                is_deeply $updated->$field, $merged, "updated payment_intent $field matches";
+            } else {
+                is $updated->$field, $updated_payment_intent_args{$field}, "updated payment_intent $field matches";
+            }
+        }
+
+# API currently returns an error for this request, even though API docs
+# (https://stripe.com/docs/api/payment_intents/update#update_payment_intent-metadata)
+# indicate that metadata can be cleared
+=cut
+        $updated = $stripe->update_payment_intent(
+            payment_intent_id => $payment_intent->id,
+            metadata => '',
+        );
+        is_deeply $updated->metadata, {}, "cleared payment_intent metadata";
+=cut
+    }
+
+    Automatic_confirmation_and_capture: {
+        my $payment_method = $stripe->get_payment_method(
+            payment_method_id => $payment_method_id_visa,
+        );
+        my %payment_intent_args = (
+            amount => 3300,
+            currency => 'usd',
+            capture_method => 'automatic',
+            confirmation_method => 'automatic',
+        );
+        my $payment_intent = $stripe->create_payment_intent(
+            %payment_intent_args,
+            confirm => 1,
+            payment_method => $payment_method->id,
+        );
+        isa_ok $payment_intent, 'Net::Stripe::PaymentIntent';
+        for my $field ( sort( keys( %payment_intent_args ) ) ) {
+            is $payment_intent->$field, $payment_intent_args{$field}, "payment_intent $field matches";
+        }
+        is $payment_intent->status, 'succeeded', 'payment_intent status is succeeded';
+        is $payment_intent->amount_capturable, 0, 'payment_intent amount_capturable matches';
+        is $payment_intent->amount_received, $payment_intent_args{amount}, 'payment_intent amount_received matches';
+
+        isa_ok $payment_intent->charges, 'Net::Stripe::List';
+        my @charges = $payment_intent->charges->elements;
+        is scalar(@charges), 1, 'one charge returned';
+        is $charges[0]->amount, $payment_intent_args{amount}, 'payment_intent charge amount matches';
+        is $charges[0]->captured, 1, 'payment_intent charge captured matches';
+        is $charges[0]->paid, 1, 'payment_intent charge paid matches';
+    }
+
+    Manual_confirmation_and_capture: {
+        my $payment_method = $stripe->get_payment_method(
+            payment_method_id => $payment_method_id_visa,
+        );
+        my %payment_intent_args = (
+            amount => 3300,
+            currency => 'usd',
+            capture_method => 'manual',
+            confirmation_method => 'manual',
+        );
+        my $payment_intent = $stripe->create_payment_intent(
+            %payment_intent_args,
+            confirm => 0,
+            payment_method => $payment_method->id,
+        );
+        isa_ok $payment_intent, 'Net::Stripe::PaymentIntent';
+        for my $field ( sort( keys( %payment_intent_args ) ) ) {
+            is $payment_intent->$field, $payment_intent_args{$field}, "payment_intent $field matches";
+        }
+        is $payment_intent->status, 'requires_confirmation', 'payment_intent status is requires_confirmation';
+        is $payment_intent->amount_capturable, 0, 'payment_intent amount_capturable matches';
+        is $payment_intent->amount_received, 0, 'payment_intent amount_received matches';
+
+
+        my $confirmed = $stripe->confirm_payment_intent(
+            payment_intent_id => $payment_intent->id,
+        );
+        isa_ok $confirmed, 'Net::Stripe::PaymentIntent';
+        for my $field ( sort( keys( %payment_intent_args ) ) ) {
+            is $confirmed->$field, $payment_intent_args{$field}, "confirmed payment_intent $field matches";
+        }
+        is $confirmed->status, 'requires_capture', 'confirmed  payment_intent status is requires_capture';
+        is $confirmed->amount_capturable, $payment_intent_args{amount}, 'confirmed payment_intent amount_capturable matches';
+        is $confirmed->amount_received, 0, 'confirmed payment_intent amount_received matches';
+
+        my $captured = $stripe->capture_payment_intent(
+            payment_intent_id => $payment_intent->id,
+        );
+        isa_ok $captured, 'Net::Stripe::PaymentIntent';
+        is $captured->id, $payment_intent->id, "captured payment_intent id matches";
+        for my $field ( sort( keys( %payment_intent_args ) ) ) {
+            is $captured->$field, $payment_intent_args{$field}, "captured payment_intent $field matches";
+        }
+        is $captured->status, 'succeeded', 'captured payment_intent status is succeeded';
+        is $captured->amount_capturable, 0, 'captured payment_intent amount_capturable matches';
+        is $captured->amount_received, $payment_intent_args{amount}, 'captured payment_intent amount_received matches';
+
+        isa_ok $captured->charges, 'Net::Stripe::List';
+        my @charges = $captured->charges->elements;
+        is scalar(@charges), 1, 'one charge returned';
+        is $charges[0]->amount, $payment_intent_args{amount}, 'payment_intent charge amount matches';
+        is $charges[0]->captured, 1, 'payment_intent charge captured matches';
+        is $charges[0]->paid, 1, "payment_intent charge paid matches";
     }
 }
 

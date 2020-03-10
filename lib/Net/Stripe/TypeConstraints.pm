@@ -90,4 +90,32 @@ subtype 'StripeAPIVersion',
         );
     };
 
+subtype 'StripePaymentMethodId',
+    as 'Str',
+    where {
+        /^pm_.+/
+    },
+    message {
+        sprintf( "Value '%s' must be a payment method id string of the form pm_.+", $_ );
+    };
+
+subtype 'StripePaymentIntentId',
+    as 'Str',
+    where {
+        /^pi_.+/
+    },
+    message {
+        sprintf( "Value '%s' must be a payment intent id string of the form pi_.+", $_ );
+    };
+
+enum StripePaymentMethodType => [qw/ card sepia_debit ideal /];
+
+enum StripeCaptureMethod => [qw/ automatic manual /];
+
+enum StripeConfirmationMethod => [qw/ automatic manual /];
+
+enum StripeCancellationReason => [qw/ duplicate fraudulent requested_by_customer abandoned /];
+
+enum StripeSetupFutureUsage => [qw/ on_session off_session /];
+
 1;
