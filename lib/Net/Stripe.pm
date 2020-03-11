@@ -2881,7 +2881,7 @@ method _get_all(
     );
     my $list = $self->_get($path, \%args);
 
-    if ( $GET_MORE ) {
+    if ( $GET_MORE && $list->elements() > 0 ) {
         # passing 'ending_before' causes the API to start with the oldest
         # records. so in order to always provide records in reverse-chronological
         # order, we must prepend these to the existing records.
