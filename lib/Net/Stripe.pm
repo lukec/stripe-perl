@@ -3202,6 +3202,7 @@ InvoiceItems: {
         }
         my %args = (
             path => 'invoiceitems',
+            customer => $customer,
             created => $created,
             ending_before => $ending_before,
             limit => $limit,

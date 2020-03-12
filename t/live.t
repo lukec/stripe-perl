@@ -2528,9 +2528,20 @@ Invoices_and_items: {
         is $newitem->currency, $item->currency, 'item currency unchanged';
         is $newitem->description, $item->description, 'item desc changed';
 
+        # create an additional customer and invoiceitem
+        my $other_customer = $stripe->post_customer(
+            card => $token_id_visa,
+            plan => $plan->id,
+        );
+        $stripe->create_invoiceitem(
+            customer => $other_customer->id,
+            amount   => 700,
+            currency => 'usd',
+            description => 'Pickles',
+        );
+
         my $items = $stripe->get_invoiceitems(
             customer => $customer->id,
-            limit => 1,
         );
         is scalar(@{$items->data}), 1, 'only 1 item returned';
         is $items->get(0)->id, $item->id, 'item id is correct';
