@@ -98,6 +98,11 @@ method fields_for($for) {
     return $thingy->form_fields if ref($thingy) =~ m/^Net::Stripe::/;
     return form_fields_for_hashref( $for, $thingy ) if ref( $thingy ) eq 'HASH';
     return form_fields_for_arrayref( $for, $thingy ) if ref( $thingy ) eq 'ARRAY';
+
+    my $token_id_type = Moose::Util::TypeConstraints::find_type_constraint( 'StripeTokenId' );
+    return form_fields_for_hashref( $for, { token => $thingy } )
+        if $self->isa( 'Net::Stripe::PaymentMethod' ) && $for eq 'card' && $token_id_type->check( $thingy );
+
     return ( $for => $self->get_form_field_value( $for ) );
 }
 
