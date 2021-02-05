@@ -252,7 +252,6 @@ Sources: {
     Create_with_receiver_flow_fields: {
         my %source_args = (
             type => 'ach_credit_transfer',
-            amount => 1234,
             currency => 'usd',
             flow => 'receiver',
             receiver => {
@@ -796,8 +795,8 @@ undef( $updated_payment_method_args{billing_details}->{address}->{line2} );
                 # other objects. other objects merge new keys on update where
                 # PaymentMethod seems to overwrite the entire hash with the
                 # passed hash.
-                #my $merged = { %{$payment_method_args{$field} || {}}, %{$updated_payment_method_args{$field} || {}} };
-                my $merged = $updated_payment_method_args{$field};
+                my $merged = { %{$payment_method_args{$field} || {}}, %{$updated_payment_method_args{$field} || {}} };
+                # my $merged = $updated_payment_method_args{$field};
                 is_deeply $updated->$field, $merged, "updated payment_method $field matches";
             } else {
                 is $updated->$field, $updated_payment_method_args{$field}, "updated payment_method $field matches";
@@ -870,7 +869,7 @@ Plans: {
             my $e = $@;
             isa_ok $e, 'Net::Stripe::Error', 'error raised is an object';
             is $e->type, 'invalid_request_error', 'error type';
-            is $e->message, "No such plan: $id", 'error message';
+            is $e->message, "No such plan: '$id'", 'error message';
         } else {
             fail "no longer can fetch deleted plans";
 
@@ -921,7 +920,7 @@ Coupons: {
             my $e = $@;
             isa_ok $e, 'Net::Stripe::Error', 'error raised is an object';
             is $e->type, 'invalid_request_error', 'error type';
-            is $e->message, "No such coupon: $id", 'error message';
+            is $e->message, "No such coupon: '$id'", 'error message';
         } else {
             fail "no longer can fetch deleted coupons";
 
@@ -971,7 +970,7 @@ Charges: {
         is $refund->charge, $charge->id, 'returned charge object matches id';
         is $refund->status, 'succeeded', 'status is "succeeded"';
         is $refund->amount, 1000, 'partial refund $10';
-        warning_like { $refund->description() } qr{deprecated}, 'warning for deprecated attribute';        
+        warning_like { $refund->description() } qr{deprecated}, 'warning for deprecated attribute';
         lives_ok { $charge = $stripe->get_charge(charge_id => $charge->id) }
             'Fetching updated charge works';
         ok !$charge->refunded, 'charge not yet fully refunded';
@@ -1017,7 +1016,7 @@ Charges: {
             );
         } 'Created a charge object with metadata';
         isa_ok $charge, 'Net::Stripe::Charge';
-        ok defined($charge->metadata), "charge has metadata";        
+        ok defined($charge->metadata), "charge has metadata";
         is $charge->metadata->{'hasmetadata'}, 'hello world', 'charge metadata';
         my $charge2 = $stripe->get_charge(charge_id => $charge->id);
         is $charge2->metadata->{'hasmetadata'}, 'hello world', 'charge metadata in retrieved object';
@@ -2504,7 +2503,7 @@ Invoices_and_items: {
         );
         ok $customer->id, 'customer has an id';
         is $customer->subscription->plan->id, $plan->id, 'customer has a plan';
-        
+
         my $ChargesList = $stripe->get_charges(limit => 1);
         my $charge = @{$ChargesList->data}[0];
         ok $charge->invoice, "Charge created by Subscription sign-up has an Invoice ID";
