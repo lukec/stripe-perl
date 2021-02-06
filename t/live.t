@@ -252,7 +252,6 @@ Sources: {
     Create_with_receiver_flow_fields: {
         my %source_args = (
             type => 'ach_credit_transfer',
-            amount => 1234,
             currency => 'usd',
             flow => 'receiver',
             receiver => {
@@ -367,6 +366,12 @@ Sources: {
             source_id => $source->id,
             %updated_source_args,
         );
+
+# HACK, HACK, HACK!!
+# the Stripe API has inconsistent responses for empty address_line2 when passing the empty string.
+# on create, it correctly reflects the empty string, while on update it incorrectly reflects undef/null
+$updated_source_args{owner}->{address} = Storable::dclone( $updated_source_args{owner}->{address} );
+undef( $updated_source_args{owner}->{address}->{line2} );
 
         for my $f ( sort( grep { $_ ne 'owner' } keys( %updated_source_args ) ) ) {
             if ( ref( $updated_source_args{$f} ) eq 'HASH' ) {
@@ -792,12 +797,7 @@ undef( $updated_payment_method_args{billing_details}->{address}->{line2} );
 
         for my $field ( sort( keys( %updated_payment_method_args ) ) ) {
             if ( ref( $updated_payment_method_args{$field} ) eq 'HASH' ) {
-                # PaymentMethod metadata appears to behave differently from
-                # other objects. other objects merge new keys on update where
-                # PaymentMethod seems to overwrite the entire hash with the
-                # passed hash.
-                #my $merged = { %{$payment_method_args{$field} || {}}, %{$updated_payment_method_args{$field} || {}} };
-                my $merged = $updated_payment_method_args{$field};
+                my $merged = { %{$payment_method_args{$field} || {}}, %{$updated_payment_method_args{$field} || {}} };
                 is_deeply $updated->$field, $merged, "updated payment_method $field matches";
             } else {
                 is $updated->$field, $updated_payment_method_args{$field}, "updated payment_method $field matches";
@@ -870,7 +870,7 @@ Plans: {
             my $e = $@;
             isa_ok $e, 'Net::Stripe::Error', 'error raised is an object';
             is $e->type, 'invalid_request_error', 'error type';
-            is $e->message, "No such plan: $id", 'error message';
+            is $e->message, "No such plan: '$id'", 'error message';
         } else {
             fail "no longer can fetch deleted plans";
 
@@ -921,7 +921,7 @@ Coupons: {
             my $e = $@;
             isa_ok $e, 'Net::Stripe::Error', 'error raised is an object';
             is $e->type, 'invalid_request_error', 'error type';
-            is $e->message, "No such coupon: $id", 'error message';
+            is $e->message, "No such coupon: '$id'", 'error message';
         } else {
             fail "no longer can fetch deleted coupons";
 
