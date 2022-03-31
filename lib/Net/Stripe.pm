@@ -3638,6 +3638,9 @@ method _get_all(
                     ( $list, $page )
                 ],
             );
+
+            last unless $page->has_more;
+
         }
     }
     return $list;
