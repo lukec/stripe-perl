@@ -9,7 +9,7 @@ use HTTP::Request::Common qw/GET POST DELETE/;
 use MIME::Base64 qw/encode_base64/;
 use URI::Escape qw/uri_escape/;
 use JSON qw/decode_json/;
-use URI qw//;
+use URI 5.19 qw//;
 use DateTime qw//;
 use Net::Stripe::TypeConstraints;
 use Net::Stripe::Constants;
