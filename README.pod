@@ -2098,7 +2098,7 @@ Rusty Conover
 
 =head1 CONTRIBUTORS
 
-=for stopwords Andrew Solomon Brian Collins Devin M. Certas Dimitar Petrov Dylan Reinhold E. Choroba Florian Heyer Hermann Calabria Jonathan "Duke" Leto Luke Closs Mohammad S Anwar Olaf Alders Paul Cochrane Peter Scott Rusty Conover Sachin Sebastian Sherrard Burton Slobodan Mišković Tom Eliaz
+=for stopwords Andrew Solomon Brian Collins Devin M. Certas Dimitar Petrov Dylan Reinhold E. Choroba Florian Heyer Hermann Calabria Jonathan "Duke" Leto Luke Closs Mohammad S Anwar Olaf Alders Paul Cochrane Peter Scott Rusty Conover Sachin Sebastian sherrardb Sherrard Burton Slobodan Mišković Tom Eliaz
 
 =over 4
 
@@ -2176,7 +2176,7 @@ Sachin Sebastian <sachinjsk@users.noreply.github.com>
 
 =item *
 
-Sherrard Burton <32931314+sherrardb@users.noreply.github.com>
+sherrardb <32931314+sherrardb@users.noreply.github.com>
 
 =item *
 
