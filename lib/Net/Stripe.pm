@@ -3267,7 +3267,7 @@ method _post(Str $path!, HashRef|StripeResourceObject $obj?) {
     my %headers;
     if ( $obj ) {
         my %form_fields = %{ convert_to_form_fields( $obj ) };
-        $headers{Content} = [ %form_fields ] if %form_fields;
+        push @{$headers{Content}}, ( $_, $form_fields{$_} ) for sort( keys( %form_fields ) );
     }
 
     my $req = POST $self->api_base . '/' . $path, %headers;
